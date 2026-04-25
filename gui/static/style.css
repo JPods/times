@@ -1,0 +1,377 @@
+/* Route-Time GUI stylesheet */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Full-window map ──────────────────────────────────────────────────────── */
+
+#map {
+  position: absolute;
+  inset: 0 280px 22px 0;   /* right=sidebar width, bottom=statusbar height */
+}
+
+/* ── Right sidebar ────────────────────────────────────────────────────────── */
+
+#sidebar {
+  position: absolute;
+  top: 0; right: 0; bottom: 22px;
+  width: 280px;
+  background: #222;
+  border-left: 1px solid #444;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel {
+  padding: 10px 12px;
+  border-bottom: 1px solid #333;
+}
+.panel h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #bbb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+#net-stats, #sim-summary, #station-detail, #allie-response {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #ccc;
+}
+#sim-lines {
+  margin-top: 8px;
+  font-size: 11px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.sim-line-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  border-bottom: 1px solid #2a2a2a;
+  color: #aaa;
+}
+.sim-line-row .line-id { color: #7fb3d3; }
+
+/* ── Status bar ───────────────────────────────────────────────────────────── */
+
+#statusbar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 22px;
+  background: #1a1a1a;
+  border-top: 1px solid #333;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 20px;
+  font-size: 11px;
+  color: #888;
+  z-index: 900;
+}
+#status-mode { color: #5dade2; font-weight: 500; }
+
+/* ── Floating tool palette ────────────────────────────────────────────────── */
+
+#palette {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  width: 148px;
+  background: rgba(28, 28, 32, 0.96);
+  border: 1px solid #555;
+  border-radius: 6px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  z-index: 1000;
+  user-select: none;
+}
+
+#palette-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: #2a2a35;
+  border-bottom: 1px solid #555;
+  border-radius: 6px 6px 0 0;
+  cursor: grab;
+}
+#palette-header:active { cursor: grabbing; }
+
+.pal-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #bbb;
+  letter-spacing: 0.3px;
+}
+
+#palette-collapse {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 0 2px;
+}
+#palette-collapse:hover { color: #fff; }
+
+#palette-body {
+  overflow: hidden;
+  transition: max-height 0.2s ease;
+}
+#palette-body.collapsed { max-height: 0 !important; }
+
+.pal-section {
+  padding: 6px 8px;
+  border-bottom: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.pal-section:last-child { border-bottom: none; }
+
+.pal-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+/* Palette buttons */
+#palette button {
+  background: #3a3a3a;
+  border: 1px solid #555;
+  color: #ddd;
+  border-radius: 3px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  text-align: left;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#palette button:hover  { background: #4a4a4a; border-color: #888; color: #fff; }
+#palette button.active { background: #1a4a7a; border-color: #3498db; color: #fff; }
+#palette button:disabled { opacity: 0.4; cursor: default; }
+
+/* 2-column grid for station orientation presets */
+.pal-grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+}
+.pal-grid2 button { text-align: center; }
+
+/* Inline row (label + input + button) */
+.pal-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.pal-row label {
+  font-size: 10px;
+  color: #888;
+  flex-shrink: 0;
+}
+.pal-row input {
+  flex: 1;
+  min-width: 0;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 11px;
+}
+.pal-row button {
+  width: auto !important;
+  padding: 3px 6px !important;
+  flex-shrink: 0;
+}
+
+/* Tile select */
+#tile-select {
+  background: #3a3a3a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 3px;
+  padding: 4px 4px;
+  font-size: 11px;
+  width: 100%;
+}
+
+/* Sim slots input */
+#sim-slots {
+  background: #2a2a2a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 11px;
+  width: 100%;
+}
+
+/* Hints */
+.pal-hints div {
+  font-size: 10px;
+  color: #555;
+  line-height: 1.7;
+}
+
+/* ── Allie panel (inside sidebar) ─────────────────────────────────────────── */
+
+#allie-params { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+#allie-params label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #aaa; }
+#allie-params input { background: #2a2a2a; border: 1px solid #555; color: #e0e0e0; border-radius: 3px; padding: 2px 4px; }
+#allie-params button { background: #1a5276; border: 1px solid #3498db; color: #fff; border-radius: 3px; padding: 4px 8px; cursor: pointer; }
+#allie-response { white-space: pre-wrap; font-size: 11px; color: #aaa; }
+
+/* ── Leaflet overrides ────────────────────────────────────────────────────── */
+
+.leaflet-container { background: #1a1a1a; }
+
+/* Alt-grab mode — circle cursor overrides all child cursors (including Leaflet's
+   pointer-on-hover for lines). The SVG is a 60×60px teal ring; hotspot at centre. */
+.alt-grab-mode,
+.alt-grab-mode * {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36'%3E%3Ccircle cx='18' cy='18' r='16' fill='rgba(26%2C188%2C156%2C0.12)' stroke='%231abc9c' stroke-width='2'/%3E%3Ccircle cx='18' cy='18' r='2' fill='%231abc9c'/%3E%3C/svg%3E") 18 18, crosshair !important;
+}
+
+/* Node markers */
+.node-marker-station {
+  width: 14px; height: 14px;
+  background: #27ae60; border: 2px solid #fff;
+  border-radius: 50%; cursor: pointer;
+}
+.node-marker-switch {
+  width: 8px; height: 8px;
+  background: #7fb3d3; border: 1px solid #fff;
+  border-radius: 2px; cursor: pointer;
+}
+
+/* Waypoint handle markers */
+.waypoint-handle {
+  width: 14px; height: 14px;
+  background: #f1c40f; border: 2px solid #e67e22;
+  border-radius: 50%; cursor: grab;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+.waypoint-handle:active { cursor: grabbing; }
+
+/* Waypoint tool handle — teal */
+.align-handle {
+  width: 14px; height: 14px;
+  background: #1abc9c; border: 2px solid #0e8c6a;
+  border-radius: 50%; cursor: grab;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+.align-handle:active { cursor: grabbing; }
+
+/* Capture circle pulse — subtle ring animation while hovering */
+@keyframes wpt-pulse {
+  0%   { stroke-opacity: 0.8; }
+  50%  { stroke-opacity: 0.3; }
+  100% { stroke-opacity: 0.8; }
+}
+.leaflet-interactive.wpt-capture {
+  animation: wpt-pulse 1.4s ease-in-out infinite;
+}
+
+/* CP stub-pair — transparent hit zone (5× larger than badge) */
+.cp-hit {
+  width: 100px; height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+/* Target circle — appears on hover and when selected */
+.cp-hit::after {
+  content: "";
+  position: absolute;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 8px solid rgba(241, 196, 15, 0.75);
+  pointer-events: none;
+  opacity: 0;
+}
+.cp-hit:hover::after { opacity: 1; }
+.cp-hit.cp-hit-selected::after {
+  opacity: 1;
+  border-color: #f1c40f;
+}
+
+/* CP stub-pair marker — visible badge: one rectangle/oval, two dots */
+.cp-marker {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 20px; height: 10px;
+  background: #2c3e50;
+  border: 1.5px solid #9b59b6;
+  border-radius: 3px;
+  cursor: pointer;
+  box-shadow: 0 0 3px rgba(0,0,0,0.6);
+  flex-shrink: 0;
+}
+.cp-marker.cp-circle   { border-radius: 10px; }
+.cp-marker.cp-connected { border-color: #27ae60; background: #1a3a2a; }
+
+/* Selected badge tint */
+.cp-hit.cp-hit-selected .cp-marker {
+  border-color: #f1c40f;
+  background: #3a2e00;
+}
+
+.cp-dot { width: 5px; height: 5px; border-radius: 50%; }
+.cp-dot.cp-out { background: #3498db; }   /* outbound — blue  */
+.cp-dot.cp-in  { background: #e74c3c; }   /* inbound  — red   */
+
+/* Pod markers */
+.pod-marker {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+}
+
+/* Line tooltip */
+.line-tooltip { font-size: 11px; }
+
+/* Overlay legend */
+.overlay-legend {
+  background: rgba(30,30,30,0.85);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #ccc;
+  line-height: 1.8;
+}
+
+/* Loading spinner */
+.spinner {
+  display: inline-block;
+  width: 14px; height: 14px;
+  border: 2px solid #555;
+  border-top-color: #3498db;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
