@@ -156,7 +156,7 @@ All parameters editable in sidebar. Defaults match Java version.
 |---------|--------|------|---------|
 | Fleet-median transit time per line | ✅ | Run simulation | Times shown in sidebar |
 | Simulation summary in sidebar | ✅ | Run simulation | Line-by-line results table |
-| Pod animation replay | 🔧 | Run, step through frames | Pods move along guideways |
+| Pod animation replay | ✅ | Click Run — animation auto-starts | Pods move along guideways, loop continuously |
 | Comparison vs car/bus/train | ⬜ | Set modal params | Side-by-side time comparison bar chart |
 | Export simulation results | ⬜ | Click Export results | CSV or JSON of transit times |
 

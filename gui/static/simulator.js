@@ -171,7 +171,16 @@ const Sim = (() => {
       await _buildFrames(result, geojson);
 
       document.getElementById("btn-replay").disabled = false;
-      setStatus(`Simulation complete — ${result.simulation.passengers_served} passengers served`);
+      const pax = result.simulation.passengers_served;
+      const frameCount = _frames.length;
+      console.log(`Simulation: ${pax} passengers served, ${frameCount} animation frames built`);
+      setStatus(`Simulation complete — ${pax} passengers served`);
+
+      // Auto-start animation if frames were built
+      if (frameCount > 0) {
+        _startReplay();
+        document.getElementById("btn-replay").textContent = "⏹ Stop";
+      }
     },
 
     replay() {
