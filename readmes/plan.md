@@ -74,11 +74,11 @@ Status legend: ✅ Done · 🔧 Partial · ⬜ Not started
 
 | Feature | Status | Test | Outcome |
 |---------|--------|------|---------|
-| Alt+drag CP — moves whole structure | 🔧 | Hold Alt, drag CP marker | Structure (lines + CPs) redraws at drop point |
-| Alt+drag structure line — moves whole structure | 🔧 | Hold Alt, drag internal line | Same as above |
+| Alt+drag CP — moves whole structure | ✅ | Hold Alt, drag CP marker | Structure (lines + CPs) redraws at drop point |
+| Alt+drag structure line — moves whole structure | ✅ | Hold Alt, drag internal line | Same as above |
 | Alt cursor (teal circle) shows grab radius | ✅ | Hold Alt key | Teal circle cursor appears |
-| Internal lines disappear on drag start | 🔧 | Begin Alt+drag | Lines vanish immediately (layer group remove) |
-| Lines redraw correctly on drop | 🔧 | Release Alt+drag | Full structure redraws via re-render |
+| Internal lines disappear on drag start | ✅ | Begin Alt+drag | Lines vanish immediately (layer group remove) |
+| Lines redraw correctly on drop | ✅ | Release Alt+drag | Full structure redraws via re-render |
 | Proximity guard on move | ✅ | Drop structure on top of another | Error, structure snaps back |
 | Connector lines follow moved structure | ⬜ | Move connected structure | Connector guideways update to new CP positions |
 
