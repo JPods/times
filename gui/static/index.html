@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Route-Time — JPods Network Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-arrowheads@1.4.0/dist/leaflet-arrowheads.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== Map (full window) ===== -->
+<div id="map"></div>
+
+<!-- ===== Right sidebar ===== -->
+<div id="sidebar">
+  <div class="panel" id="panel-network">
+    <h3>Network</h3>
+    <div id="net-stats">No network loaded.</div>
+  </div>
+  <div class="panel" id="panel-sim" style="display:none">
+    <h3>Simulation Results</h3>
+    <div id="sim-summary"></div>
+    <div id="sim-lines"></div>
+  </div>
+  <div class="panel" id="panel-station" style="display:none">
+    <h3>Station: <span id="station-id"></span></h3>
+    <div id="station-detail"></div>
+  </div>
+  <div class="panel" id="panel-structure" style="display:none">
+    <h3>Structure: <span id="struct-id"></span></h3>
+    <div id="struct-type" style="font-size:11px;color:#888;margin-bottom:6px"></div>
+    <div class="pal-label">Rotate</div>
+    <div class="pal-grid2" id="struct-heading-btns"></div>
+    <div class="pal-row" style="margin-top:4px">
+      <label style="font-size:10px;color:#888">°</label>
+      <input id="struct-heading-input" type="number" min="0" max="359" step="5"
+             style="flex:1;background:#2a2a2a;border:1px solid #555;color:#e0e0e0;border-radius:3px;padding:2px 4px;font-size:11px">
+      <button onclick="StructPanel.applyHeading()"
+              style="width:auto;padding:3px 6px;background:#3a3a3a;border:1px solid #555;color:#ddd;border-radius:3px;font-size:11px;cursor:pointer">Go</button>
+    </div>
+  </div>
+  <div class="panel" id="panel-allie" style="display:none">
+    <h3>&#129504; Allie</h3>
+    <div id="allie-params">
+      <label>Max stations: <input id="ai-stations" type="number" value="10" min="2" max="100"></label>
+      <label>Budget (km): <input id="ai-budget" type="number" value="5" min="0.5" step="0.5"></label>
+      <label>Speed (km/h): <input id="ai-speed" type="number" value="60" min="10" max="200"></label>
+      <button onclick="AI.recommend()">Recommend Network</button>
+    </div>
+    <div id="allie-response"></div>
+  </div>
+</div>
+
+<!-- ===== Status bar ===== -->
+<div id="statusbar">
+  <span id="status-mode">Ready</span>
+  <span id="status-coord"></span>
+  <span id="status-net"></span>
+</div>
+
+<!-- ===== Floating tool palette ===== -->
+<div id="palette">
+
+  <div id="palette-header">
+    <span class="pal-title">&#9965; JPods Tools</span>
+    <button id="palette-collapse" onclick="Palette.toggle()" title="Collapse / expand">&#8722;</button>
+  </div>
+
+  <div id="palette-body">
+
+    <!-- FILE -->
+    <div class="pal-section">
+      <div class="pal-label">File</div>
+      <button onclick="App.newNetwork()">New</button>
+      <button onclick="App.openFile()">Open</button>
+      <button onclick="App.saveFile()">Save</button>
+    </div>
+
+    <!-- STATIONS — orientation presets + custom -->
+    <div class="pal-section">
+      <div class="pal-label">Stations</div>
+      <div class="pal-grid2">
+        <button class="btn-station" onclick="Editor.startPlace('station',   0)" title="North–South (0°)">N–S</button>
+        <button class="btn-station" onclick="Editor.startPlace('station',  90)" title="East–West (90°)">E–W</button>
+        <button class="btn-station" onclick="Editor.startPlace('station',  45)" title="NE–SW (45°)">NE–SW</button>
+        <button class="btn-station" onclick="Editor.startPlace('station', 135)" title="NW–SE (135°)">NW–SE</button>
+      </div>
+      <div class="pal-row">
+        <label title="Custom heading °">°</label>
+        <input id="station-heading" type="number" value="0" min="0" max="359" step="5">
+        <button id="btn-add-station"
+                onclick="Editor.startPlace('station', parseInt(document.getElementById('station-heading').value)||0)"
+                title="Place station at custom heading">Go</button>
+      </div>
+    </div>
+
+    <!-- COMPONENTS — line, switch, siding, traffic circle -->
+    <div class="pal-section">
+      <div class="pal-label">Components</div>
+      <button id="btn-draw-line"   onclick="Editor.startDrawLine()"     title="Draw directed guideway pair between nodes">&#8594; Guideway</button>
+      <button id="btn-waypoint" onclick="Editor.startWaypoint()" title="Click on a guideway to place a draggable waypoint — drag to route around terrain">Waypoint</button>
+      <button id="btn-add-siding"   onclick="Editor.startPlace('siding')" title="Passing siding attached to a guideway (coming soon)" disabled>Siding</button>
+      <div class="pal-grid2">
+        <button id="btn-add-circle"   onclick="Editor.startPlace('circle',  0)" title="Traffic circle — arms N/E/S/W">&#11096; Circle</button>
+        <button id="btn-add-circle45" onclick="Editor.startPlace('circle', 45)" title="Traffic circle — arms NE/SE/SW/NW (45°)">&#11096; /45°</button>
+      </div>
+    </div>
+
+    <!-- PRE-BUILT — auto-connect and future sub-network templates -->
+    <div class="pal-section">
+      <div class="pal-label">Pre-built</div>
+      <button id="btn-autoconnect" onclick="Editor.autoConnect()" title="Best-effort MST auto-connect all structures">&#9889; Auto-Connect</button>
+    </div>
+
+    <!-- SIMULATE -->
+    <div class="pal-section">
+      <div class="pal-label">Simulate</div>
+      <button onclick="Sim.run()"    title="Run simulation">&#9654; Run</button>
+      <button id="btn-replay" onclick="Sim.replay()" title="Replay animation" disabled>&#9654;&#9654; Replay</button>
+      <div class="pal-row">
+        <label>Slots</label>
+        <input id="sim-slots" type="number" value="360" min="1" max="3600">
+      </div>
+    </div>
+
+    <!-- MAP TILES -->
+    <div class="pal-section">
+      <div class="pal-label">Map</div>
+      <select id="tile-select" onchange="Map.setTiles(this.value)">
+        <option value="osm">Street</option>
+        <option value="satellite">Satellite</option>
+        <option value="topo">Topo</option>
+        <option value="dark">Dark</option>
+      </select>
+    </div>
+
+    <!-- OVERLAYS -->
+    <div class="pal-section">
+      <div class="pal-label">Overlays</div>
+      <button onclick="Overlays.toggleAADT()"     title="Annual Average Daily Traffic">AADT</button>
+      <button onclick="Overlays.toggleAccident()" title="Accident data">Accidents</button>
+      <button onclick="Overlays.toggleMobility()" title="Cell mobility">Mobility</button>
+    </div>
+
+    <!-- ALLIE AI -->
+    <div class="pal-section">
+      <div class="pal-label">AI</div>
+      <button onclick="AI.togglePanel()" title="Allie network recommendations">&#129504; Allie</button>
+    </div>
+
+    <!-- HELP -->
+    <div class="pal-section pal-hints">
+      <div class="pal-label">Place</div>
+      <div>Click map → place selected tool</div>
+      <div>Esc → cancel tool</div>
+    </div>
+    <div class="pal-section pal-hints">
+      <div class="pal-label">Connect</div>
+      <div>Click CP → select</div>
+      <div>Click 2nd CP → connect pair</div>
+      <div>Ctrl+CP → disconnect</div>
+    </div>
+    <div class="pal-section pal-hints">
+      <div class="pal-label">Move</div>
+      <div>Alt+drag CP → move structure</div>
+      <div>Waypoint tool + drag line → move structure</div>
+    </div>
+    <div class="pal-section pal-hints">
+      <div class="pal-label">Route lines</div>
+      <div>Waypoint tool + click line → add bend</div>
+      <div>Right-click line → add align pt</div>
+      <div>Shift+waypoint pt → remove</div>
+    </div>
+    <div class="pal-section pal-hints">
+      <div class="pal-label">Delete</div>
+      <div>Shift+drag → select region</div>
+      <div>Delete/Bksp → remove selection</div>
+      <div>Shift+node → remove node</div>
+      <div>Ctrl+line → remove guideway pair</div>
+    </div>
+
+  </div><!-- /palette-body -->
+</div><!-- /palette -->
+
+<!-- Hidden file input -->
+<input type="file" id="file-input" accept=".jpd,.json" style="display:none"
+       onchange="App.onFileSelected(this)">
+
+<script src="app.js"></script>
+<script src="editor.js"></script>
+<script src="simulator.js"></script>
+<script src="overlays.js"></script>
+<script src="ai.js"></script>
+</body>
+</html>
