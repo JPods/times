@@ -83,6 +83,7 @@ const _cpPropsMap       = {};  // cp_id → CP properties (for region-select)
 const _lineStructMap     = {};  // line_id → structure_id (derived from metadata.structures)
 const _structureMetaMap  = {};  // structure_id → {line_ids, node_ids, …} from server metadata
 const _structureLayerMap = {};  // structure_id → L.layerGroup holding all internal polylines
+const _lineNodeMap       = {};  // line_id → {s: startNodeId, e: endNodeId}
 
 // Set true before _render when loading a file — causes a one-time fit-to-bounds
 let _fitOnNextRender = false;
@@ -231,6 +232,7 @@ const _moveState = {
   sid:         null,
   startLatlng: null,
   origPos:     {},   // cpId → L.LatLng snapshot at drag start
+  connectors:  [],   // [{lid, endIdx, origLatlng}] connector lines whose endpoint moves
 };
 
 let _hoverStructSid = null;   // CP or structure-line under cursor → triggers structure move
@@ -318,6 +320,28 @@ document.addEventListener("mousedown", (e) => {
       const mk = _nodeMap[cpId];
       if (mk) _moveState.origPos[cpId] = mk.getLatLng();
     });
+
+    // Collect connector line endpoints that belong to this structure's CPs
+    // so they can follow the drag live.
+    const movingTips = new Set();
+    Object.values(_cpPropsMap).forEach(p => {
+      if (p.structure_id !== sid) return;
+      if (p.outbound_node) movingTips.add(p.outbound_node);
+      if (p.inbound_node)  movingTips.add(p.inbound_node);
+    });
+    _moveState.connectors = [];
+    Object.entries(_lineNodeMap).forEach(([lid, {s, e}]) => {
+      if (_lineStructMap[lid]) return;           // skip internal lines
+      const pl = _lineMap[lid];
+      if (!pl) return;
+      const lls = pl.getLatLngs();
+      if (movingTips.has(s)) {
+        _moveState.connectors.push({ lid, endIdx: 0, origLatlng: lls[0] });
+      } else if (movingTips.has(e)) {
+        _moveState.connectors.push({ lid, endIdx: lls.length - 1, origLatlng: lls[lls.length - 1] });
+      }
+    });
+
     // Hide all internal lines in one call — the structure layer group is
     // removed from _layers.lines here and rebuilt by App._render() on drop.
     const structLg = _structureLayerMap[sid];
@@ -387,14 +411,22 @@ document.addEventListener("mousemove", (e) => {
   const latlng = map.mouseEventToLatLng(e);
 
   if (_moveState.active) {
-    // Only CP markers move during drag — internal lines were removed on drag start
-    // and will be redrawn correctly on drop.
+    // CP markers and connector guideway endpoints follow the drag live.
+    // Internal lines were removed on drag start; they rebuild on drop via _render.
     const dlat = latlng.lat - _moveState.startLatlng.lat;
     const dlon = latlng.lng - _moveState.startLatlng.lng;
     Object.entries(_cpPropsMap).forEach(([cpId, props]) => {
       if (props.structure_id !== _moveState.sid) return;
       const orig = _moveState.origPos[cpId];
       if (orig) _nodeMap[cpId]?.setLatLng([orig.lat + dlat, orig.lng + dlon]);
+    });
+    // Stretch/shrink connector lines so they remain attached to the moving structure
+    _moveState.connectors.forEach(c => {
+      const pl = _lineMap[c.lid];
+      if (!pl) return;
+      const lls = pl.getLatLngs();
+      lls[c.endIdx] = L.latLng(c.origLatlng.lat + dlat, c.origLatlng.lng + dlon);
+      pl.setLatLngs(lls);
     });
   }
 
@@ -463,6 +495,7 @@ document.addEventListener("mouseup", async (e) => {
 
   if (!_moveState.active) return;
   _moveState.active = false;
+  _moveState.connectors = [];
   map.dragging.enable();   // re-enable in case waypoint handler disabled it
 
   const dlat   = latlng.lat - _moveState.startLatlng.lat;
@@ -553,6 +586,7 @@ const App = {
     Object.keys(_lineStructMap).forEach(k => delete _lineStructMap[k]);
     Object.keys(_structureMetaMap).forEach(k => delete _structureMetaMap[k]);
     Object.keys(_structureLayerMap).forEach(k => delete _structureLayerMap[k]);
+    Object.keys(_lineNodeMap).forEach(k => delete _lineNodeMap[k]);
     _hoverStructSid = null;
     _hoverLineId    = null;
     _clearSelection();
@@ -628,6 +662,9 @@ function _addLineFeature(f) {
   const coords       = f.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
   const lineRole     = f.properties.line_role;
   const isConverging = f.properties.is_converging;
+
+  // Track start/end node IDs so connector endpoints can follow structure moves
+  _lineNodeMap[lid] = { s: f.properties.start_node, e: f.properties.end_node };
 
   // Color by role:
   //   connector (CP↔CP through-guideway) → green  (has both inbound + outbound ends)
