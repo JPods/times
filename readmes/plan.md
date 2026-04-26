@@ -103,7 +103,7 @@ Status legend: ✅ Done · 🔧 Partial · ⬜ Not started
 | Shift+click handle — remove waypoint | ✅ | Shift+click handle | Handle and bend point removed |
 | Ctrl+click guideway — remove pair | ✅ | Ctrl+click line | Both guideways of pair deleted |
 | Connect CP to CP | ✅ | Click CP, click second CP | Two connector guideways drawn |
-| Disconnect CP pair | ✅ | Ctrl+click connected CP | Both connector guideways removed |
+| Disconnect CP pair | ✅ | Shift+click connected CP | Both connector guideways removed |
 
 ---
 
