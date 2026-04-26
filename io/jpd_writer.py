@@ -25,6 +25,49 @@ from xml.dom import minidom
 from ..engine.network import Network
 
 
+def serialise_jpd(net: Network) -> bytes:
+    """Return the .jpd XML content as UTF-8 bytes (no file I/O)."""
+    root = ET.Element("network", id=net.network_id, ver=str(int(time.time() * 1000)))
+
+    switches = [n for n in net.nodes.values() if n.node_id not in net.stations]
+    sw_el = ET.SubElement(root, "Switches", lastID=str(len(switches)))
+    for node in switches:
+        ET.SubElement(sw_el, "Switch",
+                      ID=node.node_id,
+                      lat=f"{node.lat:.14f}",
+                      lon=f"{node.lon:.14f}")
+
+    st_nodes = [net.nodes[sid] for sid in net.stations if sid in net.nodes]
+    st_el = ET.SubElement(root, "stations", lastID=str(len(st_nodes)))
+    for node in st_nodes:
+        ET.SubElement(st_el, "Station",
+                      ID=node.node_id,
+                      lat=f"{node.lat:.14f}",
+                      lon=f"{node.lon:.14f}")
+
+    ln_el = ET.SubElement(root, "Lines", lastID=str(len(net.lines)))
+    for lid, line in net.lines.items():
+        el = ET.SubElement(ln_el, "line",
+                           ID=lid,
+                           startNodeId=line.start_node.node_id,
+                           endNodeId=line.end_node.node_id)
+        if line.coordinates:
+            for lat, lon in line.coordinates:
+                ET.SubElement(el, "Coordinate", lat=f"{lat:.14f}", lon=f"{lon:.14f}")
+        else:
+            ET.SubElement(el, "Coordinate",
+                          lat=f"{line.start_node.lat:.14f}",
+                          lon=f"{line.start_node.lon:.14f}")
+            ET.SubElement(el, "Coordinate",
+                          lat=f"{line.end_node.lat:.14f}",
+                          lon=f"{line.end_node.lon:.14f}")
+
+    ET.SubElement(root, "Groups", lastID="0")
+
+    raw = ET.tostring(root, encoding="unicode")
+    return minidom.parseString(raw).toprettyxml(indent="  ", encoding="UTF-8")
+
+
 def save_jpd(net: Network, path: str):
     """Write network to a .jpd file."""
     root = ET.Element("network", id=net.network_id, ver=str(int(time.time() * 1000)))

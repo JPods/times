@@ -424,6 +424,66 @@ body {
 /* Line tooltip */
 .line-tooltip { font-size: 11px; }
 
+/* JPods logo watermark */
+.jpods-logo-control {
+  background: rgba(0,0,0,0.45);
+  border-radius: 5px;
+  padding: 4px 8px;
+  line-height: 0;
+  pointer-events: none;
+  margin-bottom: 4px;
+  margin-right: 4px;
+}
+.jpods-logo-control img {
+  display: block;
+  width: 140px;
+  height: auto;
+  opacity: 0.88;
+}
+
+/* Walk-Ride-Walk ledger (always-visible color key) */
+.wrw-ledger {
+  background: rgba(15,15,15,0.82);
+  border-radius: 5px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #ccc;
+  pointer-events: none;
+  margin-bottom: 4px;
+  margin-left: 4px;
+  min-width: 130px;
+}
+.wrw-ledger-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #888;
+  margin-bottom: 4px;
+}
+.wrw-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0;
+}
+.wrw-swatch {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border-radius: 50%;
+  border: 1.5px solid;
+  flex-shrink: 0;
+}
+.wrw-label {
+  color: #ddd;
+  font-size: 11px;
+}
+.wrw-hint {
+  margin-top: 5px;
+  font-size: 10px;
+  color: #555;
+}
+
 /* Walk-Ride-Walk legend */
 .timemap-legend {
   background: rgba(20,20,20,0.88);

@@ -26,7 +26,7 @@ import os
 import uuid
 from typing import Dict, List, Optional, Tuple
 
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, Response
 
 # Import engine and IO
 import sys
@@ -44,7 +44,7 @@ from route_time.engine.structures import (
     ConnectionPoint, Structure,
 )
 from route_time.io import load_jpd, load_podpresenter, load_sketchup_map
-from route_time.io.jpd_writer import save_jpd
+from route_time.io.jpd_writer import save_jpd, serialise_jpd
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -302,6 +302,24 @@ def save_network():
         return jsonify({"error": str(e)}), 500
     _state["network_path"] = path
     return jsonify({"saved": path})
+
+
+@api.get("/network/download")
+def download_network():
+    """Return the current network as a .jpd file download (no server-side path required)."""
+    net = _net()
+    if net is None:
+        return jsonify({"error": "No network loaded"}), 400
+    try:
+        content = serialise_jpd(net)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    filename = f"{net.network_id}.jpd"
+    return Response(
+        content,
+        mimetype="application/xml",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @api.post("/network/new")

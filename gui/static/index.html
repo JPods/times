@@ -8,6 +8,7 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-arrowheads@1.4.0/dist/leaflet-arrowheads.js"></script>
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+  <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -309,6 +310,7 @@
       <button onclick="App.newNetwork()">New</button>
       <button onclick="App.openFile()">Open</button>
       <button onclick="App.saveFile()">Save</button>
+      <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button>
     </div>
 
     <!-- STATIONS -->

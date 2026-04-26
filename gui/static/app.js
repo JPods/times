@@ -60,6 +60,42 @@ const Map = {
 
 Map.setTiles("osm");
 
+// ── JPods logo watermark (bottom-right of map) ────────────────────────────────
+const _logoControl = L.control({ position: "bottomright" });
+_logoControl.onAdd = () => {
+  const div = L.DomUtil.create("div", "jpods-logo-control");
+  const img = L.DomUtil.create("img", "", div);
+  img.src = "/static/jpods-logo.png";
+  img.alt = "JPods";
+  img.title = "JPods® — Solar-Powered Personal Transit";
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+_logoControl.addTo(map);
+
+// ── Walk-Ride-Walk ledger (bottom-left, always visible) ───────────────────────
+const _ledgerControl = L.control({ position: "bottomleft" });
+_ledgerControl.onAdd = () => {
+  const div = L.DomUtil.create("div", "wrw-ledger");
+  div.innerHTML =
+    `<div class="wrw-ledger-title">Walk · Ride · Walk</div>` +
+    [
+      [5,  "#00ff44", "#00aa00", "5 min"],
+      [10, "#4488ff", "#0044cc", "10 min"],
+      [20, "#ffff00", "#aaaa00", "20 min"],
+      [30, "#ff6644", "#cc2200", "30 min"],
+    ].map(([, fill, stroke, label]) =>
+      `<div class="wrw-row">` +
+      `<span class="wrw-swatch" style="background:${fill};border-color:${stroke}"></span>` +
+      `<span class="wrw-label">${label}</span>` +
+      `</div>`
+    ).join("") +
+    `<div class="wrw-hint">&#9711; Coverage → click map</div>`;
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+_ledgerControl.addTo(map);
+
 // Coordinate display
 map.on("mousemove", (e) => {
   document.getElementById("status-coord").textContent =
@@ -566,11 +602,94 @@ const App = {
   },
 
   async saveFile() {
-    const name = prompt("Save as (.jpd):", "network.jpd");
-    if (!name) return;
-    const r = await api("POST", "/api/network/save", { path: name });
-    if (r.error) alert(r.error);
-    else setStatus(`Saved: ${r.saved}`);
+    // Fetch the .jpd content from the server as a blob
+    let blob, filename;
+    try {
+      const resp = await fetch("/api/network/download");
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        alert(err.error || "Save failed");
+        return;
+      }
+      blob = await resp.blob();
+      // Derive filename from Content-Disposition header, fallback to "network.jpd"
+      const cd = resp.headers.get("Content-Disposition") || "";
+      const m  = cd.match(/filename="?([^"]+)"?/);
+      filename = m ? m[1] : "network.jpd";
+    } catch (e) {
+      alert("Save failed: " + e.message);
+      return;
+    }
+
+    // Native OS save dialog via File System Access API (Chrome 86+, Safari 15.2+, Edge 86+)
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: "JPods network file", accept: { "application/xml": [".jpd"] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        setStatus(`Saved: ${handle.name}`);
+        return;
+      } catch (e) {
+        if (e.name === "AbortError") return;  // user cancelled — do nothing
+        // Fall through to blob-download fallback on other errors
+      }
+    }
+
+    // Fallback: trigger browser download (goes to Downloads or prompts, per browser prefs)
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement("a");
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus(`Saved: ${filename}`);
+  },
+
+  async captureMap() {
+    setStatus("Capturing map…");
+    try {
+      const canvas = await html2canvas(document.getElementById("map"), {
+        useCORS:    true,
+        allowTaint: false,
+        logging:    false,
+        // Exclude the palette div (it floats over the map) — clone-based approach
+        ignoreElements: el => el.id === "palette",
+      });
+      canvas.toBlob(async (blob) => {
+        const dt       = new Date().toISOString().slice(0, 10);
+        const filename = `jpods-network-${dt}.png`;
+        if (window.showSaveFilePicker) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: filename,
+              types: [{ description: "PNG image", accept: { "image/png": [".png"] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            setStatus(`Captured: ${handle.name}`);
+            return;
+          } catch (e) {
+            if (e.name === "AbortError") { setStatus("Ready"); return; }
+          }
+        }
+        // Fallback
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement("a");
+        a.href     = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        setStatus(`Captured: ${filename}`);
+      }, "image/png");
+    } catch (e) {
+      alert("Map capture failed: " + e.message);
+      setStatus("Ready");
+    }
   },
 
   _render(geojson) {
