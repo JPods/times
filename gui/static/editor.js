@@ -222,6 +222,7 @@ document.addEventListener("keydown", (e) => {
 
   // Escape — cancel rubber-band selection, waypoint drag, mode, CP selection
   if (e.key === "Escape") {
+    if (typeof TimeMap !== "undefined") TimeMap.deactivate();
     if (typeof wptCancel === "function") wptCancel();
     Editor.escape();
     if (typeof _clearSelection === "function") _clearSelection();
@@ -246,6 +247,19 @@ document.addEventListener("keydown", (e) => {
       deleteSelection();
       return;
     }
+    // CP selected — delete its parent structure
+    if (typeof _selectedCpId !== "undefined" && _selectedCpId !== null) {
+      const cpProps = typeof _cpPropsMap !== "undefined" && _cpPropsMap[_selectedCpId];
+      const sid = cpProps && cpProps.structure_id;
+      _selectedCpId = null;
+      if (sid) {
+        api("DELETE", `/api/network/structure/${sid}`).then(() => {
+          api("GET", "/api/network").then(gj => { App._render(gj); setStatus(`Deleted ${sid}`); });
+        });
+      }
+      return;
+    }
+
     // Single structure selected (click on internal line or CP area)
     if (typeof _selectedStructSid !== "undefined" && _selectedStructSid !== null) {
       const sid = _selectedStructSid;

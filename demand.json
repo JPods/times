@@ -1,0 +1,27 @@
+{
+  "_comment": "Passenger demand configuration for Route-Time simulation.",
+  "_format": "Each station entry lists destination station IDs and the number of passengers/hour bound for that destination (out of total_slots=360). Stations not listed use uniform random distribution.",
+
+  "total_slots": 360,
+
+  "stations": {
+
+    "_example_ST_NORTH": {
+      "_comment": "Remove the underscore prefix to activate. Station IDs must match the loaded network.",
+      "destinations": {
+        "ST_SOUTH": 180,
+        "ST_EAST":   90,
+        "ST_WEST":   90
+      }
+    },
+
+    "_example_ST_SOUTH": {
+      "destinations": {
+        "ST_NORTH": 180,
+        "ST_EAST":   90,
+        "ST_WEST":   90
+      }
+    }
+
+  }
+}

@@ -782,6 +782,7 @@ def auto_connect():
 
 @api.post("/simulation/run")
 def run_simulation():
+    from route_time.engine.demand import LoadArray
     net = _net()
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
@@ -790,7 +791,20 @@ def run_simulation():
     settings = _state["settings"].copy()
     settings.update(data.get("settings", {}))
 
-    sim = Simulator(net, settings)
+    # Load demand config from demand.json if present alongside the network file
+    demand_config = {}
+    demand_path = os.path.join(_rt_dir, "demand.json")
+    if os.path.exists(demand_path):
+        try:
+            with open(demand_path) as f:
+                demand_config = json.load(f)
+        except Exception:
+            pass
+
+    station_ids = list(net.stations.keys())
+    demand = LoadArray(station_ids, demand_config=demand_config)
+
+    sim = Simulator(net, settings, demand=demand)
     result = sim.run(total_slots=slots)
     _state["sim_result"] = result
     return jsonify(result.to_dict())
@@ -799,6 +813,48 @@ def run_simulation():
 @api.get("/settings")
 def get_settings():
     return jsonify(_state["settings"])
+
+
+# ---------------------------------------------------------------------------
+# Demand
+# ---------------------------------------------------------------------------
+
+@api.get("/demand")
+def get_demand():
+    """Return demand config + current station list."""
+    demand_path = os.path.join(_rt_dir, "demand.json")
+    config = {}
+    if os.path.exists(demand_path):
+        try:
+            with open(demand_path) as f:
+                raw = json.load(f)
+            # Strip comment keys (prefixed with _)
+            config = {k: v for k, v in raw.items() if not k.startswith("_")}
+            if "stations" in config:
+                config["stations"] = {
+                    k: v for k, v in config["stations"].items()
+                    if not k.startswith("_")
+                }
+        except Exception:
+            pass
+
+    net = _net()
+    station_ids = list(net.stations.keys()) if net else []
+    return jsonify({
+        "config":      config,
+        "station_ids": station_ids,
+        "total_slots": config.get("total_slots", 360),
+    })
+
+
+@api.post("/demand")
+def post_demand():
+    """Save demand config to demand.json."""
+    data = request.json or {}
+    demand_path = os.path.join(_rt_dir, "demand.json")
+    with open(demand_path, "w") as f:
+        json.dump(data, f, indent=2)
+    return jsonify({"ok": True})
 
 
 @api.post("/settings")

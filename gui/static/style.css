@@ -233,6 +233,64 @@ body {
   line-height: 1.7;
 }
 
+/* ── Settings panel (inside sidebar) ─────────────────────────────────────── */
+
+.cfg-group {
+  margin: 6px 0 4px;
+  border: 1px solid #2a2a2a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.cfg-group-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #666;
+  padding: 3px 8px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #2a2a2a;
+}
+.cfg-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-bottom: 1px solid #222;
+}
+.cfg-row:last-child { border-bottom: none; }
+.cfg-lbl {
+  flex: 1;
+  font-size: 11px;
+  color: #aaa;
+  cursor: default;
+}
+.cfg-sel {
+  width: 58px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 3px;
+  padding: 2px 3px;
+  font-size: 11px;
+}
+.cfg-num {
+  width: 58px;
+  background: #2a2a2a;
+  border: 1px solid #555;
+  color: #e0e0e0;
+  border-radius: 3px;
+  padding: 2px 4px;
+  font-size: 11px;
+  text-align: right;
+}
+.cfg-unit {
+  font-size: 10px;
+  color: #555;
+  min-width: 28px;
+  text-align: left;
+}
+
 /* ── Allie panel (inside sidebar) ─────────────────────────────────────────── */
 
 #allie-params { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
@@ -331,8 +389,20 @@ body {
   box-shadow: 0 0 3px rgba(0,0,0,0.6);
   flex-shrink: 0;
 }
-.cp-marker.cp-circle   { border-radius: 10px; }
+.cp-marker.cp-circle    { border-radius: 10px; }
 .cp-marker.cp-connected { border-color: #27ae60; background: #1a3a2a; }
+
+/* Orphan pulse — structure with no connected CPs */
+@keyframes orphan-pulse {
+  0%   { box-shadow: 0 0 0 0   rgba(255, 140, 0, 0.9); }
+  60%  { box-shadow: 0 0 0 8px rgba(255, 140, 0, 0);   }
+  100% { box-shadow: 0 0 0 0   rgba(255, 140, 0, 0);   }
+}
+.cp-marker.cp-orphan {
+  border-color:     #ff8c00 !important;
+  background-color: #2a1500 !important;
+  animation:        orphan-pulse 2s ease-out infinite;
+}
 
 /* Selected badge tint */
 .cp-hit.cp-hit-selected .cp-marker {
@@ -353,6 +423,25 @@ body {
 
 /* Line tooltip */
 .line-tooltip { font-size: 11px; }
+
+/* Walk-Ride-Walk legend */
+.timemap-legend {
+  background: rgba(20,20,20,0.88);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #ccc;
+  line-height: 2;
+  pointer-events: none;
+}
+.timemap-legend-swatch {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+  border: 1px solid rgba(255,255,255,0.3);
+}
 
 /* Overlay legend */
 .overlay-legend {

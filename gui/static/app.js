@@ -73,6 +73,7 @@ const _layers = {
   nodes:     L.layerGroup().addTo(map),
   waypoints: L.layerGroup().addTo(map),
   pods:      L.layerGroup().addTo(map),
+  timemap:   L.layerGroup().addTo(map),   // walk-ride-walk coverage circles
 };
 
 // Keyed by feature id → Leaflet layer
@@ -619,6 +620,9 @@ const App = {
       .filter(f => f.properties.type === "cp")
       .forEach(f => _addCpFeature(f));
 
+    // Flag structures with no connected CPs so users can see orphans
+    _markOrphans();
+
     // Draw waypoint markers for all lines that have them
     geojson.features
       .filter(f => f.properties.type === "line" &&
@@ -796,7 +800,7 @@ let _selectedCpId    = null;   // cp_id of first CP clicked, waiting for a partn
 let _selectedNodeId  = null;   // node_id of last-clicked node (Delete key removes it)
 let _selectedStructSid = null; // structure_id of last-clicked structure (Delete key removes it)
 
-function _cpIcon(props, selected) {
+function _cpIcon(props, selected, isOrphan = false) {
   const isCircle  = props.structure_type === "traffic_circle";
   const connected = !!props.connected_to;
   const heading   = props.heading_deg || 0;
@@ -805,6 +809,7 @@ function _cpIcon(props, selected) {
     "cp-marker",
     isCircle  ? "cp-circle"    : "",
     connected ? "cp-connected" : "",
+    isOrphan  ? "cp-orphan"    : "",
   ].filter(Boolean).join(" ");
   const hitCls = ["cp-hit", selected ? "cp-hit-selected" : ""].filter(Boolean).join(" ");
 
@@ -824,6 +829,40 @@ function _cpIcon(props, selected) {
     iconSize:   [100, 50],
     iconAnchor: [ 50, 25],
   });
+}
+
+// Detect orphaned structures (all CPs unconnected) and pulse their markers.
+// Called at end of every _render so it reflects the current network state.
+function _markOrphans() {
+  // Group CP ids by structure
+  const structCps = {};
+  Object.entries(_cpPropsMap).forEach(([cpId, props]) => {
+    (structCps[props.structure_id] = structCps[props.structure_id] || []).push(cpId);
+  });
+
+  // A structure is an orphan if every one of its CPs has connected_to === null
+  const orphanSids = new Set(
+    Object.entries(structCps)
+      .filter(([, cpIds]) => cpIds.every(id => !_cpPropsMap[id].connected_to))
+      .map(([sid]) => sid)
+  );
+
+  // Update marker icons for all CPs
+  Object.entries(_cpPropsMap).forEach(([cpId, props]) => {
+    const mk = _nodeMap[cpId];
+    if (!mk) return;
+    const isOrphan   = orphanSids.has(props.structure_id);
+    const isSelected = cpId === _selectedCpId;
+    mk.setIcon(_cpIcon(props, isSelected, isOrphan));
+    const tip = isOrphan
+      ? `${cpId} ⚠ no connections — click to connect`
+      : props.connected_to
+        ? `${cpId} ↔ ${props.connected_to}  (Shift+click to disconnect)`
+        : `${cpId} (open — click to select)`;
+    mk.setTooltipContent(tip);
+  });
+
+  return orphanSids.size;
 }
 
 function _addCpFeature(f) {
