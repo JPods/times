@@ -92,17 +92,10 @@ const TimeMap = (() => {
     _legend = L.control({ position: "bottomleft" });
     _legend.onAdd = () => {
       const div = L.DomUtil.create("div", "timemap-legend");
-      div.innerHTML = [
-        [5,  "#00ff44", "5 min"],
-        [10, "#4488ff", "10 min"],
-        [20, "#ffff00", "20 min"],
-        [30, "#ff6644", "30 min"],
-      ].map(([, color, label]) =>
-        `<div><span class="timemap-legend-swatch" style="background:${color}"></span>` +
-        `${label} walk + ride + walk</div>`
-      ).join("") +
-        `<div style="margin-top:4px;font-size:10px;color:#888">` +
-        `Click any point &nbsp;·&nbsp; Esc to exit</div>`;
+      div.innerHTML =
+        `<div style="font-size:10px;color:#aaa;font-weight:600">&#9711; Coverage active</div>` +
+        `<div style="margin-top:3px;font-size:10px;color:#888">` +
+        `Click map point &nbsp;·&nbsp; Esc to exit</div>`;
       return div;
     };
     _legend.addTo(App.getMap());

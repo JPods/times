@@ -60,21 +60,10 @@ const Map = {
 
 Map.setTiles("osm");
 
-// ── JPods logo watermark (bottom-right of map) ────────────────────────────────
-const _logoControl = L.control({ position: "bottomright" });
-_logoControl.onAdd = () => {
-  const div = L.DomUtil.create("div", "jpods-logo-control");
-  const img = L.DomUtil.create("img", "", div);
-  img.src = "/static/jpods-logo.png";
-  img.alt = "JPods";
-  img.title = "JPods® — Solar-Powered Personal Transit";
-  L.DomEvent.disableClickPropagation(div);
-  return div;
-};
-_logoControl.addTo(map);
-
-// ── Walk-Ride-Walk ledger (bottom-left, always visible) ───────────────────────
-const _ledgerControl = L.control({ position: "bottomleft" });
+// ── Walk-Ride-Walk ledger + JPods logo — both bottom-right, ledger below logo ──
+// Leaflet stacks bottom-right controls upward: first added = lowest, last = highest.
+// Add ledger first so logo sits above it.
+const _ledgerControl = L.control({ position: "bottomright" });
 _ledgerControl.onAdd = () => {
   const div = L.DomUtil.create("div", "wrw-ledger");
   div.innerHTML =
@@ -95,6 +84,19 @@ _ledgerControl.onAdd = () => {
   return div;
 };
 _ledgerControl.addTo(map);
+
+// ── JPods logo watermark (bottom-right, above ledger) ────────────────────────
+const _logoControl = L.control({ position: "bottomright" });
+_logoControl.onAdd = () => {
+  const div = L.DomUtil.create("div", "jpods-logo-control");
+  const img = L.DomUtil.create("img", "", div);
+  img.src = "/jpods-logo.png";
+  img.alt = "JPods";
+  img.title = "JPods® — Solar-Powered Personal Transit";
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+_logoControl.addTo(map);
 
 // Coordinate display
 map.on("mousemove", (e) => {
@@ -124,6 +126,16 @@ const _lineNodeMap       = {};  // line_id → {s: startNodeId, e: endNodeId}
 
 // Set true before _render when loading a file — causes a one-time fit-to-bounds
 let _fitOnNextRender = false;
+
+// ── Read-only lock ─────────────────────────────────────────────────────────────
+// Loaded files start locked; new networks start unlocked.
+let _readOnly = false;
+
+function _roGuard() {
+  if (!_readOnly) return false;
+  setStatus("Network locked — click \uD83D\uDD13 Edit to modify");
+  return true;
+}
 
 // ── Region selection (Shift+drag) ─────────────────────────────────────────────
 // Overrides Leaflet's built-in box-zoom so Shift+drag selects instead of zooms.
@@ -342,6 +354,7 @@ document.addEventListener("mousedown", (e) => {
   if (!e.altKey) return;
   if (!map.getContainer().contains(e.target)) return;
   if (!_hoverStructSid && !_hoverLineId) return;
+  if (_roGuard()) return;
 
   e.preventDefault();
   e.stopPropagation();
@@ -553,6 +566,7 @@ document.addEventListener("mouseup", async (e) => {
 });
 
 async function deleteSelection() {
+  if (_roGuard()) return;
   if (_sel.structures.size + _sel.freeNodes.size === 0) return;
   setStatus("Deleting…");
 
@@ -573,10 +587,36 @@ async function deleteSelection() {
 
 const App = {
 
+  isReadOnly() { return _readOnly; },
+
+  setReadOnly(ro) {
+    _readOnly = ro;
+    const btn = document.getElementById("btn-lock");
+    if (btn) {
+      btn.textContent = ro ? "\uD83D\uDD12 Locked" : "\uD83D\uDD13 Edit";
+      btn.title = ro
+        ? "Network is locked — click to enable editing"
+        : "Network is editable — click to lock";
+      btn.classList.toggle("ro-locked", ro);
+    }
+    // Hide/show editing sections when locked
+    const display = ro ? "none" : "";
+    ["pal-stations", "pal-components", "pal-circles"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = display;
+    });
+  },
+
+  toggleReadOnly() {
+    App.setReadOnly(!_readOnly);
+    if (!_readOnly) setStatus("Editing enabled");
+  },
+
   async newNetwork() {
     if (!confirm("Start a new empty network?")) return;
     const r = await api("POST", "/api/network/new", { network_id: "untitled" });
     App._render(r);
+    App.setReadOnly(false);
     setStatus("New network");
   },
 
@@ -597,6 +637,7 @@ const App = {
     if (r.error) { alert(r.error); return; }
     _fitOnNextRender = true;
     App._render(r);
+    App.setReadOnly(true);
     setStatus(`Loaded: ${file.name}`);
     input.value = "";
   },
@@ -1017,6 +1058,7 @@ function _addCpFeature(f) {
 
     // Shift+click on a connected CP → disconnect
     if (e.originalEvent.shiftKey && connected) {
+      if (_roGuard()) return;
       _selectedCpId = null;
       const r = await api("POST", "/api/network/disconnect_cp", { cp_id: cpId });
       if (r.error) { alert(r.error); return; }
@@ -1035,7 +1077,9 @@ function _addCpFeature(f) {
       // First click — select this CP and show its structure's rotation panel
       _selectedCpId = cpId;
       marker.setIcon(_cpIcon(props, true));
-      setStatus(`${cpId} selected — click another CP to connect  ·  Shift+click to disconnect  (Esc to cancel)`);
+      setStatus(_readOnly
+        ? `${cpId} selected  (Esc to cancel  ·  unlock \uD83D\uDD13 to connect or disconnect)`
+        : `${cpId} selected — click another CP to connect  ·  Shift+click to disconnect  (Esc to cancel)`);
       // Show rotation panel for the parent structure
       const meta = (await api("GET", "/api/network")).metadata || {};
       const structs = meta.structures || {};
@@ -1050,6 +1094,7 @@ function _addCpFeature(f) {
 
     } else {
       // Second click — connect the two CPs
+      if (_roGuard()) return;
       const partnerCpId = _selectedCpId;
       _selectedCpId = null;
       const r = await api("POST", "/api/network/connect_cps",

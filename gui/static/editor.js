@@ -100,9 +100,16 @@ const Editor = (() => {
     App.getNodeMap()[nid] = marker;
   }
 
+  function _guardRO() {
+    if (!App.isReadOnly()) return false;
+    setStatus("Network locked — click \uD83D\uDD13 Edit to modify");
+    return true;
+  }
+
   return {
 
     startPlace(type, heading) {
+      if (_guardRO()) return;
       if (type === "station" && heading !== undefined) {
         _heading = heading;
         const inp = document.getElementById("station-heading");
@@ -124,6 +131,7 @@ const Editor = (() => {
     },
 
     startWaypoint() {
+      if (_guardRO()) return;
       _setMode(_mode === "waypoint" ? null : "waypoint", "btn-waypoint");
     },
 
@@ -132,6 +140,7 @@ const Editor = (() => {
     },
 
     startDrawLine() {
+      if (_guardRO()) return;
       _setMode(_mode === "line" ? null : "line", "btn-draw-line");
     },
 
@@ -169,6 +178,7 @@ const Editor = (() => {
     },
 
     async breakLine(lineId) {
+      if (_guardRO()) return;
       const r = await api("DELETE", `/api/network/line/${lineId}`);
       if (r.error) { alert(r.error); return; }
       // Re-render so both lines and CP state update correctly
@@ -178,6 +188,7 @@ const Editor = (() => {
     },
 
     async removeNode(nid) {
+      if (_guardRO()) return;
       const r = await api("DELETE", `/api/network/node/${nid}`);
       if (r.error) { alert(r.error); return; }
       // Remove marker
@@ -194,6 +205,7 @@ const Editor = (() => {
     },
 
     async autoConnect() {
+      if (_guardRO()) return;
       setStatus("Auto-connecting… ⏳");
       const r = await api("POST", "/api/network/autoconnect");
       if (r.error) { alert(r.error); return; }
@@ -241,6 +253,7 @@ document.addEventListener("keydown", (e) => {
 
   // Delete / Backspace
   if (e.key === "Delete" || e.key === "Backspace") {
+    if (App.isReadOnly()) { setStatus("Network locked — click \uD83D\uDD13 Edit to modify"); return; }
     // Region selection takes priority
     if (typeof _sel !== "undefined" &&
         (_sel.structures.size + _sel.freeNodes.size) > 0) {

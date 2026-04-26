@@ -41,7 +41,7 @@
         <label class="cfg-lbl" title="Maximum cruise speed">Max speed</label>
         <select id="cfg-maxVelocityInKMPH" class="cfg-sel">
           <option>20</option><option>30</option><option>40</option><option>50</option>
-          <option selected>60</option><option>70</option><option>80</option><option>100</option>
+          <option selected>60</option><option>70</option><option>80</option><option>100</option><option>120</option><option>140</option>
         </select>
         <span class="cfg-unit">km/h</span>
       </div>
@@ -313,8 +313,14 @@
       <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button>
     </div>
 
+    <!-- LOCK -->
+    <div class="pal-section" id="pal-lock">
+      <button id="btn-lock" onclick="App.toggleReadOnly()"
+              title="Network is editable — click to lock" style="width:100%">&#128275; Edit</button>
+    </div>
+
     <!-- STATIONS -->
-    <div class="pal-section">
+    <div class="pal-section" id="pal-stations">
       <div class="pal-label">Stations</div>
       <div class="pal-grid2">
         <button class="btn-station" onclick="Editor.startPlace('station',   0)" title="North–South (0°)">N–S</button>
@@ -332,7 +338,7 @@
     </div>
 
     <!-- COMPONENTS -->
-    <div class="pal-section">
+    <div class="pal-section" id="pal-components">
       <div class="pal-label">Components</div>
       <button id="btn-draw-line"   onclick="Editor.startDrawLine()"     title="Draw directed guideway pair between nodes">&#8594; Guideway</button>
       <button id="btn-waypoint"    onclick="Editor.startWaypoint()"     title="Click on a guideway to place a draggable waypoint">Waypoint</button>
@@ -343,9 +349,9 @@
       </div>
     </div>
 
-    <!-- PRE-BUILT -->
-    <div class="pal-section">
-      <div class="pal-label">Pre-built</div>
+    <!-- CIRCLES -->
+    <div class="pal-section" id="pal-circles">
+      <div class="pal-label">Circles</div>
       <button id="btn-autoconnect" onclick="Editor.autoConnect()" title="Best-effort MST auto-connect all structures">&#9889; Auto-Connect</button>
     </div>
 

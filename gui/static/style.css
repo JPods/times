@@ -81,6 +81,9 @@ body {
 }
 #status-mode { color: #5dade2; font-weight: 500; }
 
+/* Lock button (in palette) */
+#btn-lock.ro-locked { background: #4a1a00; border-color: #cc4400; color: #ff8855; }
+
 /* ── Floating tool palette ────────────────────────────────────────────────── */
 
 #palette {
@@ -168,6 +171,7 @@ body {
 #palette button:hover  { background: #4a4a4a; border-color: #888; color: #fff; }
 #palette button.active { background: #1a4a7a; border-color: #3498db; color: #fff; }
 #palette button:disabled { opacity: 0.4; cursor: default; }
+#palette button.ro-locked { background: #4a1a00; border-color: #cc4400; color: #ff8855; }
 
 /* 2-column grid for station orientation presets */
 .pal-grid2 {
@@ -450,7 +454,7 @@ body {
   color: #ccc;
   pointer-events: none;
   margin-bottom: 4px;
-  margin-left: 4px;
+  margin-right: 4px;
   min-width: 130px;
 }
 .wrw-ledger-title {
