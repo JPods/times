@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-arrowheads@1.4.0/dist/leaflet-arrowheads.js"></script>
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+  <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -16,19 +18,247 @@
 
 <!-- ===== Right sidebar ===== -->
 <div id="sidebar">
+
+  <!-- Network summary — always visible -->
   <div class="panel" id="panel-network">
     <h3>Network</h3>
     <div id="net-stats">No network loaded.</div>
   </div>
+
+  <!-- ── Simulation Settings ── -->
+  <div class="panel" id="panel-settings" style="display:none">
+    <h3 style="display:flex;justify-content:space-between;align-items:center">
+      Simulation Settings
+      <button onclick="Settings.togglePanel()" title="Close"
+              style="background:none;border:none;color:#c44;font-size:16px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
+    </h3>
+
+    <!-- VEHICLE PHYSICS -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Vehicle</div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Maximum cruise speed">Max speed</label>
+        <select id="cfg-maxVelocityInKMPH" class="cfg-sel">
+          <option>20</option><option>30</option><option>40</option><option>50</option>
+          <option selected>60</option><option>70</option><option>80</option><option>100</option><option>120</option><option>140</option>
+        </select>
+        <span class="cfg-unit">km/h</span>
+      </div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Acceleration in Gs (1G = 9.8 m/s²)">Acceleration</label>
+        <select id="cfg-accInG" class="cfg-sel">
+          <option value="0.5">0.5</option>
+          <option value="0.75">0.75</option>
+          <option value="1.0" selected>1.0</option>
+        </select>
+        <span class="cfg-unit">G</span>
+      </div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Deceleration in Gs">Deceleration</label>
+        <select id="cfg-deccInG" class="cfg-sel">
+          <option value="0.5">0.5</option>
+          <option value="0.75">0.75</option>
+          <option value="1.0" selected>1.0</option>
+        </select>
+        <span class="cfg-unit">G</span>
+      </div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Pod body length — occupies this much guideway">Pod length</label>
+        <input id="cfg-podLen" type="number" min="1" max="10" step="0.5" value="3" class="cfg-num">
+        <span class="cfg-unit">m</span>
+      </div>
+    </div>
+
+    <!-- FLEET -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Fleet</div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Pods waiting at each station at simulation start">Pods/station</label>
+        <select id="cfg-podsPerStation" class="cfg-sel">
+          <option>2</option><option selected>4</option><option>6</option>
+          <option>8</option><option>12</option>
+        </select>
+        <span class="cfg-unit"></span>
+      </div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Robotic precision stop tolerance — how close to the end of a guideway counts as arrived">Grace dist</label>
+        <select id="cfg-graceDistance" class="cfg-sel">
+          <option value="0.5">0.5</option>
+          <option value="1" selected>1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+        <span class="cfg-unit">m</span>
+      </div>
+    </div>
+
+    <!-- STATION TIMING -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Station timing</div>
+      <div style="font-size:10px;color:#555;margin-bottom:4px">
+        Total overhead per trip = sum of all five (default 150 s)
+      </div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl">Ticketing</label>
+        <input id="cfg-ticketingTimeInSec"   type="number" min="0" max="120" step="5" value="30" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Station entry</label>
+        <input id="cfg-stationEntryTimeInSec" type="number" min="0" max="120" step="5" value="40" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Embarking</label>
+        <input id="cfg-embarkingTimeInSec"   type="number" min="0" max="60"  step="5" value="20" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Disembarking</label>
+        <input id="cfg-disembarkingTimeInSec" type="number" min="0" max="60"  step="5" value="20" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Station exit</label>
+        <input id="cfg-stationExitTimeInSec" type="number" min="0" max="120" step="5" value="40" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+    </div>
+
+    <!-- SIMULATION ENGINE -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Simulation engine</div>
+
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Simulation ticks per real second — fixed at 9 to match Java engine">Ticks/sec</label>
+        <select id="cfg-timeResolutionPerSec" class="cfg-sel">
+          <option selected>9</option>
+        </select>
+        <span class="cfg-unit">(fixed)</span>
+      </div>
+    </div>
+
+    <!-- REPLAY SPEED -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Playback speed</div>
+      <div style="font-size:10px;color:#555;padding:2px 8px 4px">
+        How many times faster than real time the animation plays.<br>
+        360× = 1 hour of simulation in 10 seconds.
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Speed</label>
+        <select id="cfg-simSpeedMultiplier" class="cfg-sel">
+          <option value="60">60×</option>
+          <option value="180">180×</option>
+          <option value="360" selected>360×</option>
+          <option value="720">720×</option>
+          <option value="3600">3600×</option>
+        </select>
+        <span class="cfg-unit">real time</span>
+      </div>
+    </div>
+
+    <!-- CAPACITY / HEADWAY -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Capacity</div>
+      <div style="font-size:10px;color:#555;padding:2px 8px 4px">
+        Min time between consecutive vehicles at cruise speed.<br>
+        0.25 s → 4 vehicles/sec → 14,400/hr per guideway.
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Minimum gap in time between pod fronts — sets line throughput capacity">Min headway</label>
+        <input id="cfg-minHeadwaySec" type="number" min="0.1" max="5" step="0.05" value="0.25" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+    </div>
+
+    <!-- WALK TIMES -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Walk times</div>
+      <div style="font-size:10px;color:#555;padding:2px 8px 4px">
+        Added to guideway time for door-to-door estimates.
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Walking speed</label>
+        <input id="cfg-walkingSpeedKmh" type="number" min="1" max="10" step="0.1" value="4.8" class="cfg-num">
+        <span class="cfg-unit">km/h</span>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Average walk from trip origin to the nearest guideway station">To station</label>
+        <input id="cfg-walkToStationSec" type="number" min="0" max="1800" step="30" value="300" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Average walk from destination station to trip endpoint">From station</label>
+        <input id="cfg-walkFromStationSec" type="number" min="0" max="1800" step="30" value="300" class="cfg-num">
+        <span class="cfg-unit">sec</span>
+      </div>
+    </div>
+
+    <!-- COVERAGE CIRCLES -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Coverage circles</div>
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Fill opacity of walk-ride-walk coverage circles (0=invisible, 1=solid)">Opacity</label>
+        <input id="cfg-timemapOpacity" type="number" min="0.05" max="1" step="0.05" value="0.15" class="cfg-num">
+        <span class="cfg-unit">0–1</span>
+      </div>
+    </div>
+
+    <button onclick="Settings.save()" style="margin-top:8px;width:100%">Save Settings</button>
+  </div>
+
+  <!-- ── Passenger Demand ── -->
+  <div class="panel" id="panel-demand" style="display:none">
+    <h3 style="display:flex;justify-content:space-between;align-items:center">
+      Passenger Demand
+      <button onclick="Demand.togglePanel()" title="Close"
+              style="background:none;border:none;color:#c44;font-size:16px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
+    </h3>
+
+    <!-- Global default -->
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;
+                padding:6px 8px;background:#1a2a1a;border:1px solid #2a4a2a;border-radius:4px">
+      <label style="font-size:11px;color:#aaa;white-space:nowrap">Default pax/hr</label>
+      <input id="dmd-global-pax" type="number" min="0" max="360" step="10" value="360"
+             style="width:60px;background:#1a1a1a;border:1px solid #3a5a3a;color:#7dbb7d;
+                    font-size:11px;text-align:center;border-radius:2px;padding:2px 4px">
+      <span style="font-size:10px;color:#555">per station (uniform start)</span>
+    </div>
+
+    <div style="font-size:10px;color:#888;margin-bottom:6px">
+      Override per station below. Routing distributes to destinations by gravity model.
+    </div>
+    <div id="demand-table-wrap"></div>
+    <button onclick="Demand.save()" style="margin-top:6px;width:100%">Save Demand</button>
+  </div>
+
+  <!-- ── Simulation Results ── -->
   <div class="panel" id="panel-sim" style="display:none">
-    <h3>Simulation Results</h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">
+      Simulation Results
+      <button onclick="Sim.closeResults()" title="Close"
+              style="background:none;border:none;color:#c44;font-size:16px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
+    </h3>
     <div id="sim-summary"></div>
     <div id="sim-lines"></div>
   </div>
+
+  <!-- ── Station detail ── -->
   <div class="panel" id="panel-station" style="display:none">
     <h3>Station: <span id="station-id"></span></h3>
     <div id="station-detail"></div>
   </div>
+
+  <!-- ── Structure heading ── -->
   <div class="panel" id="panel-structure" style="display:none">
     <h3>Structure: <span id="struct-id"></span></h3>
     <div id="struct-type" style="font-size:11px;color:#888;margin-bottom:6px"></div>
@@ -42,6 +272,8 @@
               style="width:auto;padding:3px 6px;background:#3a3a3a;border:1px solid #555;color:#ddd;border-radius:3px;font-size:11px;cursor:pointer">Go</button>
     </div>
   </div>
+
+  <!-- ── Allie AI ── -->
   <div class="panel" id="panel-allie" style="display:none">
     <h3>&#129504; Allie</h3>
     <div id="allie-params">
@@ -52,7 +284,8 @@
     </div>
     <div id="allie-response"></div>
   </div>
-</div>
+
+</div><!-- /sidebar -->
 
 <!-- ===== Status bar ===== -->
 <div id="statusbar">
@@ -77,10 +310,17 @@
       <button onclick="App.newNetwork()">New</button>
       <button onclick="App.openFile()">Open</button>
       <button onclick="App.saveFile()">Save</button>
+      <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button>
     </div>
 
-    <!-- STATIONS — orientation presets + custom -->
-    <div class="pal-section">
+    <!-- LOCK -->
+    <div class="pal-section" id="pal-lock">
+      <button id="btn-lock" onclick="App.toggleReadOnly()"
+              title="Network is editable — click to lock" style="width:100%">&#128275; Edit</button>
+    </div>
+
+    <!-- STATIONS -->
+    <div class="pal-section" id="pal-stations">
       <div class="pal-label">Stations</div>
       <div class="pal-grid2">
         <button class="btn-station" onclick="Editor.startPlace('station',   0)" title="North–South (0°)">N–S</button>
@@ -97,21 +337,21 @@
       </div>
     </div>
 
-    <!-- COMPONENTS — line, switch, siding, traffic circle -->
-    <div class="pal-section">
+    <!-- COMPONENTS -->
+    <div class="pal-section" id="pal-components">
       <div class="pal-label">Components</div>
       <button id="btn-draw-line"   onclick="Editor.startDrawLine()"     title="Draw directed guideway pair between nodes">&#8594; Guideway</button>
-      <button id="btn-waypoint" onclick="Editor.startWaypoint()" title="Click on a guideway to place a draggable waypoint — drag to route around terrain">Waypoint</button>
-      <button id="btn-add-siding"   onclick="Editor.startPlace('siding')" title="Passing siding attached to a guideway (coming soon)" disabled>Siding</button>
+      <button id="btn-waypoint"    onclick="Editor.startWaypoint()"     title="Click on a guideway to place a draggable waypoint">Waypoint</button>
+      <button id="btn-add-siding"  onclick="Editor.startPlace('siding')" title="Passing siding (coming soon)" disabled>Siding</button>
       <div class="pal-grid2">
         <button id="btn-add-circle"   onclick="Editor.startPlace('circle',  0)" title="Traffic circle — arms N/E/S/W">&#11096; Circle</button>
         <button id="btn-add-circle45" onclick="Editor.startPlace('circle', 45)" title="Traffic circle — arms NE/SE/SW/NW (45°)">&#11096; /45°</button>
       </div>
     </div>
 
-    <!-- PRE-BUILT — auto-connect and future sub-network templates -->
-    <div class="pal-section">
-      <div class="pal-label">Pre-built</div>
+    <!-- CIRCLES -->
+    <div class="pal-section" id="pal-circles">
+      <div class="pal-label">Circles</div>
       <button id="btn-autoconnect" onclick="Editor.autoConnect()" title="Best-effort MST auto-connect all structures">&#9889; Auto-Connect</button>
     </div>
 
@@ -120,6 +360,10 @@
       <div class="pal-label">Simulate</div>
       <button onclick="Sim.run()"    title="Run simulation">&#9654; Run</button>
       <button id="btn-replay" onclick="Sim.replay()" title="Replay animation" disabled>&#9654;&#9654; Replay</button>
+      <button id="btn-timemap" onclick="TimeMap.toggle()"
+              title="Walk-Ride-Walk: click a point to see coverage circles (5/10/20/30 min)">&#9711; Coverage</button>
+      <button onclick="Demand.togglePanel()"   title="Set passenger demand per station">&#128100; Demand</button>
+      <button onclick="Settings.togglePanel()" title="Edit simulation settings (vehicle, fleet, timing)">&#9881; Settings</button>
       <div class="pal-row">
         <label>Slots</label>
         <input id="sim-slots" type="number" value="360" min="1" max="3600">
@@ -166,7 +410,7 @@
     <div class="pal-section pal-hints">
       <div class="pal-label">Move</div>
       <div>Alt+drag CP → move structure</div>
-      <div>Waypoint tool + drag line → move structure</div>
+      <div>Waypoint tool + drag line → move</div>
     </div>
     <div class="pal-section pal-hints">
       <div class="pal-label">Route lines</div>
@@ -192,6 +436,9 @@
 <script src="app.js"></script>
 <script src="editor.js"></script>
 <script src="simulator.js"></script>
+<script src="timemap.js"></script>
+<script src="settings.js"></script>
+<script src="demand.js"></script>
 <script src="overlays.js"></script>
 <script src="ai.js"></script>
 </body>

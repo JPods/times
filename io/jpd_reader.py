@@ -34,17 +34,23 @@ the Coordinate chain.
 
 from __future__ import annotations
 
+import json
 import os
-from typing import Optional
+from typing import List, Optional, Tuple
 
 from lxml import etree
 
 from ..engine.network import Line, Network, Node, Station, vincenty_m
 
 
-def load(path: str, network_id: Optional[str] = None) -> Network:
+def load(path: str, network_id: Optional[str] = None
+         ) -> Tuple[Network, List[dict], List[dict]]:
     """
-    Parse a .jpd file and return a Network.
+    Parse a .jpd file and return (Network, structures_data, cps_data).
+
+    structures_data and cps_data are lists of dicts serialised from
+    Structure.to_dict() / ConnectionPoint.to_dict().  They are empty
+    for legacy files that pre-date the <StructureMeta> element.
 
     network_id defaults to the filename without extension.
     """
@@ -105,7 +111,20 @@ def load(path: str, network_id: Optional[str] = None) -> Network:
         net.lines[lid] = line
 
     net.build()
-    return net
+
+    # ---- Structure / CP metadata (written by jpd_writer, absent in legacy files) ----
+    structures_data: List[dict] = []
+    cps_data:        List[dict] = []
+    meta_el = root.find("StructureMeta")
+    if meta_el is not None and meta_el.text:
+        try:
+            meta = json.loads(meta_el.text)
+            structures_data = meta.get("structures", [])
+            cps_data        = meta.get("cps", [])
+        except Exception:
+            pass   # corrupt metadata — ignore gracefully
+
+    return net, structures_data, cps_data
 
 
 def _chain_length(coords: list) -> float:

@@ -84,9 +84,22 @@ class Station:
 # ---------------------------------------------------------------------------
 
 _JAMMED_POD_THRESHOLD = 4   # >4 pods on the line
-_JAMMED_SPACING_M     = 8   # <8m per pod → jammed
+_JAMMED_SPACING_M     = 8   # <8m per pod → jammed (recomputed by Simulator from settings)
 
 MAX_WEIGHT = float("inf")
+
+
+def configure_jam_threshold(min_headway_s: float, max_velocity_kmph: float,
+                             pod_len_m: float = 3.0):
+    """
+    Set the jam-spacing threshold from physics settings.
+
+    min_spacing = (max_velocity × min_headway) + pod_length
+    At 60 km/h and 0.25s headway:  16.67 m/s × 0.25 + 3 = 7.17 m
+    """
+    global _JAMMED_SPACING_M
+    v_ms = max_velocity_kmph * 1000.0 / 3600.0
+    _JAMMED_SPACING_M = v_ms * min_headway_s + pod_len_m
 
 
 @dataclass

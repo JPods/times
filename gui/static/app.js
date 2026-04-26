@@ -60,6 +60,44 @@ const Map = {
 
 Map.setTiles("osm");
 
+// ── Walk-Ride-Walk ledger + JPods logo — both bottom-right, ledger below logo ──
+// Leaflet stacks bottom-right controls upward: first added = lowest, last = highest.
+// Add ledger first so logo sits above it.
+const _ledgerControl = L.control({ position: "bottomright" });
+_ledgerControl.onAdd = () => {
+  const div = L.DomUtil.create("div", "wrw-ledger");
+  div.innerHTML =
+    `<div class="wrw-ledger-title">Walk · Ride · Walk</div>` +
+    [
+      [5,  "#00ff44", "#00aa00", "5 min"],
+      [10, "#4488ff", "#0044cc", "10 min"],
+      [20, "#ffff00", "#aaaa00", "20 min"],
+      [30, "#ff6644", "#cc2200", "30 min"],
+    ].map(([, fill, stroke, label]) =>
+      `<div class="wrw-row">` +
+      `<span class="wrw-swatch" style="background:${fill};border-color:${stroke}"></span>` +
+      `<span class="wrw-label">${label}</span>` +
+      `</div>`
+    ).join("") +
+    `<div class="wrw-hint">&#9711; Coverage → click map</div>`;
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+_ledgerControl.addTo(map);
+
+// ── JPods logo watermark (bottom-right, above ledger) ────────────────────────
+const _logoControl = L.control({ position: "bottomright" });
+_logoControl.onAdd = () => {
+  const div = L.DomUtil.create("div", "jpods-logo-control");
+  const img = L.DomUtil.create("img", "", div);
+  img.src = "/jpods-logo.png";
+  img.alt = "JPods";
+  img.title = "JPods® — Solar-Powered Personal Transit";
+  L.DomEvent.disableClickPropagation(div);
+  return div;
+};
+_logoControl.addTo(map);
+
 // Coordinate display
 map.on("mousemove", (e) => {
   document.getElementById("status-coord").textContent =
@@ -73,6 +111,7 @@ const _layers = {
   nodes:     L.layerGroup().addTo(map),
   waypoints: L.layerGroup().addTo(map),
   pods:      L.layerGroup().addTo(map),
+  timemap:   L.layerGroup().addTo(map),   // walk-ride-walk coverage circles
 };
 
 // Keyed by feature id → Leaflet layer
@@ -87,6 +126,16 @@ const _lineNodeMap       = {};  // line_id → {s: startNodeId, e: endNodeId}
 
 // Set true before _render when loading a file — causes a one-time fit-to-bounds
 let _fitOnNextRender = false;
+
+// ── Read-only lock ─────────────────────────────────────────────────────────────
+// Loaded files start locked; new networks start unlocked.
+let _readOnly = false;
+
+function _roGuard() {
+  if (!_readOnly) return false;
+  setStatus("Network locked — click \uD83D\uDD13 Edit to modify");
+  return true;
+}
 
 // ── Region selection (Shift+drag) ─────────────────────────────────────────────
 // Overrides Leaflet's built-in box-zoom so Shift+drag selects instead of zooms.
@@ -305,6 +354,7 @@ document.addEventListener("mousedown", (e) => {
   if (!e.altKey) return;
   if (!map.getContainer().contains(e.target)) return;
   if (!_hoverStructSid && !_hoverLineId) return;
+  if (_roGuard()) return;
 
   e.preventDefault();
   e.stopPropagation();
@@ -516,6 +566,7 @@ document.addEventListener("mouseup", async (e) => {
 });
 
 async function deleteSelection() {
+  if (_roGuard()) return;
   if (_sel.structures.size + _sel.freeNodes.size === 0) return;
   setStatus("Deleting…");
 
@@ -536,10 +587,36 @@ async function deleteSelection() {
 
 const App = {
 
+  isReadOnly() { return _readOnly; },
+
+  setReadOnly(ro) {
+    _readOnly = ro;
+    const btn = document.getElementById("btn-lock");
+    if (btn) {
+      btn.textContent = ro ? "\uD83D\uDD12 Locked" : "\uD83D\uDD13 Edit";
+      btn.title = ro
+        ? "Network is locked — click to enable editing"
+        : "Network is editable — click to lock";
+      btn.classList.toggle("ro-locked", ro);
+    }
+    // Hide/show editing sections when locked
+    const display = ro ? "none" : "";
+    ["pal-stations", "pal-components", "pal-circles"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = display;
+    });
+  },
+
+  toggleReadOnly() {
+    App.setReadOnly(!_readOnly);
+    if (!_readOnly) setStatus("Editing enabled");
+  },
+
   async newNetwork() {
     if (!confirm("Start a new empty network?")) return;
     const r = await api("POST", "/api/network/new", { network_id: "untitled" });
     App._render(r);
+    App.setReadOnly(false);
     setStatus("New network");
   },
 
@@ -560,16 +637,100 @@ const App = {
     if (r.error) { alert(r.error); return; }
     _fitOnNextRender = true;
     App._render(r);
+    App.setReadOnly(true);
     setStatus(`Loaded: ${file.name}`);
     input.value = "";
   },
 
   async saveFile() {
-    const name = prompt("Save as (.jpd):", "network.jpd");
-    if (!name) return;
-    const r = await api("POST", "/api/network/save", { path: name });
-    if (r.error) alert(r.error);
-    else setStatus(`Saved: ${r.saved}`);
+    // Fetch the .jpd content from the server as a blob
+    let blob, filename;
+    try {
+      const resp = await fetch("/api/network/download");
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        alert(err.error || "Save failed");
+        return;
+      }
+      blob = await resp.blob();
+      // Derive filename from Content-Disposition header, fallback to "network.jpd"
+      const cd = resp.headers.get("Content-Disposition") || "";
+      const m  = cd.match(/filename="?([^"]+)"?/);
+      filename = m ? m[1] : "network.jpd";
+    } catch (e) {
+      alert("Save failed: " + e.message);
+      return;
+    }
+
+    // Native OS save dialog via File System Access API (Chrome 86+, Safari 15.2+, Edge 86+)
+    if (window.showSaveFilePicker) {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: filename,
+          types: [{ description: "JPods network file", accept: { "application/xml": [".jpd"] } }],
+        });
+        const writable = await handle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        setStatus(`Saved: ${handle.name}`);
+        return;
+      } catch (e) {
+        if (e.name === "AbortError") return;  // user cancelled — do nothing
+        // Fall through to blob-download fallback on other errors
+      }
+    }
+
+    // Fallback: trigger browser download (goes to Downloads or prompts, per browser prefs)
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement("a");
+    a.href     = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatus(`Saved: ${filename}`);
+  },
+
+  async captureMap() {
+    setStatus("Capturing map…");
+    try {
+      const canvas = await html2canvas(document.getElementById("map"), {
+        useCORS:    true,
+        allowTaint: false,
+        logging:    false,
+        // Exclude the palette div (it floats over the map) — clone-based approach
+        ignoreElements: el => el.id === "palette",
+      });
+      canvas.toBlob(async (blob) => {
+        const dt       = new Date().toISOString().slice(0, 10);
+        const filename = `jpods-network-${dt}.png`;
+        if (window.showSaveFilePicker) {
+          try {
+            const handle = await window.showSaveFilePicker({
+              suggestedName: filename,
+              types: [{ description: "PNG image", accept: { "image/png": [".png"] } }],
+            });
+            const writable = await handle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+            setStatus(`Captured: ${handle.name}`);
+            return;
+          } catch (e) {
+            if (e.name === "AbortError") { setStatus("Ready"); return; }
+          }
+        }
+        // Fallback
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement("a");
+        a.href     = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+        setStatus(`Captured: ${filename}`);
+      }, "image/png");
+    } catch (e) {
+      alert("Map capture failed: " + e.message);
+      setStatus("Ready");
+    }
   },
 
   _render(geojson) {
@@ -618,6 +779,9 @@ const App = {
     geojson.features
       .filter(f => f.properties.type === "cp")
       .forEach(f => _addCpFeature(f));
+
+    // Flag structures with no connected CPs so users can see orphans
+    _markOrphans();
 
     // Draw waypoint markers for all lines that have them
     geojson.features
@@ -796,7 +960,7 @@ let _selectedCpId    = null;   // cp_id of first CP clicked, waiting for a partn
 let _selectedNodeId  = null;   // node_id of last-clicked node (Delete key removes it)
 let _selectedStructSid = null; // structure_id of last-clicked structure (Delete key removes it)
 
-function _cpIcon(props, selected) {
+function _cpIcon(props, selected, isOrphan = false) {
   const isCircle  = props.structure_type === "traffic_circle";
   const connected = !!props.connected_to;
   const heading   = props.heading_deg || 0;
@@ -805,6 +969,7 @@ function _cpIcon(props, selected) {
     "cp-marker",
     isCircle  ? "cp-circle"    : "",
     connected ? "cp-connected" : "",
+    isOrphan  ? "cp-orphan"    : "",
   ].filter(Boolean).join(" ");
   const hitCls = ["cp-hit", selected ? "cp-hit-selected" : ""].filter(Boolean).join(" ");
 
@@ -824,6 +989,40 @@ function _cpIcon(props, selected) {
     iconSize:   [100, 50],
     iconAnchor: [ 50, 25],
   });
+}
+
+// Detect orphaned structures (all CPs unconnected) and pulse their markers.
+// Called at end of every _render so it reflects the current network state.
+function _markOrphans() {
+  // Group CP ids by structure
+  const structCps = {};
+  Object.entries(_cpPropsMap).forEach(([cpId, props]) => {
+    (structCps[props.structure_id] = structCps[props.structure_id] || []).push(cpId);
+  });
+
+  // A structure is an orphan if every one of its CPs has connected_to === null
+  const orphanSids = new Set(
+    Object.entries(structCps)
+      .filter(([, cpIds]) => cpIds.every(id => !_cpPropsMap[id].connected_to))
+      .map(([sid]) => sid)
+  );
+
+  // Update marker icons for all CPs
+  Object.entries(_cpPropsMap).forEach(([cpId, props]) => {
+    const mk = _nodeMap[cpId];
+    if (!mk) return;
+    const isOrphan   = orphanSids.has(props.structure_id);
+    const isSelected = cpId === _selectedCpId;
+    mk.setIcon(_cpIcon(props, isSelected, isOrphan));
+    const tip = isOrphan
+      ? `${cpId} ⚠ no connections — click to connect`
+      : props.connected_to
+        ? `${cpId} ↔ ${props.connected_to}  (Shift+click to disconnect)`
+        : `${cpId} (open — click to select)`;
+    mk.setTooltipContent(tip);
+  });
+
+  return orphanSids.size;
 }
 
 function _addCpFeature(f) {
@@ -851,15 +1050,15 @@ function _addCpFeature(f) {
 
   marker.on("click", async (e) => {
     L.DomEvent.stopPropagation(e);  // prevent click reaching map (avoids accidental placement)
-    console.log(`CP click: ${cpId}  mode=${Editor.getMode()}  shift=${e.originalEvent.shiftKey}  sel=${_selectedCpId}`);
 
-    // Ignore CP clicks when a placement tool is active (station/circle/switch/waypoint).
-    // Line-draw is the only mode where clicking a CP is intentional.
+    // In line-draw mode, CP click feeds the node into the guideway draw tool.
+    // In all other modes (including placement modes), fall through to CP connect/disconnect.
+    // stopPropagation above already prevents the placement handler from also firing.
     const mode = Editor.getMode();
-    if (mode !== null && mode !== "line") return;
 
     // Shift+click on a connected CP → disconnect
     if (e.originalEvent.shiftKey && connected) {
+      if (_roGuard()) return;
       _selectedCpId = null;
       const r = await api("POST", "/api/network/disconnect_cp", { cp_id: cpId });
       if (r.error) { alert(r.error); return; }
@@ -878,7 +1077,9 @@ function _addCpFeature(f) {
       // First click — select this CP and show its structure's rotation panel
       _selectedCpId = cpId;
       marker.setIcon(_cpIcon(props, true));
-      setStatus(`${cpId} selected — click another CP to connect  ·  Shift+click to disconnect  (Esc to cancel)`);
+      setStatus(_readOnly
+        ? `${cpId} selected  (Esc to cancel  ·  unlock \uD83D\uDD13 to connect or disconnect)`
+        : `${cpId} selected — click another CP to connect  ·  Shift+click to disconnect  (Esc to cancel)`);
       // Show rotation panel for the parent structure
       const meta = (await api("GET", "/api/network")).metadata || {};
       const structs = meta.structures || {};
@@ -893,6 +1094,7 @@ function _addCpFeature(f) {
 
     } else {
       // Second click — connect the two CPs
+      if (_roGuard()) return;
       const partnerCpId = _selectedCpId;
       _selectedCpId = null;
       const r = await api("POST", "/api/network/connect_cps",

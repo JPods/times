@@ -26,7 +26,7 @@ import os
 import uuid
 from typing import Dict, List, Optional, Tuple
 
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, Response
 
 # Import engine and IO
 import sys
@@ -44,7 +44,7 @@ from route_time.engine.structures import (
     ConnectionPoint, Structure,
 )
 from route_time.io import load_jpd, load_podpresenter, load_sketchup_map
-from route_time.io.jpd_writer import save_jpd
+from route_time.io.jpd_writer import save_jpd, serialise_jpd
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -92,6 +92,179 @@ def _clear_edit_state():
     _state["waypoints"]  = {}
     _state["line_pairs"] = {}
     _state["line_roles"] = {}
+
+
+def _reconstruct_structures_from_net(net) -> tuple:
+    """
+    Derive Structure and ConnectionPoint objects from a legacy .jpd network
+    (one saved before <StructureMeta> was added) using node naming conventions.
+
+    Stations:  all nodes with IDs starting "ST_"  → {sid}.NB_N_tip etc.
+    Circles:   all nodes with IDs starting "TC_"  → {sid}.A{i}_out / A{i}_in
+
+    Returns (structures_dict, cps_dict).
+    """
+    import math as _math
+
+    # Group nodes by their structure prefix (text before the first '.')
+    prefix_nodes: dict = {}
+    for nid, node in net.nodes.items():
+        if '.' in nid:
+            prefix = nid.split('.')[0]
+            if prefix.startswith('ST_') or prefix.startswith('TC_'):
+                prefix_nodes.setdefault(prefix, {})[nid] = node
+
+    structures: dict = {}
+    cps: dict = {}
+
+    for sid, nodes in prefix_nodes.items():
+
+        # Internal line_ids = lines where BOTH endpoints belong to this structure
+        line_ids = [
+            lid for lid, ln in net.lines.items()
+            if ln.start_node.node_id in nodes and ln.end_node.node_id in nodes
+        ]
+
+        if sid.startswith('ST_'):
+            # ── Station ────────────────────────────────────────────────────
+            nb_n_tip = nodes.get(f"{sid}.NB_N_tip")
+            sb_n_tip = nodes.get(f"{sid}.SB_N_tip")
+            nb_s_tip = nodes.get(f"{sid}.NB_S_tip")
+            sb_s_tip = nodes.get(f"{sid}.SB_S_tip")
+            if not all([nb_n_tip, sb_n_tip, nb_s_tip, sb_s_tip]):
+                continue   # incomplete — skip
+
+            # Compute heading from NB_S → NB_N
+            nb_n = nodes.get(f"{sid}.NB_N")
+            nb_s = nodes.get(f"{sid}.NB_S")
+            heading_deg = 0.0
+            if nb_n and nb_s:
+                dlat = nb_n.lat - nb_s.lat
+                dlon = nb_n.lon - nb_s.lon
+                heading_deg = _math.degrees(
+                    _math.atan2(dlon * _math.cos(_math.radians(nb_n.lat)), dlat)
+                ) % 360
+
+            nb_h = heading_deg
+            sb_h = (nb_h + 180) % 360
+
+            cp_n = ConnectionPoint(
+                cp_id=f"{sid}.CP_N", structure_id=sid, heading_deg=nb_h,
+                inbound_node=sb_n_tip, outbound_node=nb_n_tip,
+                center_lat=(nb_n_tip.lat + sb_n_tip.lat) / 2,
+                center_lon=(nb_n_tip.lon + sb_n_tip.lon) / 2,
+            )
+            cp_s = ConnectionPoint(
+                cp_id=f"{sid}.CP_S", structure_id=sid, heading_deg=sb_h,
+                inbound_node=nb_s_tip, outbound_node=sb_s_tip,
+                center_lat=(nb_s_tip.lat + sb_s_tip.lat) / 2,
+                center_lon=(nb_s_tip.lon + sb_s_tip.lon) / 2,
+            )
+
+            platform = nodes.get(f"{sid}.PLATFORM")
+            clat = platform.lat if platform else sum(n.lat for n in nodes.values()) / len(nodes)
+            clon = platform.lon if platform else sum(n.lon for n in nodes.values()) / len(nodes)
+
+            structures[sid] = Structure(
+                structure_id=sid, structure_type="station",
+                cp_ids=[cp_n.cp_id, cp_s.cp_id],
+                node_ids=list(nodes.keys()), line_ids=line_ids,
+                center_lat=clat, center_lon=clon, heading_deg=heading_deg,
+            )
+            cps[cp_n.cp_id] = cp_n
+            cps[cp_s.cp_id] = cp_s
+
+        elif sid.startswith('TC_'):
+            # ── Traffic circle ──────────────────────────────────────────────
+            cp_ids = []
+            tc_cps = {}
+            arm_headings = []
+
+            for arm_idx in range(4):
+                out_tip = nodes.get(f"{sid}.A{arm_idx}_out")
+                in_tip  = nodes.get(f"{sid}.A{arm_idx}_in")
+                div     = nodes.get(f"{sid}.A{arm_idx}_div")
+                if out_tip is None or in_tip is None:
+                    continue
+
+                # Heading = direction from div toward out_tip
+                hdg = 0.0
+                if div:
+                    dlat = out_tip.lat - div.lat
+                    dlon = out_tip.lon - div.lon
+                    hdg  = _math.degrees(
+                        _math.atan2(dlon * _math.cos(_math.radians(div.lat)), dlat)
+                    ) % 360
+
+                cp = ConnectionPoint(
+                    cp_id=f"{sid}.CP{arm_idx}", structure_id=sid, heading_deg=hdg,
+                    inbound_node=in_tip, outbound_node=out_tip,
+                    center_lat=(out_tip.lat + in_tip.lat) / 2,
+                    center_lon=(out_tip.lon + in_tip.lon) / 2,
+                )
+                tc_cps[cp.cp_id] = cp
+                cp_ids.append(cp.cp_id)
+                arm_headings.append(hdg)
+
+            if not cp_ids:
+                continue
+
+            all_lats = [n.lat for n in nodes.values()]
+            all_lons = [n.lon for n in nodes.values()]
+            structures[sid] = Structure(
+                structure_id=sid, structure_type="traffic_circle",
+                cp_ids=cp_ids, node_ids=list(nodes.keys()), line_ids=line_ids,
+                center_lat=sum(all_lats) / len(all_lats),
+                center_lon=sum(all_lons) / len(all_lons),
+                arm_headings=arm_headings,
+            )
+            cps.update(tc_cps)
+
+    # Resolve connected_to: a line from cp_a.outbound → cp_b.inbound
+    # that crosses structure boundaries marks both CPs as connected.
+    out_node_to_cp = {cp.outbound_node.node_id: cp for cp in cps.values()}
+    in_node_to_cp  = {cp.inbound_node.node_id:  cp for cp in cps.values()}
+    for ln in net.lines.values():
+        cp_a = out_node_to_cp.get(ln.start_node.node_id)
+        cp_b = in_node_to_cp.get(ln.end_node.node_id)
+        if cp_a and cp_b and cp_a.structure_id != cp_b.structure_id:
+            cp_a.connected_to = cp_b.cp_id
+            cp_b.connected_to = cp_a.cp_id
+
+    return structures, cps
+
+
+def _restore_structures(structures_data: list, cps_data: list, net) -> None:
+    """Rebuild _state["structures"] and _state["cps"] from saved metadata."""
+    for s in structures_data:
+        struct = Structure(
+            structure_id=s["structure_id"],
+            structure_type=s["structure_type"],
+            cp_ids=s["cp_ids"],
+            node_ids=s["node_ids"],
+            line_ids=s["line_ids"],
+            center_lat=s.get("center_lat", 0.0),
+            center_lon=s.get("center_lon", 0.0),
+            heading_deg=s.get("heading_deg", 0.0),
+            arm_headings=s.get("arm_headings", []),
+        )
+        _state["structures"][struct.structure_id] = struct
+    for c in cps_data:
+        in_node  = net.nodes.get(c["inbound_node"])
+        out_node = net.nodes.get(c["outbound_node"])
+        if in_node is None or out_node is None:
+            continue   # dangling reference — skip
+        cp = ConnectionPoint(
+            cp_id=c["cp_id"],
+            structure_id=c["structure_id"],
+            heading_deg=c["heading_deg"],
+            inbound_node=in_node,
+            outbound_node=out_node,
+            center_lat=c["center_lat"],
+            center_lon=c["center_lon"],
+            connected_to=c.get("connected_to"),
+        )
+        _state["cps"][cp.cp_id] = cp
 
 
 def _net() -> Optional[Network]:
@@ -264,9 +437,10 @@ def load_network():
         return jsonify({"error": f"File not found: {path}"}), 400
 
     ext = os.path.splitext(path)[1].lower()
+    structs_data, cps_data = [], []
     try:
         if ext == ".jpd":
-            net = load_jpd(path)
+            net, structs_data, cps_data = load_jpd(path)
         else:
             with open(path) as f:
                 raw = json.load(f)
@@ -282,6 +456,12 @@ def load_network():
     _state["sim_frames"] = []
     _state["sim_result"] = None
     _clear_edit_state()
+    if structs_data or cps_data:
+        _restore_structures(structs_data, cps_data, net)
+    else:
+        s, c = _reconstruct_structures_from_net(net)
+        _state["structures"].update(s)
+        _state["cps"].update(c)
     return jsonify(_network_to_geojson(net))
 
 
@@ -297,11 +477,29 @@ def save_network():
     if not path.endswith(".jpd"):
         path = path + ".jpd"
     try:
-        save_jpd(net, path)
+        save_jpd(net, path, _state["structures"], _state["cps"])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     _state["network_path"] = path
     return jsonify({"saved": path})
+
+
+@api.get("/network/download")
+def download_network():
+    """Return the current network as a .jpd file download (no server-side path required)."""
+    net = _net()
+    if net is None:
+        return jsonify({"error": "No network loaded"}), 400
+    try:
+        content = serialise_jpd(net, _state["structures"], _state["cps"])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    filename = f"{net.network_id}.jpd"
+    return Response(
+        content,
+        mimetype="application/xml",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @api.post("/network/new")
@@ -782,6 +980,7 @@ def auto_connect():
 
 @api.post("/simulation/run")
 def run_simulation():
+    from route_time.engine.demand import LoadArray
     net = _net()
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
@@ -790,7 +989,20 @@ def run_simulation():
     settings = _state["settings"].copy()
     settings.update(data.get("settings", {}))
 
-    sim = Simulator(net, settings)
+    # Load demand config from demand.json if present alongside the network file
+    demand_config = {}
+    demand_path = os.path.join(_rt_dir, "demand.json")
+    if os.path.exists(demand_path):
+        try:
+            with open(demand_path) as f:
+                demand_config = json.load(f)
+        except Exception:
+            pass
+
+    station_ids = list(net.stations.keys())
+    demand = LoadArray(station_ids, demand_config=demand_config)
+
+    sim = Simulator(net, settings, demand=demand)
     result = sim.run(total_slots=slots)
     _state["sim_result"] = result
     return jsonify(result.to_dict())
@@ -799,6 +1011,48 @@ def run_simulation():
 @api.get("/settings")
 def get_settings():
     return jsonify(_state["settings"])
+
+
+# ---------------------------------------------------------------------------
+# Demand
+# ---------------------------------------------------------------------------
+
+@api.get("/demand")
+def get_demand():
+    """Return demand config + current station list."""
+    demand_path = os.path.join(_rt_dir, "demand.json")
+    config = {}
+    if os.path.exists(demand_path):
+        try:
+            with open(demand_path) as f:
+                raw = json.load(f)
+            # Strip comment keys (prefixed with _)
+            config = {k: v for k, v in raw.items() if not k.startswith("_")}
+            if "stations" in config:
+                config["stations"] = {
+                    k: v for k, v in config["stations"].items()
+                    if not k.startswith("_")
+                }
+        except Exception:
+            pass
+
+    net = _net()
+    station_ids = list(net.stations.keys()) if net else []
+    return jsonify({
+        "config":      config,
+        "station_ids": station_ids,
+        "total_slots": config.get("total_slots", 360),
+    })
+
+
+@api.post("/demand")
+def post_demand():
+    """Save demand config to demand.json."""
+    data = request.json or {}
+    demand_path = os.path.join(_rt_dir, "demand.json")
+    with open(demand_path, "w") as f:
+        json.dump(data, f, indent=2)
+    return jsonify({"ok": True})
 
 
 @api.post("/settings")
@@ -989,9 +1243,10 @@ def load_network_text():
         tmp.write(content)
         tmp_path = tmp.name
 
+    structs_data, cps_data = [], []
     try:
         if suffix == ".jpd":
-            net = load_jpd(tmp_path)
+            net, structs_data, cps_data = load_jpd(tmp_path)
         else:
             with open(tmp_path) as f:
                 raw = json.load(f)
@@ -1009,6 +1264,12 @@ def load_network_text():
     _state["sim_frames"] = []
     _state["sim_result"] = None
     _clear_edit_state()
+    if structs_data or cps_data:
+        _restore_structures(structs_data, cps_data, net)
+    else:
+        s, c = _reconstruct_structures_from_net(net)
+        _state["structures"].update(s)
+        _state["cps"].update(c)
     return jsonify(_network_to_geojson(net))
 
 

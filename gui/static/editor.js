@@ -31,9 +31,6 @@ const Editor = (() => {
     });
     _mode      = mode;
     _lineStart = null;
-    // Clear any pending CP selection so switching modes can't trigger an
-    // accidental connection on the next CP click.
-    if (typeof _selectedCpId !== "undefined") _selectedCpId = null;
     if (activeBtn) {
       const el = document.getElementById(activeBtn);
       if (el) el.classList.add("active");
@@ -103,9 +100,16 @@ const Editor = (() => {
     App.getNodeMap()[nid] = marker;
   }
 
+  function _guardRO() {
+    if (!App.isReadOnly()) return false;
+    setStatus("Network locked — click \uD83D\uDD13 Edit to modify");
+    return true;
+  }
+
   return {
 
     startPlace(type, heading) {
+      if (_guardRO()) return;
       if (type === "station" && heading !== undefined) {
         _heading = heading;
         const inp = document.getElementById("station-heading");
@@ -127,6 +131,7 @@ const Editor = (() => {
     },
 
     startWaypoint() {
+      if (_guardRO()) return;
       _setMode(_mode === "waypoint" ? null : "waypoint", "btn-waypoint");
     },
 
@@ -135,6 +140,7 @@ const Editor = (() => {
     },
 
     startDrawLine() {
+      if (_guardRO()) return;
       _setMode(_mode === "line" ? null : "line", "btn-draw-line");
     },
 
@@ -172,6 +178,7 @@ const Editor = (() => {
     },
 
     async breakLine(lineId) {
+      if (_guardRO()) return;
       const r = await api("DELETE", `/api/network/line/${lineId}`);
       if (r.error) { alert(r.error); return; }
       // Re-render so both lines and CP state update correctly
@@ -181,6 +188,7 @@ const Editor = (() => {
     },
 
     async removeNode(nid) {
+      if (_guardRO()) return;
       const r = await api("DELETE", `/api/network/node/${nid}`);
       if (r.error) { alert(r.error); return; }
       // Remove marker
@@ -197,6 +205,7 @@ const Editor = (() => {
     },
 
     async autoConnect() {
+      if (_guardRO()) return;
       setStatus("Auto-connecting… ⏳");
       const r = await api("POST", "/api/network/autoconnect");
       if (r.error) { alert(r.error); return; }
@@ -225,6 +234,7 @@ document.addEventListener("keydown", (e) => {
 
   // Escape — cancel rubber-band selection, waypoint drag, mode, CP selection
   if (e.key === "Escape") {
+    if (typeof TimeMap !== "undefined") TimeMap.deactivate();
     if (typeof wptCancel === "function") wptCancel();
     Editor.escape();
     if (typeof _clearSelection === "function") _clearSelection();
@@ -243,12 +253,26 @@ document.addEventListener("keydown", (e) => {
 
   // Delete / Backspace
   if (e.key === "Delete" || e.key === "Backspace") {
+    if (App.isReadOnly()) { setStatus("Network locked — click \uD83D\uDD13 Edit to modify"); return; }
     // Region selection takes priority
     if (typeof _sel !== "undefined" &&
         (_sel.structures.size + _sel.freeNodes.size) > 0) {
       deleteSelection();
       return;
     }
+    // CP selected — delete its parent structure
+    if (typeof _selectedCpId !== "undefined" && _selectedCpId !== null) {
+      const cpProps = typeof _cpPropsMap !== "undefined" && _cpPropsMap[_selectedCpId];
+      const sid = cpProps && cpProps.structure_id;
+      _selectedCpId = null;
+      if (sid) {
+        api("DELETE", `/api/network/structure/${sid}`).then(() => {
+          api("GET", "/api/network").then(gj => { App._render(gj); setStatus(`Deleted ${sid}`); });
+        });
+      }
+      return;
+    }
+
     // Single structure selected (click on internal line or CP area)
     if (typeof _selectedStructSid !== "undefined" && _selectedStructSid !== null) {
       const sid = _selectedStructSid;

@@ -13,11 +13,13 @@
 
 const Sim = (() => {
 
-  let _result     = null;
-  let _frames     = [];    // [{pods: [{lat,lng,color}]}, ...]
-  let _frameIdx   = 0;
-  let _animTimer  = null;
-  let _podMarkers = [];
+  let _result      = null;
+  let _geojson     = null;  // last-fetched network GeoJSON (reused by TimeMap)
+  let _frames      = [];    // [{pods: [{lat,lng,color}]}, ...]
+  let _frameIdx    = 0;
+  let _animTimer   = null;
+  let _loadingAnim = null;  // interval handle for the sim-running loading animation
+  let _podMarkers  = [];
 
   // HSV interpolation red→green for velocity ratio 0→1
   function _podColor(ratio) {
@@ -46,41 +48,96 @@ const Sim = (() => {
     });
   }
 
-  // Build animation frames from line_stats + network GeoJSON
-  // Simple model: for each line with samples, animate one pod traversing it
+  // Build animation frames — one pod per station-to-station route.
+  // Each pod travels the full path: origin platform → guideways → destination platform.
+  //
+  // Cycle structure (per route):
+  //   [DWELL at origin] [TRAVEL] [DWELL at destination] [empty return - instant]
+  //
+  // DWELL_FRAC: fraction of cycle the pod sits parked at each end.
+  // Parked pods show white; travelling pods show red→green→red (velocity bell).
   async function _buildFrames(result, geojson) {
     _frames = [];
+
+    const DWELL_FRAC = 0.15;   // 15% of each cycle parked at origin, 15% at dest
+
+    // Index line geometries by line_id
     const lineFeatures = {};
     geojson.features
       .filter(f => f.properties.type === "line")
       .forEach(f => { lineFeatures[f.properties.line_id] = f; });
 
+    // Build full-route coordinate chains from trip_stats
+    const routes = [];
+    (result.trip_stats || []).forEach(ts => {
+      if (!ts.route_line_ids || ts.route_line_ids.length === 0) return;
+      if (!ts.median_trip_ms) return;
+
+      // Concatenate all line coordinate arrays along the route
+      const coords = [];
+      ts.route_line_ids.forEach(lid => {
+        const feat = lineFeatures[lid];
+        if (!feat) return;
+        const c = feat.geometry.coordinates; // [[lng,lat], ...]
+        if (coords.length === 0) {
+          coords.push(...c);
+        } else {
+          // Skip first point — same as previous segment's last point
+          coords.push(...c.slice(1));
+        }
+      });
+
+      if (coords.length < 2) return;
+      routes.push({
+        coords,
+        transit_ms: ts.median_trip_ms,
+        label: `${ts.origin_id} → ${ts.dest_id}`,
+        origin: coords[0],           // [lng, lat] of origin station platform
+        dest:   coords[coords.length - 1],  // [lng, lat] of dest station platform
+      });
+    });
+
+    if (routes.length === 0) return;
+
     const fps = 12;
-    const totalFrames = fps * 10; // 10-second replay
+    const totalFrames = fps * 10;  // 10-second loop
+
+    // Normalise so slowest route sets the cycle length
+    const maxMs = Math.max(...routes.map(r => r.transit_ms));
 
     for (let frame = 0; frame < totalFrames; frame++) {
-      const t = frame / totalFrames;
+      const t = frame / totalFrames;  // 0..1 across replay window
       const pods = [];
 
-      result.line_stats.forEach(ls => {
-        if (!ls.fleet_median_transit_ms) return;
-        const feat = lineFeatures[ls.line_id];
-        if (!feat) return;
+      routes.forEach(route => {
+        // Each route has a cycle proportional to its transit time
+        const cycleT = route.transit_ms / maxMs;   // 0..1 relative to slowest
+        const rawPos = (t / Math.max(cycleT, 0.001)) % 1;  // position in THIS route's cycle
 
-        const coords = feat.geometry.coordinates; // [[lng,lat],...]
-        if (coords.length < 2) return;
+        let travelRatio;  // 0 = origin platform, 1 = dest platform
+        let color;
 
-        // Ratio within this line's repeat cycle
-        const cycleLen = ls.fleet_median_transit_ms / 1000 / 60; // fraction of replay
-        const ratio = (t / Math.max(cycleLen, 0.001)) % 1;
+        if (rawPos < DWELL_FRAC) {
+          // ── Parked at origin station ──
+          travelRatio = 0;
+          color = "#ffffff";   // white = parked / loading
+        } else if (rawPos > 1 - DWELL_FRAC) {
+          // ── Parked at destination station ──
+          travelRatio = 1;
+          color = "#ffffff";   // white = parked / unloading
+        } else {
+          // ── Travelling ──
+          travelRatio = (rawPos - DWELL_FRAC) / (1 - 2 * DWELL_FRAC);
+          // Bell-shaped velocity: green at cruise, red at platforms
+          const phase = Math.min(travelRatio * 4, 1) * Math.min((1 - travelRatio) * 4, 1);
+          color = _podColor(phase);
+        }
 
-        // Interpolate along coordinate chain
-        const pos = _interpolateChain(coords, ratio);
-        const speedRatio = Math.min(ratio * 2, 1); // ramp up
+        const pos = _interpolateChain(route.coords, travelRatio);
         pods.push({
           lat: pos[1], lng: pos[0],
-          color: _podColor(speedRatio),
-          label: ls.line_id,
+          color,
+          label: route.label,
         });
       });
 
@@ -113,16 +170,27 @@ const Sim = (() => {
     return coords[coords.length - 1];
   }
 
+  function _replayIntervalMs() {
+    // Read speed multiplier from settings panel (default 360×)
+    const mult = parseFloat(
+      document.getElementById("cfg-simSpeedMultiplier")?.value || 360
+    );
+    // Base: 12 fps at 360×.  Scale interval inversely with multiplier.
+    const baseInterval = 1000 / 12;
+    return Math.max(16, Math.round(baseInterval * 360 / mult));
+  }
+
   function _startReplay() {
     if (_animTimer) clearInterval(_animTimer);
     _frameIdx = 0;
+    const interval = _replayIntervalMs();
     _animTimer = setInterval(() => {
       if (_frameIdx >= _frames.length) {
         _frameIdx = 0; // loop
       }
       _drawPods(_frames[_frameIdx].pods);
       _frameIdx++;
-    }, 1000 / 12);
+    }, interval);
   }
 
   function _stopReplay() {
@@ -130,28 +198,309 @@ const Sim = (() => {
     _clearPods();
   }
 
+  // ── Loading animation (runs while simulation POST is in flight) ─────────────
+  // Accepts pre-fetched geojson to avoid a race between the animation start
+  // and the simulation response completing before the inner GET returns.
+
+  function _startLoadingAnim(geojson) {
+    if (_loadingAnim) return;
+
+    const lines = (geojson.features || []).filter(f => f.properties.type === "line");
+    if (lines.length === 0) return;
+
+    // Group lines by their end_node — pods heading to the same junction
+    // will naturally bunch there, showing likely congestion points.
+    // No phase offset: all pods on connected paths advance in lock-step,
+    // so they pile up at merge points just as real vehicles would.
+    const nodeGroups = {};
+    lines.forEach(feat => {
+      const endNode = feat.properties.end_node || feat.properties.line_id;
+      if (!nodeGroups[endNode]) nodeGroups[endNode] = [];
+      nodeGroups[endNode].push(feat);
+    });
+
+    // Assign each pod a start offset proportional to its line length,
+    // so pods enter their line at the right spacing for the given headway.
+    const headwaySec = parseFloat(
+      document.getElementById("cfg-minHeadwaySec")?.value || 0.25
+    );
+    const speedKmh = parseFloat(
+      document.getElementById("cfg-maxVelocityInKMPH")?.value || 60
+    );
+    const speedMs = speedKmh / 3.6;
+
+    // Pods per line = floor(line_length / (speed × headway + pod_len))
+    // Each pod has its own phase offset within that line's capacity
+    const podLen = parseFloat(document.getElementById("cfg-podLen")?.value || 3);
+    const minSpacingM = speedMs * headwaySec + podLen;
+
+    let tick = 0;
+    const fps = 10;
+    const LOOP_S = 6;  // seconds for one pass along a line
+    const ticksPerLoop = fps * LOOP_S;
+
+    _loadingAnim = setInterval(() => {
+      const podList = [];
+
+      lines.forEach(feat => {
+        const coords = feat.geometry.coordinates;
+        if (coords.length < 2) return;
+
+        // Estimate line length in degrees (proportional approximation)
+        let degLen = 0;
+        for (let i = 0; i < coords.length - 1; i++) {
+          const dx = coords[i+1][0] - coords[i][0];
+          const dy = coords[i+1][1] - coords[i][1];
+          degLen += Math.sqrt(dx*dx + dy*dy);
+        }
+        const lineLen_m = feat.properties.length_m || (degLen * 111000);
+        const maxPods   = Math.max(1, Math.floor(lineLen_m / minSpacingM));
+        const count     = Math.min(maxPods, 8);  // cap display pods per line
+
+        for (let p = 0; p < count; p++) {
+          // No stagger — pods are evenly spaced by headway, NOT randomly offset
+          // so they bunch at shared nodes the same way real traffic does
+          const spacingFrac = (minSpacingM / lineLen_m) || (1 / count);
+          const ratio = ((tick / ticksPerLoop) + p * spacingFrac) % 1;
+
+          const pos = _interpolateChain(coords, ratio);
+          podList.push({
+            lat: pos[1], lng: pos[0],
+            color: "#3498db",   // solid blue — loading indicator
+            label: feat.properties.line_id || "",
+          });
+        }
+      });
+
+      _clearPods();
+      podList.forEach(({ lat, lng, color, label }) => {
+        const icon = L.divIcon({
+          className: "",
+          html: `<div class="pod-marker" style="background:${color}" title="${label}"></div>`,
+          iconSize: [8, 8], iconAnchor: [4, 4],
+        });
+        const m = L.marker([lat, lng], { icon, interactive: false });
+        App.getLayers().pods.addLayer(m);
+        _podMarkers.push(m);
+      });
+
+      tick++;
+    }, 1000 / fps);
+  }
+
+  function _stopLoadingAnim() {
+    if (_loadingAnim) { clearInterval(_loadingAnim); _loadingAnim = null; }
+    _clearPods();
+  }
+
+  function _fmtMin(min) {
+    if (!min && min !== 0) return "—";
+    const m = Math.floor(min), s = Math.round((min - m) * 60);
+    return m > 0 ? `${m}m ${s}s` : `${s}s`;
+  }
+
+  function _panelRow(label, value) {
+    return `<div class="sim-line-row"><span style="color:#aaa">${label}</span><span>${value}</span></div>`;
+  }
+
+  function _sectionHead(title) {
+    return `<div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 3px;border-top:1px solid #333;padding-top:5px">${title}</div>`;
+  }
+
   function _showResults(result) {
     _result = result;
     document.getElementById("panel-sim").style.display = "";
-    const s = result.simulation || {};
-    const pct = s.passengers_generated
-      ? ((s.passengers_served / s.passengers_generated) * 100).toFixed(1)
-      : "—";
+
+    const sim = result.simulation || {};
+    const sm  = result.summary   || {};
+    const pct = sim.passengers_generated
+      ? ((sim.passengers_served / sim.passengers_generated) * 100).toFixed(1) : "—";
+
+    // Header summary
     document.getElementById("sim-summary").innerHTML =
-      `Passengers: ${s.passengers_served} / ${s.passengers_generated} (${pct}%)<br>
-       Ticks: ${s.total_ticks}`;
+      `<b>${sim.passengers_served}</b> / ${sim.passengers_generated} passengers (${pct}%)`;
 
-    const sorted = [...(result.line_stats || [])]
-      .filter(ls => ls.fleet_median_transit_ms)
-      .sort((a, b) => (b.fleet_median_transit_ms - a.fleet_median_transit_ms));
+    let html = "";
 
-    document.getElementById("sim-lines").innerHTML = sorted.map(ls =>
-      `<div class="sim-line-row">
-         <span class="line-id">${ls.line_id}</span>
-         <span>${ls.length_m}m</span>
-         <span>${Math.round(ls.fleet_median_transit_ms)} ms</span>
-       </div>`
-    ).join("");
+    // --- CAPACITY ---
+    html += _sectionHead("Capacity");
+    html += _panelRow("Carried",    sm.passengers_carried   ?? "—");
+    html += _panelRow("Travelling", sm.passengers_travelling ?? "—");
+    html += _panelRow("Waiting",    sm.passengers_waiting   ?? "—");
+    html += _panelRow("Throughput", sm.throughput_per_hour != null ? `${sm.throughput_per_hour}/hr` : "—");
+
+    // --- VELOCITY ---
+    html += _sectionHead("Velocity (km/h)");
+    html += _panelRow("Avg",     sm.avg_velocity_kmph     ?? "—");
+    html += _panelRow("Slowest", sm.slowest_velocity_kmph ?? "—");
+
+    // --- TIMINGS ---
+    const walkToSec   = parseFloat(document.getElementById("cfg-walkToStationSec")?.value   || 300);
+    const walkFromSec = parseFloat(document.getElementById("cfg-walkFromStationSec")?.value || 300);
+    const walkTotalMin = (walkToSec + walkFromSec) / 60;
+    const avgDoorMin   = sm.avg_trip_time_min != null
+      ? Math.round((sm.avg_trip_time_min + walkTotalMin) * 10) / 10 : null;
+
+    html += _sectionHead("Timings");
+    html += _panelRow("Avg guideway",   _fmtMin(sm.avg_trip_time_min));
+    html += _panelRow("Walk overhead",  `+${_fmtMin(walkTotalMin)}`);
+    html += _panelRow("Avg door-to-door", _fmtMin(avgDoorMin));
+    html += _panelRow("Longest trip",   _fmtMin(sm.longest_trip_time_min));
+    html += _panelRow("Longest wait",   _fmtMin(sm.longest_wait_time_min));
+
+    // --- DISTANCE ---
+    html += _sectionHead("Distance (km)");
+    html += _panelRow("Avg trip",  sm.avg_trip_distance_km   != null ? sm.avg_trip_distance_km   : "—");
+    html += _panelRow("Total",     sm.total_trip_distance_km != null ? sm.total_trip_distance_km : "—");
+
+    // --- RUN ---
+    html += _sectionHead("Run");
+    html += _panelRow("Simulated", sm.simulated_time_hms ?? "—");
+    html += _panelRow("Machine",   sm.machine_time_hms   ?? "—");
+
+    // --- NETWORK ---
+    html += _sectionHead("Network");
+    html += _panelRow("Stations",    sm.station_count    ?? "—");
+    html += _panelRow("Lines",       sm.line_count       ?? "—");
+    html += _panelRow("Length (km)", sm.total_network_km ?? "—");
+    html += _panelRow("Total pods",  sm.total_pods       ?? "—");
+
+    // --- STATIONS (convergences/divergences — what Java called Switches) ---
+    html += _sectionHead("Stations");
+    html += _panelRow("Convergences", sm.convergence_count ?? "—");
+    html += _panelRow("Divergences",  sm.divergence_count  ?? "—");
+
+    // --- TRIP TIMES (origin → destination) ---
+    const trips = [...(result.trip_stats || [])]
+      .sort((a, b) => (b.median_trip_ms || 0) - (a.median_trip_ms || 0));
+    if (trips.length > 0) {
+      const oh = Math.round((trips[0].station_overhead_ms || 0) / 1000);
+      html += _sectionHead(`Trip Times (incl. ${oh}s station overhead)`);
+      html += `<div class="sim-line-row" style="font-size:10px;color:#666">Origin → Dest<span>Median</span><span>n</span></div>`;
+      trips.forEach(ts => {
+        const sec = Math.round(ts.median_trip_ms / 1000);
+        const m = Math.floor(sec / 60), s = sec % 60;
+        const lbl = m > 0 ? `${m}m ${s}s` : `${sec}s`;
+        html += `<div class="sim-line-row">
+          <span style="font-size:10px;line-height:1.3">${ts.origin_id}<br>→ ${ts.dest_id}</span>
+          <span>${lbl}</span><span style="color:#666">${ts.sample_count}</span></div>`;
+      });
+    } else {
+      html += _sectionHead("Trip Times");
+      html += `<div style="color:#666;font-size:11px">No trips completed — check network connectivity</div>`;
+    }
+
+    // --- LINE DATA (congestion) ---
+    const lines = [...(result.line_stats || [])]
+      .filter(l => l.pods_arrived > 0)
+      .sort((a, b) => (b.congestion || 0) - (a.congestion || 0));
+    if (lines.length > 0) {
+      html += _sectionHead("Line Data");
+      html += `<div class="sim-line-row" style="font-size:10px;color:#666">Line<span>In/Out</span><span>Avg s</span><span>Cong</span></div>`;
+      lines.forEach(l => {
+        const cong = l.congestion != null ? l.congestion : 0;
+        const hue  = Math.round((1 - Math.min(cong, 1)) * 120); // green=free, red=jammed
+        const bar  = `<span style="display:inline-block;width:28px;height:8px;border-radius:2px;background:hsl(${hue},80%,45%);vertical-align:middle"></span>`;
+        html += `<div class="sim-line-row" style="font-size:10px">
+          <span title="${l.line_id}">${l.line_id.slice(-8)}</span>
+          <span>${l.pods_arrived}</span>
+          <span>${l.avg_time_s ?? "—"}</span>
+          <span>${bar}</span></div>`;
+      });
+    }
+
+    // --- STATION DATA ---
+    const stations = [...(result.station_stats || [])]
+      .sort((a, b) => (b.passengers_boarded + b.passengers_alighted) -
+                      (a.passengers_boarded + a.passengers_alighted));
+    if (stations.length > 0) {
+      html += _sectionHead("Station Data");
+      html += `<div class="sim-line-row" style="font-size:10px;color:#666">Station<span>Boarded</span><span>Alighted</span></div>`;
+      stations.forEach(st => {
+        html += `<div class="sim-line-row" style="font-size:10px">
+          <span title="${st.station_id}">${st.station_id.slice(-10)}</span>
+          <span>${st.passengers_boarded}</span>
+          <span>${st.passengers_alighted}</span></div>`;
+      });
+    }
+
+    // --- ROUTE GRID (origin × destination matrix, color by travel time) ---
+    const tripData = result.trip_stats || [];
+    if (tripData.length > 0) {
+      // Collect unique station IDs in order of first appearance
+      const stationSet = new Set();
+      tripData.forEach(t => { stationSet.add(t.origin_id); stationSet.add(t.dest_id); });
+      const stations = [...stationSet].sort();
+
+      // Build lookup: "origin|dest" → median_trip_ms
+      const lookup = {};
+      tripData.forEach(t => { lookup[`${t.origin_id}|${t.dest_id}`] = t.median_trip_ms; });
+
+      // TimeColor scale matching Java TimeColor enum (minutes → color)
+      function _timeColor(ms) {
+        if (ms == null) return "#1a1a1a";
+        const min = ms / 60000;
+        if (min <  5) return "rgb(102,255,0)";
+        if (min < 10) return "rgb(191,255,0)";
+        if (min < 15) return "rgb(255,255,49)";
+        if (min < 20) return "rgb(255,219,88)";
+        if (min < 25) return "rgb(255,179,71)";
+        if (min < 30) return "rgb(255,90,54)";
+        return "rgb(255,28,0)";
+      }
+      function _textColor(ms) {
+        if (ms == null) return "#555";
+        const min = ms / 60000;
+        return min < 15 ? "#111" : "#fff";
+      }
+      function _fmtCell(ms) {
+        if (ms == null) return "—";
+        const sec = Math.round(ms / 1000);
+        const m = Math.floor(sec / 60), s = sec % 60;
+        return m > 0 ? `${m}m${s}s` : `${sec}s`;
+      }
+
+      // Short station labels (last 6 chars of ID)
+      const short = id => id.replace(/^[A-Z]+_/, "").slice(-6);
+
+      html += _sectionHead("Route Grid");
+      html += `<div style="font-size:10px;color:#666;margin-bottom:3px">Rows=origin · Cols=destination · Color=trip time</div>`;
+
+      let tbl = `<table style="border-collapse:collapse;font-size:9px;width:100%">`;
+      // Header row
+      tbl += `<tr><th style="background:#111;padding:2px"></th>`;
+      stations.forEach(dest => {
+        tbl += `<th style="background:#111;color:#888;padding:2px;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);max-width:28px" title="${dest}">${short(dest)}</th>`;
+      });
+      tbl += `</tr>`;
+      // Data rows
+      stations.forEach(origin => {
+        tbl += `<tr><td style="background:#111;color:#888;padding:2px 3px;white-space:nowrap" title="${origin}">${short(origin)}</td>`;
+        stations.forEach(dest => {
+          if (origin === dest) {
+            tbl += `<td style="background:#111;text-align:center;padding:1px">·</td>`;
+          } else {
+            const ms  = lookup[`${origin}|${dest}`];
+            const bg  = _timeColor(ms);
+            const fg  = _textColor(ms);
+            tbl += `<td style="background:${bg};color:${fg};text-align:center;padding:1px;min-width:24px" title="${origin}→${dest}: ${_fmtCell(ms)}">${_fmtCell(ms)}</td>`;
+          }
+        });
+        tbl += `</tr>`;
+      });
+      tbl += `</table>`;
+      html += tbl;
+
+      // Color legend
+      html += `<div style="display:flex;gap:3px;margin-top:4px;font-size:9px;align-items:center">
+        <span style="background:rgb(102,255,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;5m
+        <span style="background:rgb(255,255,49);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;15m
+        <span style="background:rgb(255,90,54);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;30m
+        <span style="background:rgb(255,28,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>30m+
+      </div>`;
+    }
+
+    document.getElementById("sim-lines").innerHTML = html;
   }
 
   return {
@@ -161,17 +510,32 @@ const Sim = (() => {
       setStatus("Running simulation… ⏳");
       _stopReplay();
 
+      // Pre-fetch network geometry so loading animation starts immediately
+      // (no race condition — we have the geojson before the simulation POST begins)
+      _geojson = await api("GET", "/api/network");
+      _startLoadingAnim(_geojson);
+
       const result = await api("POST", "/api/simulation/run", { slots });
+      _stopLoadingAnim();
+
       if (result.error) { alert(result.error); return; }
 
       _showResults(result);
 
-      // Build animation frames
-      const geojson = await api("GET", "/api/network");
-      await _buildFrames(result, geojson);
+      // Build animation frames — reuse the already-fetched geojson
+      await _buildFrames(result, _geojson);
 
       document.getElementById("btn-replay").disabled = false;
-      setStatus(`Simulation complete — ${result.simulation.passengers_served} passengers served`);
+      const pax = result.simulation.passengers_served;
+      const frameCount = _frames.length;
+      console.log(`Simulation: ${pax} passengers served, ${frameCount} animation frames built`);
+      setStatus(`Simulation complete — ${pax} passengers served`);
+
+      // Auto-start animation if frames were built
+      if (frameCount > 0) {
+        _startReplay();
+        document.getElementById("btn-replay").textContent = "⏹ Stop";
+      }
     },
 
     replay() {
@@ -186,6 +550,18 @@ const Sim = (() => {
         setStatus("Replaying simulation…");
       }
     },
+
+    closeResults() {
+      _stopReplay();
+      document.getElementById("panel-sim").style.display = "none";
+      document.getElementById("btn-replay").textContent = "▶▶ Replay";
+      document.getElementById("btn-replay").disabled = true;
+      setStatus("Ready");
+    },
+
+    // Accessors for TimeMap (walk-ride-walk circles)
+    getResult()  { return _result;  },
+    getGeojson() { return _geojson; },
 
   };
 
