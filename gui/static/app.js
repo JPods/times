@@ -839,7 +839,9 @@ function _addCpFeature(f) {
   });
 
   marker.bindTooltip(
-    `${cpId}${connected ? " ↔ " + props.connected_to : " (open)"}`,
+    connected
+      ? `${cpId} ↔ ${props.connected_to}  (Shift+click to disconnect)`
+      : `${cpId} (open — click to select)`,
     { direction: "top", offset: [0, -30] }
   );
 
@@ -855,8 +857,9 @@ function _addCpFeature(f) {
     const mode = Editor.getMode();
     if (mode !== null && mode !== "line") return;
 
-    // Ctrl/Cmd-click on a connected CP → disconnect
-    if ((e.originalEvent.ctrlKey || e.originalEvent.metaKey) && connected) {
+    // Shift+click on a connected CP → disconnect
+    if (e.originalEvent.shiftKey && connected) {
+      _selectedCpId = null;
       const r = await api("POST", "/api/network/disconnect_cp", { cp_id: cpId });
       if (r.error) { alert(r.error); return; }
       const gj = await api("GET", "/api/network");
@@ -874,7 +877,7 @@ function _addCpFeature(f) {
       // First click — select this CP and show its structure's rotation panel
       _selectedCpId = cpId;
       marker.setIcon(_cpIcon(props, true));
-      setStatus(`${cpId} selected — click another CP to connect  (Esc to cancel)`);
+      setStatus(`${cpId} selected — click another CP to connect  ·  Shift+click to disconnect  (Esc to cancel)`);
       // Show rotation panel for the parent structure
       const meta = (await api("GET", "/api/network")).metadata || {};
       const structs = meta.structures || {};

@@ -209,7 +209,7 @@ These are not in the Java version but are needed for the browser tool:
 | Click map (tool active) | Place station / circle / switch |
 | Click CP | Select for connect |
 | Click second CP | Connect the pair |
-| Ctrl+click connected CP | Disconnect |
+| Shift+click connected CP | Disconnect |
 | Alt+drag CP or structure line | Move whole structure |
 | Alt+drag free guideway | Add/move bend point on pair |
 | Waypoint tool + click guideway | Add routing bend |
