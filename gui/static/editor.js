@@ -31,9 +31,6 @@ const Editor = (() => {
     });
     _mode      = mode;
     _lineStart = null;
-    // Clear any pending CP selection so switching modes can't trigger an
-    // accidental connection on the next CP click.
-    if (typeof _selectedCpId !== "undefined") _selectedCpId = null;
     if (activeBtn) {
       const el = document.getElementById(activeBtn);
       if (el) el.classList.add("active");

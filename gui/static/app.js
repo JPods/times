@@ -851,12 +851,11 @@ function _addCpFeature(f) {
 
   marker.on("click", async (e) => {
     L.DomEvent.stopPropagation(e);  // prevent click reaching map (avoids accidental placement)
-    console.log(`CP click: ${cpId}  mode=${Editor.getMode()}  shift=${e.originalEvent.shiftKey}  sel=${_selectedCpId}`);
 
-    // Ignore CP clicks when a placement tool is active (station/circle/switch/waypoint).
-    // Line-draw is the only mode where clicking a CP is intentional.
+    // In line-draw mode, CP click feeds the node into the guideway draw tool.
+    // In all other modes (including placement modes), fall through to CP connect/disconnect.
+    // stopPropagation above already prevents the placement handler from also firing.
     const mode = Editor.getMode();
-    if (mode !== null && mode !== "line") return;
 
     // Shift+click on a connected CP → disconnect
     if (e.originalEvent.shiftKey && connected) {
