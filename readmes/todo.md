@@ -53,7 +53,31 @@ into the `.tld` XML format used by the legacy RouteTime app.
 
 ---
 
-## Other backlog
+## Auto-Connect — UX Polish
+
+**Status:** working but needs polish before it's teachable
+
+Auto-Connect is a powerful tool — it connects all interior CPs using a greedy
+nearest-neighbour algorithm, leaving boundary CPs open for the user to route
+manually. But it's invisible and one-shot: there's no preview, no undo, and no
+explanation of which CPs were connected vs skipped.
+
+### What needs to happen before it's user-facing
+
+- **Preview mode** — show proposed connections as dashed lines before committing;
+  user confirms or cancels
+- **Highlight skipped CPs** — after auto-connect, briefly highlight the CPs that
+  were left open (boundary gates) so the user knows where to route next
+- **Undo** — auto-connect should be undoable as a single action (see Undo item below)
+- **Guided intro** — a short tooltip or first-run hint explaining the boundary rule:
+  "Interior CPs are connected automatically. Outer boundary CPs are left for you
+  to connect to adjacent network segments."
+- **Incremental** — re-running auto-connect after adding new structures should only
+  connect the new unconnected CPs, not re-process already-connected ones
+
+---
+
+## Other Backlog
 
 - Siding placement tool (currently disabled in palette)
 - Undo / redo (Ctrl+Z / Ctrl+Y)

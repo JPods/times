@@ -811,6 +811,13 @@ function _addCpFeature(f) {
   marker.on("mouseout",  () => { if (_hoverStructSid === props.structure_id) _hoverStructSid = null; });
 
   marker.on("click", async (e) => {
+    L.DomEvent.stopPropagation(e);  // prevent click reaching map (avoids accidental placement)
+
+    // Ignore CP clicks when a placement tool is active (station/circle/switch/waypoint).
+    // Line-draw is the only mode where clicking a CP is intentional.
+    const mode = Editor.getMode();
+    if (mode !== null && mode !== "line") return;
+
     // Ctrl/Cmd-click on a connected CP → disconnect
     if ((e.originalEvent.ctrlKey || e.originalEvent.metaKey) && connected) {
       const r = await api("POST", "/api/network/disconnect_cp", { cp_id: cpId });
