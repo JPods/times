@@ -851,6 +851,7 @@ function _addCpFeature(f) {
 
   marker.on("click", async (e) => {
     L.DomEvent.stopPropagation(e);  // prevent click reaching map (avoids accidental placement)
+    console.log(`CP click: ${cpId}  mode=${Editor.getMode()}  shift=${e.originalEvent.shiftKey}  sel=${_selectedCpId}`);
 
     // Ignore CP clicks when a placement tool is active (station/circle/switch/waypoint).
     // Line-draw is the only mode where clicking a CP is intentional.
