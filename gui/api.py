@@ -975,6 +975,153 @@ def auto_connect():
 
 
 # ---------------------------------------------------------------------------
+# Grid generator
+# ---------------------------------------------------------------------------
+
+_MI_TO_M = 1609.344
+
+
+def _cp_by_heading(cp_dict: dict, target_heading: float) -> Optional[ConnectionPoint]:
+    """Return the CP whose heading_deg is closest to target_heading."""
+    best, best_diff = None, float("inf")
+    for cp in cp_dict.values():
+        diff = abs((cp.heading_deg - target_heading + 180) % 360 - 180)
+        if diff < best_diff:
+            best_diff = diff
+            best = cp
+    return best
+
+
+@api.post("/network/grid")
+def network_grid():
+    """
+    Generate a rectangular grid network:
+      - Traffic circles at every intersection
+      - One station at the midpoint of every block (between adjacent circles)
+      - CPs connected: circle ↔ station ↔ circle along each axis
+
+    Body (all distances in miles):
+      center_lat, center_lon  — geographic centre of the grid
+      spacing_ns              — N-S block size  (default 1.0)
+      spacing_ew              — E-W block size  (default 1.0)
+      extent_ns               — total N-S span  (default 4.0)
+      extent_ew               — total E-W span  (default 4.0)
+      replace                 — if true (default), clear existing network first
+    """
+    data = request.json or {}
+    center_lat = float(data.get("center_lat", 37.31))
+    center_lon = float(data.get("center_lon", -121.87))
+    spacing_ns = float(data.get("spacing_ns", 1.0))
+    spacing_ew = float(data.get("spacing_ew", 1.0))
+    extent_ns  = float(data.get("extent_ns",  4.0))
+    extent_ew  = float(data.get("extent_ew",  4.0))
+    replace    = bool(data.get("replace", True))
+
+    if replace:
+        net = Network(network_id="grid")
+        _state["network"] = net
+        _clear_edit_state()
+    else:
+        net = _net()
+        if net is None:
+            net = Network(network_id="grid")
+            _state["network"] = net
+
+    # Convert miles → metres → degrees
+    dlat_per_m = 1.0 / 111_320.0
+    dlon_per_m = 1.0 / (111_320.0 * math.cos(math.radians(center_lat)))
+
+    ns_m = spacing_ns * _MI_TO_M
+    ew_m = spacing_ew * _MI_TO_M
+
+    dlat = ns_m * dlat_per_m   # degrees lat per row step (going south)
+    dlon = ew_m * dlon_per_m   # degrees lon per col step (going east)
+
+    n_rows = max(2, round(extent_ns / spacing_ns) + 1)
+    n_cols = max(2, round(extent_ew / spacing_ew) + 1)
+
+    # Top-left corner (northwest)
+    start_lat = center_lat + dlat * (n_rows - 1) / 2.0
+    start_lon = center_lon - dlon * (n_cols - 1) / 2.0
+
+    # ── 1. Build traffic circles at every intersection ──────────────────────
+    grid: List[List] = []          # grid[r][c] = (struct, cp_dict)
+    for r in range(n_rows):
+        row = []
+        for c in range(n_cols):
+            lat = start_lat - r * dlat
+            lon = start_lon + c * dlon
+            struct, cp_dict = build_traffic_circle(
+                net, lat, lon,
+                arm_headings=[0.0, 90.0, 180.0, 270.0],
+            )
+            _state["structures"][struct.structure_id] = struct
+            _state["cps"].update(cp_dict)
+            row.append((struct, cp_dict))
+        grid.append(row)
+
+    n_stations = 0
+
+    # ── 2. N-S blocks: station between (r,c) and (r+1,c) ───────────────────
+    for r in range(n_rows - 1):
+        for c in range(n_cols):
+            lat = start_lat - (r + 0.5) * dlat
+            lon = start_lon + c * dlon
+            st, st_cps = build_station(net, lat, lon, heading_deg=0.0)
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            n_stations += 1
+
+            # North circle south arm ↔ station CP_N (north end, heading=0°)
+            _, cp_dict_north = grid[r][c]
+            tc_south = _cp_by_heading(cp_dict_north, 180.0)
+            st_north = st_cps.get(f"{st.structure_id}.CP_N")
+            if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
+                connect_cps(net, tc_south, st_north, _state["cps"])
+
+            # Station CP_S (south end, heading=180°) ↔ south circle north arm
+            _, cp_dict_south = grid[r + 1][c]
+            tc_north = _cp_by_heading(cp_dict_south, 0.0)
+            st_south = st_cps.get(f"{st.structure_id}.CP_S")
+            if tc_north and st_south and tc_north.connected_to is None and st_south.connected_to is None:
+                connect_cps(net, st_south, tc_north, _state["cps"])
+
+    # ── 3. E-W blocks: station between (r,c) and (r,c+1) ───────────────────
+    for r in range(n_rows):
+        for c in range(n_cols - 1):
+            lat = start_lat - r * dlat
+            lon = start_lon + (c + 0.5) * dlon
+            st, st_cps = build_station(net, lat, lon, heading_deg=90.0)
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            n_stations += 1
+
+            # West circle east arm ↔ station CP_S (west end, heading=270°)
+            _, cp_dict_west = grid[r][c]
+            tc_east = _cp_by_heading(cp_dict_west, 90.0)
+            st_west = st_cps.get(f"{st.structure_id}.CP_S")
+            if tc_east and st_west and tc_east.connected_to is None and st_west.connected_to is None:
+                connect_cps(net, tc_east, st_west, _state["cps"])
+
+            # Station CP_N (east end, heading=90°) ↔ east circle west arm
+            _, cp_dict_east = grid[r][c + 1]
+            tc_west = _cp_by_heading(cp_dict_east, 270.0)
+            st_east = st_cps.get(f"{st.structure_id}.CP_N")
+            if tc_west and st_east and tc_west.connected_to is None and st_east.connected_to is None:
+                connect_cps(net, st_east, tc_west, _state["cps"])
+
+    net.build()
+    return jsonify({
+        "circles":   n_rows * n_cols,
+        "stations":  n_stations,
+        "rows":      n_rows,
+        "cols":      n_cols,
+        "spacing_ns_mi": spacing_ns,
+        "spacing_ew_mi": spacing_ew,
+    })
+
+
+# ---------------------------------------------------------------------------
 # Simulation
 # ---------------------------------------------------------------------------
 

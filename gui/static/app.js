@@ -60,6 +60,170 @@ const Map = {
 
 Map.setTiles("osm");
 
+// ── City search (Nominatim / OSM geocoder — no API key required) ─────────────
+
+const CitySearch = (() => {
+  let _fenceLayer = null;   // current boundary polygon layer
+
+  function _clearFence() {
+    if (_fenceLayer) { map.removeLayer(_fenceLayer); _fenceLayer = null; }
+  }
+
+  function _drawFence(geojson) {
+    _clearFence();
+    _fenceLayer = L.geoJSON(geojson, {
+      style: {
+        color:     "#ffaa00",
+        weight:    2,
+        dashArray: "8 5",
+        fillOpacity: 0,
+        interactive: false,
+      },
+    }).addTo(map);
+  }
+
+  return {
+    go() {
+      const raw = document.getElementById("city-search").value.trim();
+      if (!raw) return;
+      const errEl = document.getElementById("city-error");
+      errEl.style.display = "none";
+      setStatus(`Searching for "${raw}"…`);
+
+      const url = "https://nominatim.openstreetmap.org/search?" +
+        new URLSearchParams({ q: raw, format: "json", limit: 1, polygon_geojson: 1 });
+
+      fetch(url, { headers: { "Accept-Language": "en" } })
+        .then(r => r.json())
+        .then(results => {
+          if (!results || results.length === 0) {
+            errEl.textContent = `Not found: "${raw}"`;
+            errEl.style.display = "block";
+            setStatus('City not found — try "City, State" or "City, Country"');
+            return;
+          }
+          const r = results[0];
+
+          // Draw boundary fence if Nominatim returned polygon data
+          if (r.geojson &&
+              (r.geojson.type === "Polygon" || r.geojson.type === "MultiPolygon")) {
+            _drawFence(r.geojson);
+          } else {
+            _clearFence();   // point result — no boundary available
+          }
+
+          // Fit view: prefer the actual polygon bounds, fall back to bounding box
+          if (_fenceLayer) {
+            map.fitBounds(_fenceLayer.getBounds(), { maxZoom: 14 });
+          } else if (r.boundingbox) {
+            const bb = r.boundingbox.map(Number);
+            map.fitBounds([[bb[0], bb[2]], [bb[1], bb[3]]], { maxZoom: 14 });
+          } else {
+            map.setView([parseFloat(r.lat), parseFloat(r.lon)], 12);
+          }
+
+          const label = r.display_name.split(",").slice(0, 3).join(",").trim();
+          setStatus(`Centered on: ${label}`);
+        })
+        .catch(() => {
+          errEl.textContent = "Geocode request failed — check network connection";
+          errEl.style.display = "block";
+          setStatus("City search failed");
+        });
+    },
+
+    clearFence() { _clearFence(); },
+  };
+})();
+
+// ── Grid generator ────────────────────────────────────────────────────────────
+
+const Grid = (() => {
+
+  function _val(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+  function _preview() {
+    const sNS = _val("grid-spacing-ns") || 1;
+    const sEW = _val("grid-spacing-ew") || 1;
+    const eNS = _val("grid-extent-ns")  || 4;
+    const eEW = _val("grid-extent-ew")  || 4;
+    const rows    = Math.round(eNS / sNS) + 1;
+    const cols    = Math.round(eEW / sEW) + 1;
+    const circles = rows * cols;
+    const stNS    = cols * (rows - 1);   // N-S mid-block stations
+    const stEW    = rows * (cols - 1);   // E-W mid-block stations
+    const stations = stNS + stEW;
+    const guideways = (stNS + stEW) * 2; // each station = 2 guideway pairs
+    const warn = (circles + stations) > 600
+      ? `<br><span style="color:#c84">⚠ Large grid — generation may take a few seconds</span>`
+      : "";
+    document.getElementById("grid-preview").innerHTML =
+      `<strong>${rows} rows × ${cols} cols</strong><br>` +
+      `${circles} traffic circles &nbsp;·&nbsp; ${stations} stations<br>` +
+      `~${guideways} guideway pairs &nbsp;·&nbsp; ` +
+      `${(eNS).toFixed(1)} × ${(eEW).toFixed(1)} mi coverage` +
+      warn;
+  }
+
+  return {
+    openDialog() {
+      document.getElementById("grid-dialog-backdrop").style.display = "flex";
+      _preview();
+      // Live preview on any input change
+      ["grid-spacing-ns","grid-spacing-ew","grid-extent-ns","grid-extent-ew"]
+        .forEach(id => {
+          const el = document.getElementById(id);
+          el.oninput = _preview;
+          // Also allow Enter to trigger generate
+          el.onkeydown = e => { if (e.key === "Enter") Grid.generate(); };
+        });
+    },
+
+    closeDialog() {
+      document.getElementById("grid-dialog-backdrop").style.display = "none";
+    },
+
+    async generate() {
+      const spacingNS = _val("grid-spacing-ns") || 1;
+      const spacingEW = _val("grid-spacing-ew") || 1;
+      const extentNS  = _val("grid-extent-ns")  || 4;
+      const extentEW  = _val("grid-extent-ew")  || 4;
+
+      const rows    = Math.round(extentNS / spacingNS) + 1;
+      const cols    = Math.round(extentEW / spacingEW) + 1;
+      const total   = rows * cols + (rows - 1) * cols + rows * (cols - 1);
+      if (total > 600) {
+        if (!confirm(`This grid will create ${total} structures. Continue?`)) return;
+      }
+
+      Grid.closeDialog();
+      const c = map.getCenter();
+      setStatus(`Generating ${rows}×${cols} grid… ⏳`);
+
+      const r = await api("POST", "/api/network/grid", {
+        center_lat: c.lat,
+        center_lon: c.lng,
+        spacing_ns: spacingNS,
+        spacing_ew: spacingEW,
+        extent_ns:  extentNS,
+        extent_ew:  extentEW,
+        replace:    true,
+      });
+
+      if (r.error) { alert(r.error); return; }
+
+      const geojson = await api("GET", "/api/network");
+      App._render(geojson);
+      App.setReadOnly(false);
+
+      setStatus(
+        `Grid: ${r.rows}×${r.cols} — ${r.circles} circles, ${r.stations} stations ` +
+        `(${spacingNS}×${spacingEW} mi blocks, ${extentNS}×${extentEW} mi total)`
+      );
+    },
+  };
+})();
+
 // ── Walk-Ride-Walk ledger + JPods logo — both bottom-right, ledger below logo ──
 // Leaflet stacks bottom-right controls upward: first added = lowest, last = highest.
 // Add ledger first so logo sits above it.
@@ -278,7 +442,8 @@ function _clearSelection() {
 
 const _moveState = {
   active:      false,
-  sid:         null,
+  sid:         null,   // single-structure move
+  sids:        null,   // Set — multi-structure move (selection drag)
   startLatlng: null,
   origPos:     {},   // cpId → L.LatLng snapshot at drag start
   connectors:  [],   // [{lid, endIdx, origLatlng}] connector lines whose endpoint moves
@@ -346,13 +511,73 @@ function _nearestWaypointHandle(latlng) {
   return best;
 }
 
+// Start a multi-structure drag — called when the user drags a selected structure.
+function _startMultiMove(latlng) {
+  const sids = new Set(_sel.structures);
+
+  // Snapshot all CP positions for every selected structure
+  _moveState.origPos = {};
+  sids.forEach(sid => {
+    Object.entries(_cpPropsMap).forEach(([cpId, p]) => {
+      if (p.structure_id !== sid) return;
+      const mk = _nodeMap[cpId];
+      if (mk) _moveState.origPos[cpId] = mk.getLatLng();
+    });
+  });
+
+  // Collect connector-line endpoints — classify internal (both move) vs external (one moves)
+  const movingTips = new Set();
+  sids.forEach(sid => {
+    Object.values(_cpPropsMap).forEach(p => {
+      if (p.structure_id !== sid) return;
+      if (p.outbound_node) movingTips.add(p.outbound_node);
+      if (p.inbound_node)  movingTips.add(p.inbound_node);
+    });
+  });
+  _moveState.connectors = [];
+  Object.entries(_lineNodeMap).forEach(([lid, {s, e}]) => {
+    if (_lineStructMap[lid]) return;   // skip internal lines
+    const pl = _lineMap[lid];
+    if (!pl) return;
+    const lls = pl.getLatLngs();
+    if (movingTips.has(s))
+      _moveState.connectors.push({ lid, endIdx: 0, origLatlng: lls[0] });
+    if (movingTips.has(e))
+      _moveState.connectors.push({ lid, endIdx: lls.length - 1, origLatlng: lls[lls.length - 1] });
+  });
+
+  // Hide internal lines for all selected structures
+  sids.forEach(sid => {
+    const lg = _structureLayerMap[sid];
+    if (lg) _layers.lines.removeLayer(lg);
+  });
+
+  _moveState.active      = true;
+  _moveState.sid         = null;
+  _moveState.sids        = sids;
+  _moveState.startLatlng = latlng;
+  map.dragging.disable();
+  setStatus(`Moving ${sids.size} structure(s) — release to drop`);
+}
+
 // Capture-phase mousedown — intercepts Alt+mousedown before Leaflet's drag handler.
 // Branches on what the cursor is hovering:
-//   _hoverStructSid → move the whole structure
+//   _hoverStructSid → move the whole structure (or whole selection if selected)
 //   _hoverLineId    → inline bend-point drag on that guideway pair
 document.addEventListener("mousedown", (e) => {
-  if (!e.altKey) return;
   if (!map.getContainer().contains(e.target)) return;
+
+  // Selection drag: plain drag on a structure that is part of the current selection
+  if (!e.altKey && _sel.structures.size > 0 &&
+      _hoverStructSid && _sel.structures.has(_hoverStructSid)) {
+    if (_roGuard()) return;
+    e.preventDefault();
+    e.stopPropagation();
+    _startMultiMove(map.mouseEventToLatLng(e));
+    return;
+  }
+
+  if (!e.altKey) return;
   if (!_hoverStructSid && !_hoverLineId) return;
   if (_roGuard()) return;
 
@@ -465,12 +690,19 @@ document.addEventListener("mousemove", (e) => {
     // Internal lines were removed on drag start; they rebuild on drop via _render.
     const dlat = latlng.lat - _moveState.startLatlng.lat;
     const dlon = latlng.lng - _moveState.startLatlng.lng;
-    Object.entries(_cpPropsMap).forEach(([cpId, props]) => {
-      if (props.structure_id !== _moveState.sid) return;
-      const orig = _moveState.origPos[cpId];
-      if (orig) _nodeMap[cpId]?.setLatLng([orig.lat + dlat, orig.lng + dlon]);
-    });
-    // Stretch/shrink connector lines so they remain attached to the moving structure
+    if (_moveState.sids) {
+      // Multi-structure: all CPs in origPos move together
+      Object.entries(_moveState.origPos).forEach(([cpId, orig]) => {
+        _nodeMap[cpId]?.setLatLng([orig.lat + dlat, orig.lng + dlon]);
+      });
+    } else {
+      Object.entries(_cpPropsMap).forEach(([cpId, props]) => {
+        if (props.structure_id !== _moveState.sid) return;
+        const orig = _moveState.origPos[cpId];
+        if (orig) _nodeMap[cpId]?.setLatLng([orig.lat + dlat, orig.lng + dlon]);
+      });
+    }
+    // Stretch/shrink connector lines so they remain attached to the moving structure(s)
     _moveState.connectors.forEach(c => {
       const pl = _lineMap[c.lid];
       if (!pl) return;
@@ -548,21 +780,34 @@ document.addEventListener("mouseup", async (e) => {
   _moveState.connectors = [];
   map.dragging.enable();   // re-enable in case waypoint handler disabled it
 
-  const dlat   = latlng.lat - _moveState.startLatlng.lat;
-  const dlon   = latlng.lng - _moveState.startLatlng.lng;
-  const sid    = _moveState.sid;
-  _moveState.sid = null;
+  const dlat = latlng.lat - _moveState.startLatlng.lat;
+  const dlon = latlng.lng - _moveState.startLatlng.lng;
+  const sid  = _moveState.sid;
+  const sids = _moveState.sids;
+  _moveState.sid  = null;
+  _moveState.sids = null;
 
   if (Math.abs(dlat) < 1e-9 && Math.abs(dlon) < 1e-9) {
     setStatus("Ready");
     return;
   }
 
-  const r = await api("POST", `/api/network/structure/${sid}/move`, { dlat, dlon });
-  if (r.error) { alert(r.error); }
-  const geojson = await api("GET", "/api/network");
-  App._render(geojson);
-  setStatus(`Moved ${sid}`);
+  if (sids) {
+    // Multi-structure: move all selected structures in parallel
+    const results = await Promise.all(
+      [...sids].map(s => api("POST", `/api/network/structure/${s}/move`, { dlat, dlon }))
+    );
+    if (results.some(r => r.error)) { alert(results.find(r => r.error).error); }
+    const geojson = await api("GET", "/api/network");
+    App._render(geojson);
+    setStatus(`Moved ${sids.size} structure(s)`);
+  } else {
+    const r = await api("POST", `/api/network/structure/${sid}/move`, { dlat, dlon });
+    if (r.error) { alert(r.error); }
+    const geojson = await api("GET", "/api/network");
+    App._render(geojson);
+    setStatus(`Moved ${sid}`);
+  }
 });
 
 async function deleteSelection() {
@@ -591,6 +836,7 @@ const App = {
 
   setReadOnly(ro) {
     _readOnly = ro;
+    map.getContainer().classList.toggle("network-locked", ro);
     const btn = document.getElementById("btn-lock");
     if (btn) {
       btn.textContent = ro ? "\uD83D\uDD12 Locked" : "\uD83D\uDD13 Edit";

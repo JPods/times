@@ -232,8 +232,10 @@ const Editor = (() => {
 document.addEventListener("keydown", (e) => {
   if (document.activeElement && document.activeElement.tagName === "INPUT") return;
 
-  // Escape — cancel rubber-band selection, waypoint drag, mode, CP selection
+  // Escape — close any open dialog first, then cancel tools
   if (e.key === "Escape") {
+    const backdrop = document.getElementById("grid-dialog-backdrop");
+    if (backdrop && backdrop.style.display !== "none") { Grid.closeDialog(); return; }
     if (typeof TimeMap !== "undefined") TimeMap.deactivate();
     if (typeof wptCancel === "function") wptCancel();
     Editor.escape();

@@ -355,6 +355,13 @@
       <button id="btn-autoconnect" onclick="Editor.autoConnect()" title="Best-effort MST auto-connect all structures">&#9889; Auto-Connect</button>
     </div>
 
+    <!-- GRID GENERATOR -->
+    <div class="pal-section" id="pal-grid">
+      <div class="pal-label">Grid Estimate</div>
+      <button onclick="Grid.openDialog()" style="width:100%"
+              title="Design a grid network — circles at intersections, stations mid-block">&#9783; Grid…</button>
+    </div>
+
     <!-- SIMULATE -->
     <div class="pal-section">
       <div class="pal-label">Simulate</div>
@@ -370,7 +377,7 @@
       </div>
     </div>
 
-    <!-- MAP TILES -->
+    <!-- MAP TILES + CITY SEARCH -->
     <div class="pal-section">
       <div class="pal-label">Map</div>
       <select id="tile-select" onchange="Map.setTiles(this.value)">
@@ -379,6 +386,15 @@
         <option value="topo">Topo</option>
         <option value="dark">Dark</option>
       </select>
+      <div class="pal-row" style="margin-top:5px">
+        <input id="city-search" type="text" placeholder="City, State or Country"
+               title="Type a city name and press Enter or click Go"
+               style="flex:1;min-width:0"
+               onkeydown="if(event.key==='Enter') CitySearch.go()">
+        <button onclick="CitySearch.go()" title="Center map on city">Go</button>
+        <button onclick="CitySearch.clearFence()" title="Remove city boundary" style="padding:3px 5px !important">&#10005;</button>
+      </div>
+      <div id="city-error" style="display:none;font-size:10px;color:#c44;margin-top:3px"></div>
     </div>
 
     <!-- OVERLAYS -->
@@ -432,6 +448,65 @@
 <!-- Hidden file input -->
 <input type="file" id="file-input" accept=".jpd,.json" style="display:none"
        onchange="App.onFileSelected(this)">
+
+<!-- ===== Grid Generator Dialog ===== -->
+<div id="grid-dialog-backdrop" class="dialog-backdrop" style="display:none"
+     onclick="if(event.target===this) Grid.closeDialog()">
+  <div class="dialog" id="grid-dialog">
+
+    <div class="dialog-header">
+      <span>&#9783; Grid Network Estimate</span>
+      <button class="dialog-close" onclick="Grid.closeDialog()" title="Close">&times;</button>
+    </div>
+
+    <div class="dialog-body">
+
+      <p class="dialog-hint">
+        Generates a rectangular JPods network centered on the current map view.<br>
+        Traffic circles at every intersection · One station mid-block on every segment.
+      </p>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Block spacing</div>
+        <div class="dialog-row">
+          <label>North–South</label>
+          <input id="grid-spacing-ns" type="number" value="1" min="0.1" max="50" step="0.5">
+          <span class="dialog-unit">miles</span>
+        </div>
+        <div class="dialog-row">
+          <label>East–West</label>
+          <input id="grid-spacing-ew" type="number" value="1" min="0.1" max="50" step="0.5">
+          <span class="dialog-unit">miles</span>
+        </div>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Total coverage</div>
+        <div class="dialog-row">
+          <label>North–South</label>
+          <input id="grid-extent-ns" type="number" value="4" min="0.5" max="500" step="0.5">
+          <span class="dialog-unit">miles</span>
+        </div>
+        <div class="dialog-row">
+          <label>East–West</label>
+          <input id="grid-extent-ew" type="number" value="4" min="0.5" max="500" step="0.5">
+          <span class="dialog-unit">miles</span>
+        </div>
+      </div>
+
+      <div class="dialog-preview" id="grid-preview">
+        <!-- filled by Grid.updatePreview() -->
+      </div>
+
+    </div><!-- /dialog-body -->
+
+    <div class="dialog-footer">
+      <button class="btn-secondary" onclick="Grid.closeDialog()">Cancel</button>
+      <button class="btn-primary"   onclick="Grid.generate()">&#9783; Generate Grid</button>
+    </div>
+
+  </div><!-- /dialog -->
+</div><!-- /backdrop -->
 
 <script src="app.js"></script>
 <script src="editor.js"></script>
