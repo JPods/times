@@ -28,10 +28,20 @@
 
 const TimeMap = (() => {
 
-  let _active       = false;
-  let _layers       = [];    // Leaflet GeoJSON layers currently on the map
-  let _originMarker = null;
-  let _legend       = null;
+  let _active          = false;
+  let _layers          = [];    // Leaflet GeoJSON layers currently on the map
+  let _originMarker    = null;
+  let _boardingMarker  = null;  // nearest-station pin (always shown)
+  let _legend          = null;
+
+  // Minimum walk-from-destination radius.  Below this the blob is too small to
+  // be useful and reads as a map artefact rather than real coverage.
+  const MIN_RADIUS_M = 300;
+
+  // Max plausible pod speed (m/min).  Any ride_time that implies faster travel
+  // is treated as a simulation artefact (disconnected-island phantom) and ignored.
+  // 200 km/h = 3333 m/min — well above the 60 km/h (1000 m/min) cruise default.
+  const MAX_SPEED_M_PER_MIN = 3333;
 
   // Draw largest budgets first so smaller (more reachable) areas render on top
   const BUDGETS = [30, 20, 10, 5];
@@ -65,9 +75,10 @@ const TimeMap = (() => {
   /**
    * Build a Turf polygon approximating a circle at (lat, lng) with radius metres.
    * steps=64 gives a smooth circle at planning-scale zoom levels.
+   * Returns null if the radius is below MIN_RADIUS_M — suppresses micro-blobs.
    */
   function _turfCircle(lat, lng, radiusM) {
-    if (radiusM < 5) return null;
+    if (radiusM < MIN_RADIUS_M) return null;
     return turf.circle([lng, lat], radiusM / 1000, { steps: 64, units: "kilometers" });
   }
 
@@ -114,6 +125,10 @@ const TimeMap = (() => {
       App.getLayers().timemap.removeLayer(_originMarker);
       _originMarker = null;
     }
+    if (_boardingMarker) {
+      App.getLayers().timemap.removeLayer(_boardingMarker);
+      _boardingMarker = null;
+    }
   }
 
   // ── Core algorithm ───────────────────────────────────────────────────────────
@@ -123,6 +138,7 @@ const TimeMap = (() => {
 
     const speedMperMin = _walkSpeedMperMin();
     const fillOpacity  = _fillOpacity();
+    const MAX_BUDGET   = BUDGETS[0];   // 30 min (BUDGETS = [30, 20, 10, 5])
 
     // Station positions from last-fetched geojson
     const geojson  = Sim.getGeojson();
@@ -137,13 +153,27 @@ const TimeMap = (() => {
     }
     const stationIds = Object.keys(stations);
 
-    // Ride times from simulation trip_stats  (minutes)
+    // Ride times from simulation trip_stats (minutes).
+    // Filter out phantom entries: if the implied travel speed exceeds
+    // MAX_SPEED_M_PER_MIN the time is a simulation artefact from a
+    // disconnected-island station — skip it.
     const rideMins = {};
     const result = Sim.getResult();
     if (result) {
       (result.trip_stats || []).forEach(ts => {
+        const ride_min = ts.median_trip_ms / 60000;
+        // Guard against zero/near-zero times for non-adjacent stations
+        if (ride_min > 0) {
+          const orig = stations[ts.origin_id];
+          const dest = stations[ts.dest_id];
+          if (orig && dest) {
+            const distM  = _distMeters(orig.lat, orig.lng, dest.lat, dest.lng);
+            const impliedSpeed = distM / ride_min;  // m/min
+            if (impliedSpeed > MAX_SPEED_M_PER_MIN) return;  // phantom — skip
+          }
+        }
         if (!rideMins[ts.origin_id]) rideMins[ts.origin_id] = {};
-        rideMins[ts.origin_id][ts.dest_id] = ts.median_trip_ms / 60000;
+        rideMins[ts.origin_id][ts.dest_id] = ride_min;
       });
     }
 
@@ -164,12 +194,34 @@ const TimeMap = (() => {
       }
     });
 
-    // Origin marker
+    // Origin marker (white dot at click point)
     _originMarker = L.circleMarker([clickLat, clickLng], {
       radius: 7, color: "#fff", weight: 2,
       fillColor: "#fff", fillOpacity: 1, interactive: false,
     });
     App.getLayers().timemap.addLayer(_originMarker);
+
+    // Boarding station marker — always shown so the user can see the nearest
+    // station even when it is beyond all time budgets.
+    if (boardingSid) {
+      const bs     = stations[boardingSid];
+      const tooFar = walkToBoarding >= MAX_BUDGET;
+      const bsName = boardingSid.replace(/\.PLATFORM$/, "");
+      _boardingMarker = L.circleMarker([bs.lat, bs.lng], {
+        radius:      8,
+        color:       tooFar ? "#e74c3c" : "#f39c12",
+        weight:      2.5,
+        fillColor:   tooFar ? "#e74c3c" : "#f39c12",
+        fillOpacity: 0.9,
+        interactive: true,
+      });
+      _boardingMarker.bindTooltip(
+        `${bsName}<br>${walkToBoarding.toFixed(1)} min walk` +
+        (tooFar ? "<br>⚠ beyond 30 min budget" : ""),
+        { direction: "top", className: "line-tooltip" }
+      );
+      App.getLayers().timemap.addLayer(_boardingMarker);
+    }
 
     // Build + render one unioned polygon per budget
     BUDGETS.forEach(budget => {
@@ -179,7 +231,7 @@ const TimeMap = (() => {
       // 1. Pure-walk circle at clicked point
       polys.push(_turfCircle(clickLat, clickLng, budget * speedMperMin));
 
-      // 2. Station circles
+      // 2. Destination station circles
       stationIds.forEach(destSid => {
         const s = stations[destSid];
         let remaining;
@@ -218,15 +270,22 @@ const TimeMap = (() => {
       _layers.push(layer);
     });
 
-    const boardingLabel = boardingSid
-      ? boardingSid.replace(/\.PLATFORM$/, "")
-      : "no stations";
-    const walkMin = isFinite(walkToBoarding) ? walkToBoarding.toFixed(1) : "?";
+    // Status message — always shows nearest station and warns when too far
     const hasRides = Object.keys(rideMins).length > 0;
-    setStatus(
-      `Walk-Ride-Walk — boarding: ${boardingLabel} (${walkMin} min walk)` +
-      (hasRides ? "" : " · Run simulation for ride-time circles")
-    );
+    if (!boardingSid) {
+      setStatus("Walk-Ride-Walk — no stations in network");
+    } else {
+      const bsName  = boardingSid.replace(/\.PLATFORM$/, "");
+      const walkMin = walkToBoarding.toFixed(1);
+      const tooFar  = walkToBoarding >= MAX_BUDGET;
+      setStatus(
+        tooFar
+          ? `⚠ Nearest station ${bsName} is ${walkMin} min walk — beyond 30 min budget` +
+            (hasRides ? "" : "  ·  Run simulation for ride-time circles")
+          : `Walk-Ride-Walk — boarding: ${bsName} (${walkMin} min walk)` +
+            (hasRides ? "" : "  ·  Run simulation for ride-time circles")
+      );
+    }
   }
 
   // ── Public API ───────────────────────────────────────────────────────────────

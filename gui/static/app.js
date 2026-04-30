@@ -1110,6 +1110,9 @@ function _addLineFeature(f) {
     pl.on("mouseout",  () => { if (_hoverStructSid === structSid) _hoverStructSid = null; });
     pl.on("click", (e) => {
       L.DomEvent.stopPropagation(e);
+      if (typeof TimeMap !== "undefined" && TimeMap.isActive()) {
+        TimeMap.handleClick(e.latlng.lat, e.latlng.lng); return;
+      }
       if (_moveState.active) return;
       _selectedStructSid = structSid;
       _selectedCpId      = null;
@@ -1126,6 +1129,9 @@ function _addLineFeature(f) {
 
     pl.on("click", (e) => {
       L.DomEvent.stopPropagation(e);
+      if (typeof TimeMap !== "undefined" && TimeMap.isActive()) {
+        TimeMap.handleClick(e.latlng.lat, e.latlng.lng); return;
+      }
       if (Editor.isWaypointing()) return;
       if (e.originalEvent.shiftKey) {
         Waypoints.addWaypoint(lid, e.latlng.lat, e.latlng.lng);
@@ -1296,6 +1302,9 @@ function _addCpFeature(f) {
 
   marker.on("click", async (e) => {
     L.DomEvent.stopPropagation(e);  // prevent click reaching map (avoids accidental placement)
+    if (typeof TimeMap !== "undefined" && TimeMap.isActive()) {
+      TimeMap.handleClick(e.latlng.lat, e.latlng.lng); return;
+    }
 
     // In line-draw mode, CP click feeds the node into the guideway draw tool.
     // In all other modes (including placement modes), fall through to CP connect/disconnect.

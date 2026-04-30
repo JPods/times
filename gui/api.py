@@ -1155,6 +1155,47 @@ def run_simulation():
     return jsonify(result.to_dict())
 
 
+@api.post("/trip/dispatch")
+def trip_dispatch():
+    """Receive a live trip request from the JPods phone app.
+
+    Looks up the estimated travel time from the last simulation result for
+    this O-D pair and returns it alongside a queued status.
+
+    Body (from Django TravelView):
+        origin_station_id, destination_station_id, trip_id, contact_name, price, network_id
+    """
+    data   = request.json or {}
+    origin = data.get("origin_station_id", "")
+    dest   = data.get("destination_station_id", "")
+
+    travel_time_ms = None
+    sim = _state.get("sim_result")
+    if sim:
+        # SimResult.trip_stats is keyed by (origin_platform, dest_platform)
+        # Station node IDs end in .PLATFORM; try both bare ID and .PLATFORM suffix
+        ts = getattr(sim, "trip_stats", {})
+        for o_key in (origin, f"ST_{origin}.PLATFORM", f"{origin}.PLATFORM"):
+            for d_key in (dest, f"ST_{dest}.PLATFORM", f"{dest}.PLATFORM"):
+                stats = ts.get((o_key, d_key))
+                if stats:
+                    travel_time_ms = getattr(stats, "median_ms", None)
+                    break
+            if travel_time_ms is not None:
+                break
+
+    return jsonify({
+        "status":          "queued",
+        "trip_id":         data.get("trip_id"),
+        "contact_name":    data.get("contact_name"),
+        "origin":          origin,
+        "destination":     dest,
+        "travel_time_ms":  travel_time_ms,
+        "travel_time_s":   round(travel_time_ms / 1000, 1) if travel_time_ms else None,
+        "sim_available":   sim is not None,
+    })
+
+
 @api.get("/settings")
 def get_settings():
     return jsonify(_state["settings"])
