@@ -205,11 +205,26 @@
 
     <!-- COVERAGE CIRCLES -->
     <div class="cfg-group">
-      <div class="cfg-group-label">Coverage circles</div>
+      <div class="cfg-group-label">Isochrone</div>
       <div class="cfg-row">
         <label class="cfg-lbl" title="Fill opacity of walk-ride-walk coverage circles (0=invisible, 1=solid)">Opacity</label>
         <input id="cfg-timemapOpacity" type="number" min="0.05" max="1" step="0.05" value="0.15" class="cfg-num">
         <span class="cfg-unit">0–1</span>
+      </div>
+    </div>
+
+    <!-- DISPLAY -->
+    <div class="cfg-group">
+      <div class="cfg-group-label">Display</div>
+      <div class="cfg-row">
+        <label class="cfg-lbl" title="Size of station ID labels shown when hovering over a station">Station labels</label>
+        <select id="cfg-stationLabelSize" class="cfg-sel">
+          <option value="1">1× (11 px)</option>
+          <option value="2">2× (22 px)</option>
+          <option value="3" selected>3× (33 px)</option>
+          <option value="4">4× (44 px)</option>
+        </select>
+        <span class="cfg-unit"></span>
       </div>
     </div>
 
@@ -368,7 +383,7 @@
       <button onclick="Sim.run()"    title="Run simulation">&#9654; Run</button>
       <button id="btn-replay" onclick="Sim.replay()" title="Replay animation" disabled>&#9654;&#9654; Replay</button>
       <button id="btn-timemap" onclick="TimeMap.toggle()"
-              title="Walk-Ride-Walk: click a point to see coverage circles (5/10/20/30 min)">&#9711; Coverage</button>
+              title="Isochrone: click a point to see walk-ride-walk travel-time zones (5/10/20/30 min)">&#9711; Isochrone</button>
       <button onclick="Demand.togglePanel()"   title="Set passenger demand per station">&#128100; Demand</button>
       <button onclick="Settings.togglePanel()" title="Edit simulation settings (vehicle, fleet, timing)">&#9881; Settings</button>
       <div class="pal-row">

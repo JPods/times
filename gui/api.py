@@ -20,10 +20,16 @@ Endpoints:
 
 from __future__ import annotations
 
+import heapq
 import json
+import logging
 import math
 import os
+import threading
 import uuid
+from datetime import datetime, timezone
+
+log = logging.getLogger(__name__)
 from typing import Dict, List, Optional, Tuple
 
 from flask import Blueprint, jsonify, request, current_app, Response
@@ -77,11 +83,16 @@ _state: Dict = {
     "settings": _default_settings(),
     "sim_frames": [],
     "sim_result": None,
+    "sim_active": False,        # True while a simulation thread is running
+    "sim_instance": None,       # active Simulator object (for progress reads)
+    "sim_error": None,          # error string if sim thread failed
     "structures":   {},   # structure_id → Structure
     "cps":          {},   # cp_id → ConnectionPoint
     "waypoints":    {},   # line_id → [{"lat": float, "lon": float}, ...]
     "line_pairs":   {},   # line_id → partner_line_id  (guideways always paired)
     "line_roles":   {},   # line_id → role string, e.g. "siding"
+    "_next_s":      1,    # counter for s1, s2, s3 ... station IDs
+    "_next_c":      1,    # counter for c1, c2, c3 ... circle IDs
 }
 
 
@@ -92,6 +103,33 @@ def _clear_edit_state():
     _state["waypoints"]  = {}
     _state["line_pairs"] = {}
     _state["line_roles"] = {}
+    _state["_next_s"]    = 1
+    _state["_next_c"]    = 1
+
+
+def _next_sid(stype: str) -> str:
+    """Return next sequential human-readable structure ID: s1,s2,… or c1,c2,…"""
+    key = "_next_s" if stype == "s" else "_next_c"
+    n = _state[key]
+    _state[key] += 1
+    return f"{stype}{n}"
+
+
+def _sync_counters():
+    """After loading a file, advance counters past any existing s#/c# IDs."""
+    import re as _re
+    max_s = max_c = 0
+    for sid in _state["structures"]:
+        m = _re.match(r'^s(\d+)$', sid)
+        if m:
+            max_s = max(max_s, int(m.group(1)))
+        m = _re.match(r'^c(\d+)$', sid)
+        if m:
+            max_c = max(max_c, int(m.group(1)))
+    if max_s:
+        _state["_next_s"] = max_s + 1
+    if max_c:
+        _state["_next_c"] = max_c + 1
 
 
 def _reconstruct_structures_from_net(net) -> tuple:
@@ -106,12 +144,16 @@ def _reconstruct_structures_from_net(net) -> tuple:
     """
     import math as _math
 
+    import re as _re
+    _is_st = lambda p: p.startswith('ST_') or bool(_re.match(r'^s\d+$', p))
+    _is_tc = lambda p: p.startswith('TC_') or bool(_re.match(r'^c\d+$', p))
+
     # Group nodes by their structure prefix (text before the first '.')
     prefix_nodes: dict = {}
     for nid, node in net.nodes.items():
         if '.' in nid:
             prefix = nid.split('.')[0]
-            if prefix.startswith('ST_') or prefix.startswith('TC_'):
+            if _is_st(prefix) or _is_tc(prefix):
                 prefix_nodes.setdefault(prefix, {})[nid] = node
 
     structures: dict = {}
@@ -125,7 +167,7 @@ def _reconstruct_structures_from_net(net) -> tuple:
             if ln.start_node.node_id in nodes and ln.end_node.node_id in nodes
         ]
 
-        if sid.startswith('ST_'):
+        if _is_st(sid):
             # ── Station ────────────────────────────────────────────────────
             nb_n_tip = nodes.get(f"{sid}.NB_N_tip")
             sb_n_tip = nodes.get(f"{sid}.SB_N_tip")
@@ -174,7 +216,7 @@ def _reconstruct_structures_from_net(net) -> tuple:
             cps[cp_n.cp_id] = cp_n
             cps[cp_s.cp_id] = cp_s
 
-        elif sid.startswith('TC_'):
+        elif _is_tc(sid):
             # ── Traffic circle ──────────────────────────────────────────────
             cp_ids = []
             tc_cps = {}
@@ -462,6 +504,7 @@ def load_network():
         s, c = _reconstruct_structures_from_net(net)
         _state["structures"].update(s)
         _state["cps"].update(c)
+    _sync_counters()
     return jsonify(_network_to_geojson(net))
 
 
@@ -607,7 +650,7 @@ def add_circle():
     data = request.json or {}
     lat  = float(data["lat"])
     lon  = float(data["lon"])
-    cid  = data.get("id") or _new_id("TC")
+    cid  = data.get("id") or _next_sid("c")
     arms = data.get("arm_headings")   # optional [h0, h1, h2, h3]
 
     overlap_err = _check_overlap(lat, lon, "traffic_circle")
@@ -642,7 +685,7 @@ def add_station():
     lat         = float(data["lat"])
     lon         = float(data["lon"])
     heading_deg = float(data.get("heading_deg", 0.0))
-    sid         = data.get("id") or _new_id("ST")
+    sid         = data.get("id") or _next_sid("s")
 
     overlap_err = _check_overlap(lat, lon, "station")
     if overlap_err:
@@ -1053,6 +1096,7 @@ def network_grid():
             lon = start_lon + c * dlon
             struct, cp_dict = build_traffic_circle(
                 net, lat, lon,
+                structure_id=_next_sid("c"),
                 arm_headings=[0.0, 90.0, 180.0, 270.0],
             )
             _state["structures"][struct.structure_id] = struct
@@ -1067,7 +1111,8 @@ def network_grid():
         for c in range(n_cols):
             lat = start_lat - (r + 0.5) * dlat
             lon = start_lon + c * dlon
-            st, st_cps = build_station(net, lat, lon, heading_deg=0.0)
+            st, st_cps = build_station(net, lat, lon, heading_deg=0.0,
+                                       structure_id=_next_sid("s"))
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             n_stations += 1
@@ -1091,7 +1136,8 @@ def network_grid():
         for c in range(n_cols - 1):
             lat = start_lat - r * dlat
             lon = start_lon + (c + 0.5) * dlon
-            st, st_cps = build_station(net, lat, lon, heading_deg=90.0)
+            st, st_cps = build_station(net, lat, lon, heading_deg=90.0,
+                                       structure_id=_next_sid("s"))
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             n_stations += 1
@@ -1122,21 +1168,137 @@ def network_grid():
 
 
 # ---------------------------------------------------------------------------
+# Analytical travel times (Dijkstra — used by isochrone)
+# ---------------------------------------------------------------------------
+
+@api.get("/network/travel_times")
+def network_travel_times():
+    """
+    Dijkstra-based travel times from a given origin station to all reachable
+    stations, using network line lengths and cruise speed.
+
+    Query params:
+      origin  — station node_id (e.g. "s32.PLATFORM")
+      speed   — cruise speed km/h (optional; falls back to settings)
+
+    Returns:
+      { "origin": <id>, "travel_min": { dest_id: minutes, ... } }
+    """
+    net = _net()
+    if net is None:
+        return jsonify({"error": "No network loaded"}), 400
+
+    origin_id = request.args.get("origin", "")
+    if origin_id not in net.nodes:
+        return jsonify({"error": f"Node {origin_id!r} not found"}), 400
+
+    speed_kmh = float(request.args.get("speed", 0) or
+                      _state["settings"].get("maxVelocityInKMPH", 60))
+    speed_m_per_min = speed_kmh * 1000 / 60
+
+    # Dijkstra over all nodes — edge weight = length_m (metres).
+    # Treat zero-length connection lines as free (0.001 m) so inter-CP
+    # connections never break the path.
+    INF = float("inf")
+    dist_m: dict = {origin_id: 0.0}
+    pq = [(0.0, origin_id)]
+
+    while pq:
+        cost, nid = heapq.heappop(pq)
+        if cost > dist_m.get(nid, INF):
+            continue
+        node = net.nodes[nid]
+        for line in node.outbound:
+            w = max(line.length_m, 0.001)   # allow zero-length connection lines
+            new_cost = cost + w
+            end_id = line.end_node.node_id
+            if new_cost < dist_m.get(end_id, INF):
+                dist_m[end_id] = new_cost
+                heapq.heappush(pq, (new_cost, end_id))
+
+    # Extract station-to-station times (minutes)
+    travel_min = {}
+    for sid, station in net.stations.items():
+        if sid == origin_id:
+            continue
+        d = dist_m.get(sid)
+        if d is not None and d < INF:
+            travel_min[sid] = round(d / speed_m_per_min, 3)
+
+    return jsonify({"origin": origin_id, "travel_min": travel_min})
+
+
+# ---------------------------------------------------------------------------
+# Sweep trips JSON export
+# ---------------------------------------------------------------------------
+
+def _save_sweep_json(result) -> None:
+    """Write sweep_trips.json alongside the network file (or in _rt_dir).
+
+    Format:
+      {
+        "network_id": "...",
+        "generated_at": "2026-04-30T12:00:00Z",
+        "station_count": 30,
+        "expected_pairs": 870,
+        "covered_pairs": 870,
+        "missing_count": 0,
+        "missing_pairs": [],
+        "trips": [
+          {"trip_key": "sw1_s1_s2", "sweep": 1, "origin_id": "s1", "dest_id": "s2",
+           "travel_min": 2.4, "wait_min": 0.0, "dist_m": 1200.0},
+          ...
+        ]
+      }
+    """
+    try:
+        n = result.summary.get("station_count", 0)
+        expected = n * (n - 1)  # pairs per sweep × 2 sweeps worth of keys
+        covered  = expected - len(result.missing_pairs)
+
+        payload = {
+            "network_id":    result.network_id,
+            "generated_at":  datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "station_count": n,
+            "expected_pairs": expected,
+            "covered_pairs":  max(0, covered),
+            "missing_count":  len(result.missing_pairs),
+            "missing_pairs":  result.missing_pairs,
+            "trips":          result.sweep_trips,
+        }
+
+        out_path = os.path.join(_rt_dir, "sweep_trips.json")
+        with open(out_path, "w") as f:
+            json.dump(payload, f, indent=2)
+        log.info("sweep_trips.json written: %d trips, %d missing pairs → %s",
+                 len(result.sweep_trips), len(result.missing_pairs), out_path)
+    except Exception as exc:
+        import traceback, sys
+        print(f"[sweep_trips] ERROR: {exc}", file=sys.stderr)
+        traceback.print_exc(file=sys.stderr)
+        log.warning("Could not write sweep_trips.json: %s", exc)
+
+
+# ---------------------------------------------------------------------------
 # Simulation
 # ---------------------------------------------------------------------------
 
 @api.post("/simulation/run")
 def run_simulation():
     from route_time.engine.demand import LoadArray
+
+    if _state.get("sim_active"):
+        return jsonify({"error": "Simulation already running"}), 409
+
     net = _net()
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
+
     data = request.json or {}
     slots = int(data.get("slots", 360))
     settings = _state["settings"].copy()
     settings.update(data.get("settings", {}))
 
-    # Load demand config from demand.json if present alongside the network file
     demand_config = {}
     demand_path = os.path.join(_rt_dir, "demand.json")
     if os.path.exists(demand_path):
@@ -1148,11 +1310,79 @@ def run_simulation():
 
     station_ids = list(net.stations.keys())
     demand = LoadArray(station_ids, demand_config=demand_config)
-
     sim = Simulator(net, settings, demand=demand)
-    result = sim.run(total_slots=slots)
-    _state["sim_result"] = result
-    return jsonify(result.to_dict())
+
+    _state["sim_active"]   = True
+    _state["sim_instance"] = sim
+    _state["sim_result"]   = None
+    _state["sim_error"]    = None
+
+    def _run_thread():
+        try:
+            result = sim.run(total_slots=slots)
+            _state["sim_result"] = result
+            _save_sweep_json(result)
+        except Exception as exc:
+            import traceback
+            _state["sim_error"] = str(exc)
+            log.error("Simulation thread error: %s", traceback.format_exc())
+        finally:
+            _state["sim_active"]   = False
+            _state["sim_instance"] = None
+
+    t = threading.Thread(target=_run_thread, daemon=True)
+    t.start()
+    return jsonify({"status": "started"})
+
+
+@api.get("/simulation/progress")
+def simulation_progress():
+    """Poll during an async simulation run.
+
+    Returns:
+      { "status": "running", "completed_origins": [...], "total_stations": N }
+      { "status": "done",    "result": { ... } }
+      { "status": "error",   "error": "..." }
+      { "status": "idle" }
+    """
+    if _state.get("sim_error"):
+        err = _state["sim_error"]
+        _state["sim_error"] = None
+        return jsonify({"status": "error", "error": err})
+
+    result = _state.get("sim_result")
+    if result and not _state.get("sim_active"):
+        return jsonify({"status": "done", "result": result.to_dict()})
+
+    sim = _state.get("sim_instance")
+    if sim and _state.get("sim_active"):
+        all_sids = list(sim.network.stations.keys())
+        n = len(all_sids)
+
+        # Read completed sweep trips (thread-safe: list is append-only)
+        orig_dests: Dict[str, set] = {}
+        for trip in list(sim._completed_trips):
+            if trip.trip_key:
+                if trip.origin_id not in orig_dests:
+                    orig_dests[trip.origin_id] = set()
+                orig_dests[trip.origin_id].add(trip.dest_id)
+
+        # An origin is "complete" once it has a completed trip to every other station
+        completed = [s for s in all_sids if len(orig_dests.get(s, set())) >= n - 1]
+
+        # Count total covered O-D pairs for progress display
+        covered_pairs = sum(len(v) for v in orig_dests.values())
+        total_pairs   = n * (n - 1)
+
+        return jsonify({
+            "status":            "running",
+            "completed_origins": completed,
+            "total_stations":    n,
+            "covered_pairs":     covered_pairs,
+            "total_pairs":       total_pairs,
+        })
+
+    return jsonify({"status": "idle"})
 
 
 @api.post("/trip/dispatch")
@@ -1458,6 +1688,7 @@ def load_network_text():
         s, c = _reconstruct_structures_from_net(net)
         _state["structures"].update(s)
         _state["cps"].update(c)
+    _sync_counters()
     return jsonify(_network_to_geojson(net))
 
 

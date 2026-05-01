@@ -9,6 +9,7 @@ Usage:
 Opens http://localhost:5050 in the default browser.
 """
 
+import logging
 import os
 import sys
 import argparse
@@ -76,8 +77,21 @@ def main():
     if not args.no_browser:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
 
+    # Log to file so external tools (Claude Code) can tail output
+    log_path = os.path.join(_rt_dir, "route_time.log")
+    file_handler = logging.FileHandler(log_path)
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(logging.Formatter(
+        "%(asctime)s %(levelname)s %(name)s: %(message)s", datefmt="%H:%M:%S"
+    ))
+    logging.getLogger().addHandler(file_handler)
+    logging.getLogger().setLevel(logging.DEBUG)
+    # Also capture Werkzeug (Flask request logs)
+    logging.getLogger("werkzeug").addHandler(file_handler)
+
     print(f"Route-Time GUI → {url}")
-    app.run(host="0.0.0.0", port=args.port, debug=False)
+    print(f"Log file        → {log_path}")
+    app.run(host="0.0.0.0", port=args.port, debug=False, threaded=True)
 
 
 if __name__ == "__main__":

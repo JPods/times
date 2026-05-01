@@ -10,8 +10,9 @@
  * All circles of the same color are unioned into a single polygon using
  * Turf.js so only the outer boundary is visible — no interior circle lines.
  *
- * Requires a simulation to have been run (for ride times).
- * Walk-only circles always show even without simulation data.
+ * Ride times come from Dijkstra (analytical, always available) and are
+ * upgraded to simulation medians where the sim has run — sim times include
+ * station overhead and real congestion; analytical times are free-flow estimates.
  *
  * Algorithm matches Java TimeGraph.java:
  *   remaining = budget − walk_to_boarding_station − ride_time(boarding→dest)
@@ -104,7 +105,7 @@ const TimeMap = (() => {
     _legend.onAdd = () => {
       const div = L.DomUtil.create("div", "timemap-legend");
       div.innerHTML =
-        `<div style="font-size:10px;color:#aaa;font-weight:600">&#9711; Coverage active</div>` +
+        `<div style="font-size:10px;color:#aaa;font-weight:600">&#9711; Isochrone active</div>` +
         `<div style="margin-top:3px;font-size:10px;color:#888">` +
         `Click map point &nbsp;·&nbsp; Esc to exit</div>`;
       return div;
@@ -133,7 +134,7 @@ const TimeMap = (() => {
 
   // ── Core algorithm ───────────────────────────────────────────────────────────
 
-  function _draw(clickLat, clickLng) {
+  async function _draw(clickLat, clickLng) {
     _clearAll();
 
     const speedMperMin = _walkSpeedMperMin();
@@ -153,30 +154,6 @@ const TimeMap = (() => {
     }
     const stationIds = Object.keys(stations);
 
-    // Ride times from simulation trip_stats (minutes).
-    // Filter out phantom entries: if the implied travel speed exceeds
-    // MAX_SPEED_M_PER_MIN the time is a simulation artefact from a
-    // disconnected-island station — skip it.
-    const rideMins = {};
-    const result = Sim.getResult();
-    if (result) {
-      (result.trip_stats || []).forEach(ts => {
-        const ride_min = ts.median_trip_ms / 60000;
-        // Guard against zero/near-zero times for non-adjacent stations
-        if (ride_min > 0) {
-          const orig = stations[ts.origin_id];
-          const dest = stations[ts.dest_id];
-          if (orig && dest) {
-            const distM  = _distMeters(orig.lat, orig.lng, dest.lat, dest.lng);
-            const impliedSpeed = distM / ride_min;  // m/min
-            if (impliedSpeed > MAX_SPEED_M_PER_MIN) return;  // phantom — skip
-          }
-        }
-        if (!rideMins[ts.origin_id]) rideMins[ts.origin_id] = {};
-        rideMins[ts.origin_id][ts.dest_id] = ride_min;
-      });
-    }
-
     // Walk time (minutes) from clicked point to each station
     const walkToStation = {};
     stationIds.forEach(sid => {
@@ -193,6 +170,55 @@ const TimeMap = (() => {
         boardingSid    = sid;
       }
     });
+
+    // ── Ride times: analytical (Dijkstra) with simulation overlay ────────────
+    //
+    // The simulation only produces trip_stats for O-D pairs that received ≥1
+    // randomly generated passenger.  On a 60-station grid that leaves ~22% of
+    // pairs blank by chance — enough to create visible isochrone holes.
+    //
+    // We fix this by fetching Dijkstra-based travel times from the API for the
+    // boarding station.  Simulation medians (which include station overhead and
+    // real congestion) are used where available; analytical times fill the rest.
+    //
+    // rideMins[boardingSid][destSid] = minutes
+
+    const rideMins = {};
+
+    // 1. Simulation data (preferred — includes overhead + congestion)
+    const result = Sim.getResult();
+    if (result) {
+      (result.trip_stats || []).forEach(ts => {
+        const ride_min = ts.median_trip_ms / 60000;
+        if (ride_min > 0) {
+          const orig = stations[ts.origin_id];
+          const dest = stations[ts.dest_id];
+          if (orig && dest) {
+            const distM = _distMeters(orig.lat, orig.lng, dest.lat, dest.lng);
+            if (distM / ride_min > MAX_SPEED_M_PER_MIN) return;  // phantom
+          }
+        }
+        if (!rideMins[ts.origin_id]) rideMins[ts.origin_id] = {};
+        rideMins[ts.origin_id][ts.dest_id] = ride_min;
+      });
+    }
+
+    // 2. Analytical fill-in for the boarding station
+    if (boardingSid) {
+      try {
+        const resp = await fetch(`/api/network/travel_times?origin=${encodeURIComponent(boardingSid)}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (!rideMins[boardingSid]) rideMins[boardingSid] = {};
+          Object.entries(data.travel_min || {}).forEach(([destId, mins]) => {
+            // Only fill gaps — simulation data takes precedence
+            if (rideMins[boardingSid][destId] == null) {
+              rideMins[boardingSid][destId] = mins;
+            }
+          });
+        }
+      } catch (_) { /* network error — isochrone continues with sim data only */ }
+    }
 
     // Origin marker (white dot at click point)
     _originMarker = L.circleMarker([clickLat, clickLng], {
@@ -270,20 +296,73 @@ const TimeMap = (() => {
       _layers.push(layer);
     });
 
+    // Station reach markers — dot at each station showing ride time and total time.
+    // Lets the user identify specific anomalies by station name (s1, s2, etc.).
+    if (boardingSid) {
+      // Pre-build set of dest IDs that have real simulation data from this boarding station
+      const simDestSet = new Set();
+      if (result) {
+        (result.trip_stats || []).forEach(ts => {
+          if (ts.origin_id === boardingSid) simDestSet.add(ts.dest_id);
+        });
+      }
+
+      stationIds.forEach(destSid => {
+        if (destSid === boardingSid) return;  // boarding marker already shown
+        const s = stations[destSid];
+        const ride = rideMins[boardingSid]?.[destSid];
+        const name = destSid.replace(/\.PLATFORM$/, "");
+
+        let dotColor, totalMin, rideMin;
+        if (ride == null) {
+          dotColor = "#888";
+          rideMin  = null;
+          totalMin = null;
+        } else {
+          rideMin  = ride;
+          totalMin = walkToBoarding + rideMin;
+          if      (totalMin < 5)  dotColor = STYLE[5].color;
+          else if (totalMin < 10) dotColor = STYLE[10].color;
+          else if (totalMin < 20) dotColor = STYLE[20].color;
+          else if (totalMin < 30) dotColor = STYLE[30].color;
+          else                    dotColor = "#888";
+        }
+
+        // "~" marks analytical (Dijkstra) estimate; no prefix = simulation median
+        const isSim = simDestSet.has(destSid);
+        const tip = ride == null
+          ? `<b>${name}</b><br>no route`
+          : isSim
+            ? `<b>${name}</b><br>${rideMin.toFixed(1)} min ride (sim)<br>${totalMin.toFixed(1)} min total`
+            : `<b>${name}</b><br>~${rideMin.toFixed(1)} min ride (est)<br>~${totalMin.toFixed(1)} min total`;
+
+        const dot = L.circleMarker([s.lat, s.lng], {
+          radius:      4,
+          color:       "#222",
+          weight:      1,
+          fillColor:   dotColor,
+          fillOpacity: 0.9,
+          interactive: true,
+        });
+        dot.bindTooltip(tip, { direction: "top", className: "line-tooltip" });
+        App.getLayers().timemap.addLayer(dot);
+        _layers.push(dot);
+      });
+    }
+
     // Status message — always shows nearest station and warns when too far
-    const hasRides = Object.keys(rideMins).length > 0;
+    const hasSim = result && (result.trip_stats || []).length > 0;
     if (!boardingSid) {
-      setStatus("Walk-Ride-Walk — no stations in network");
+      setStatus("Isochrone — no stations in network");
     } else {
       const bsName  = boardingSid.replace(/\.PLATFORM$/, "");
       const walkMin = walkToBoarding.toFixed(1);
       const tooFar  = walkToBoarding >= MAX_BUDGET;
+      const simNote = hasSim ? "" : "  ·  est. times (run sim for congestion data)";
       setStatus(
         tooFar
-          ? `⚠ Nearest station ${bsName} is ${walkMin} min walk — beyond 30 min budget` +
-            (hasRides ? "" : "  ·  Run simulation for ride-time circles")
-          : `Walk-Ride-Walk — boarding: ${bsName} (${walkMin} min walk)` +
-            (hasRides ? "" : "  ·  Run simulation for ride-time circles")
+          ? `⚠ Nearest station ${bsName} is ${walkMin} min walk — beyond 30 min budget`
+          : `Isochrone — boarding: ${bsName} (${walkMin} min walk)${simNote}`
       );
     }
   }
@@ -299,7 +378,7 @@ const TimeMap = (() => {
       App.getMap().getContainer().style.cursor = _active ? "crosshair" : "";
       if (_active) {
         _showLegend();
-        setStatus("Walk-Ride-Walk: click any point on the map");
+        setStatus("Isochrone: click any point on the map");
       } else {
         _hideLegend();
         _clearAll();
@@ -311,7 +390,8 @@ const TimeMap = (() => {
 
     handleClick(lat, lng) {
       if (!_active) return false;
-      _draw(lat, lng);
+      setStatus("Isochrone — computing…");
+      _draw(lat, lng);   // async — returns Promise; fire-and-forget is fine
       return true;
     },
 

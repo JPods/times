@@ -293,6 +293,37 @@ const Sim = (() => {
     _clearPods();
   }
 
+  // ── Sweep progress circles ─────────────────────────────────────────────────
+  // Orange rings around each station while it still has pending sweep trips.
+  let _sweepCircles = {};   // station node_id → L.circleMarker
+
+  function _showSweepCircles(geojson) {
+    _sweepCircles = {};
+    (geojson.features || [])
+      .filter(f => f.properties.type === "station")
+      .forEach(f => {
+        const [lng, lat] = f.geometry.coordinates;
+        const sid = f.properties.node_id;
+        const m = L.circleMarker([lat, lng], {
+          radius: 14, color: "#FF8C00", weight: 3, fill: false, interactive: false,
+        });
+        App.getLayers().pods.addLayer(m);
+        _sweepCircles[sid] = m;
+      });
+  }
+
+  function _clearSweepCirclesFor(completedSids) {
+    (completedSids || []).forEach(sid => {
+      const m = _sweepCircles[sid];
+      if (m) { App.getLayers().pods.removeLayer(m); delete _sweepCircles[sid]; }
+    });
+  }
+
+  function _clearSweepCircles() {
+    Object.values(_sweepCircles).forEach(m => App.getLayers().pods.removeLayer(m));
+    _sweepCircles = {};
+  }
+
   function _fmtMin(min) {
     if (!min && min !== 0) return "—";
     const m = Math.floor(min), s = Math.round((min - m) * 60);
@@ -305,6 +336,34 @@ const Sim = (() => {
 
   function _sectionHead(title) {
     return `<div style="font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px;margin:8px 0 3px;border-top:1px solid #333;padding-top:5px">${title}</div>`;
+  }
+
+  // Grid color helpers — used by _showResults and _fillGridGaps
+  function _timeColor(ms, est) {
+    if (ms == null) return "#1a1a1a";
+    const min = ms / 60000;
+    const alpha = est ? "0.6" : "1";
+    if (min <  5) return `rgba(102,255,0,${alpha})`;
+    if (min < 10) return `rgba(191,255,0,${alpha})`;
+    if (min < 15) return `rgba(255,255,49,${alpha})`;
+    if (min < 20) return `rgba(255,219,88,${alpha})`;
+    if (min < 25) return `rgba(255,179,71,${alpha})`;
+    if (min < 30) return `rgba(255,90,54,${alpha})`;
+    return `rgba(255,28,0,${alpha})`;
+  }
+  function _textColor(ms) {
+    if (ms == null) return "#555";
+    return (ms / 60000) < 15 ? "#111" : "#fff";
+  }
+  function _fmtCell(ms, est) {
+    if (ms == null) return "—";
+    const sec = Math.round(ms / 1000);
+    const m = Math.floor(sec / 60), s = sec % 60;
+    const t = m > 0 ? `${m}m${s}s` : `${sec}s`;
+    return est ? `~${t}` : t;
+  }
+  function _cellId(orig, dest) {
+    return `gc-${orig.replace(/[^a-zA-Z0-9]/g, "_")}-${dest.replace(/[^a-zA-Z0-9]/g, "_")}`;
   }
 
   function _showResults(result) {
@@ -370,6 +429,63 @@ const Sim = (() => {
     html += _panelRow("Convergences", sm.convergence_count ?? "—");
     html += _panelRow("Divergences",  sm.divergence_count  ?? "—");
 
+    // --- ROUTE GRID (origin × destination matrix, color by travel time) ---
+    // All stations from station_stats — guarantees every station appears even
+    // if it had zero completed trips.  Gaps filled analytically after render.
+    const allStationIds = (result.station_stats || [])
+      .map(st => st.station_id).sort();
+
+    // Build lookup: "origin|dest" → median_trip_ms (from completed trips)
+    const gridLookup = {};
+    (result.trip_stats || []).forEach(t => {
+      gridLookup[`${t.origin_id}|${t.dest_id}`] = t.median_trip_ms;
+    });
+
+    if (allStationIds.length > 0) {
+      // Strip .PLATFORM suffix and any legacy hex prefix, keep the s# / c# label
+      const short = id => id.replace(/\.PLATFORM$/, "").replace(/^[A-Z]+_[0-9A-F]+$/, id);
+      html += _sectionHead("Route Grid");
+      html += `<div style="font-size:10px;color:#666;margin-bottom:3px">` +
+              `Rows=origin · Cols=destination · Color=trip time · ~=analytical estimate</div>`;
+
+      let tbl = `<table style="border-collapse:collapse;font-size:9px;width:100%">`;
+      tbl += `<tr><th style="background:#111;padding:2px"></th>`;
+      allStationIds.forEach(dest => {
+        tbl += `<th style="background:#111;color:#888;padding:2px;text-align:center;` +
+               `writing-mode:vertical-rl;transform:rotate(180deg);max-width:28px" ` +
+               `title="${dest}">${short(dest)}</th>`;
+      });
+      tbl += `</tr>`;
+      allStationIds.forEach(origin => {
+        tbl += `<tr><td style="background:#111;color:#888;padding:2px 3px;white-space:nowrap" ` +
+               `title="${origin}">${short(origin)}</td>`;
+        allStationIds.forEach(dest => {
+          if (origin === dest) {
+            tbl += `<td style="background:#111;text-align:center;padding:1px">·</td>`;
+          } else {
+            const ms  = gridLookup[`${origin}|${dest}`];
+            const bg  = _timeColor(ms, false);
+            const fg  = _textColor(ms);
+            const cid = _cellId(origin, dest);
+            tbl += `<td id="${cid}" style="background:${bg};color:${fg};text-align:center;` +
+                   `padding:1px;min-width:24px" title="${origin}→${dest}: ${_fmtCell(ms, false)}">` +
+                   `${_fmtCell(ms, false)}</td>`;
+          }
+        });
+        tbl += `</tr>`;
+      });
+      tbl += `</table>`;
+      html += tbl;
+
+      html += `<div style="display:flex;gap:3px;margin-top:4px;font-size:9px;align-items:center">
+        <span style="background:rgb(102,255,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;5m
+        <span style="background:rgb(255,255,49);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;15m
+        <span style="background:rgb(255,90,54);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;30m
+        <span style="background:rgb(255,28,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>30m+
+        <span style="opacity:0.6;background:rgb(191,255,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>~est
+      </div>`;
+    }
+
     // --- TRIP TIMES (origin → destination) ---
     const trips = [...(result.trip_stats || [])]
       .sort((a, b) => (b.median_trip_ms || 0) - (a.median_trip_ms || 0));
@@ -399,7 +515,7 @@ const Sim = (() => {
       html += `<div class="sim-line-row" style="font-size:10px;color:#666">Line<span>In/Out</span><span>Avg s</span><span>Cong</span></div>`;
       lines.forEach(l => {
         const cong = l.congestion != null ? l.congestion : 0;
-        const hue  = Math.round((1 - Math.min(cong, 1)) * 120); // green=free, red=jammed
+        const hue  = Math.round((1 - Math.min(cong, 1)) * 120);
         const bar  = `<span style="display:inline-block;width:28px;height:8px;border-radius:2px;background:hsl(${hue},80%,45%);vertical-align:middle"></span>`;
         html += `<div class="sim-line-row" style="font-size:10px">
           <span title="${l.line_id}">${l.line_id.slice(-8)}</span>
@@ -410,13 +526,13 @@ const Sim = (() => {
     }
 
     // --- STATION DATA ---
-    const stations = [...(result.station_stats || [])]
+    const stationData = [...(result.station_stats || [])]
       .sort((a, b) => (b.passengers_boarded + b.passengers_alighted) -
                       (a.passengers_boarded + a.passengers_alighted));
-    if (stations.length > 0) {
+    if (stationData.length > 0) {
       html += _sectionHead("Station Data");
       html += `<div class="sim-line-row" style="font-size:10px;color:#666">Station<span>Boarded</span><span>Alighted</span></div>`;
-      stations.forEach(st => {
+      stationData.forEach(st => {
         html += `<div class="sim-line-row" style="font-size:10px">
           <span title="${st.station_id}">${st.station_id.slice(-10)}</span>
           <span>${st.passengers_boarded}</span>
@@ -424,83 +540,43 @@ const Sim = (() => {
       });
     }
 
-    // --- ROUTE GRID (origin × destination matrix, color by travel time) ---
-    const tripData = result.trip_stats || [];
-    if (tripData.length > 0) {
-      // Collect unique station IDs in order of first appearance
-      const stationSet = new Set();
-      tripData.forEach(t => { stationSet.add(t.origin_id); stationSet.add(t.dest_id); });
-      const stations = [...stationSet].sort();
-
-      // Build lookup: "origin|dest" → median_trip_ms
-      const lookup = {};
-      tripData.forEach(t => { lookup[`${t.origin_id}|${t.dest_id}`] = t.median_trip_ms; });
-
-      // TimeColor scale matching Java TimeColor enum (minutes → color)
-      function _timeColor(ms) {
-        if (ms == null) return "#1a1a1a";
-        const min = ms / 60000;
-        if (min <  5) return "rgb(102,255,0)";
-        if (min < 10) return "rgb(191,255,0)";
-        if (min < 15) return "rgb(255,255,49)";
-        if (min < 20) return "rgb(255,219,88)";
-        if (min < 25) return "rgb(255,179,71)";
-        if (min < 30) return "rgb(255,90,54)";
-        return "rgb(255,28,0)";
-      }
-      function _textColor(ms) {
-        if (ms == null) return "#555";
-        const min = ms / 60000;
-        return min < 15 ? "#111" : "#fff";
-      }
-      function _fmtCell(ms) {
-        if (ms == null) return "—";
-        const sec = Math.round(ms / 1000);
-        const m = Math.floor(sec / 60), s = sec % 60;
-        return m > 0 ? `${m}m${s}s` : `${sec}s`;
-      }
-
-      // Short station labels (last 6 chars of ID)
-      const short = id => id.replace(/^[A-Z]+_/, "").slice(-6);
-
-      html += _sectionHead("Route Grid");
-      html += `<div style="font-size:10px;color:#666;margin-bottom:3px">Rows=origin · Cols=destination · Color=trip time</div>`;
-
-      let tbl = `<table style="border-collapse:collapse;font-size:9px;width:100%">`;
-      // Header row
-      tbl += `<tr><th style="background:#111;padding:2px"></th>`;
-      stations.forEach(dest => {
-        tbl += `<th style="background:#111;color:#888;padding:2px;text-align:center;writing-mode:vertical-rl;transform:rotate(180deg);max-width:28px" title="${dest}">${short(dest)}</th>`;
-      });
-      tbl += `</tr>`;
-      // Data rows
-      stations.forEach(origin => {
-        tbl += `<tr><td style="background:#111;color:#888;padding:2px 3px;white-space:nowrap" title="${origin}">${short(origin)}</td>`;
-        stations.forEach(dest => {
-          if (origin === dest) {
-            tbl += `<td style="background:#111;text-align:center;padding:1px">·</td>`;
-          } else {
-            const ms  = lookup[`${origin}|${dest}`];
-            const bg  = _timeColor(ms);
-            const fg  = _textColor(ms);
-            tbl += `<td style="background:${bg};color:${fg};text-align:center;padding:1px;min-width:24px" title="${origin}→${dest}: ${_fmtCell(ms)}">${_fmtCell(ms)}</td>`;
-          }
-        });
-        tbl += `</tr>`;
-      });
-      tbl += `</table>`;
-      html += tbl;
-
-      // Color legend
-      html += `<div style="display:flex;gap:3px;margin-top:4px;font-size:9px;align-items:center">
-        <span style="background:rgb(102,255,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;5m
-        <span style="background:rgb(255,255,49);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;15m
-        <span style="background:rgb(255,90,54);width:14px;height:10px;display:inline-block;border-radius:2px"></span>&lt;30m
-        <span style="background:rgb(255,28,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>30m+
-      </div>`;
-    }
-
     document.getElementById("sim-lines").innerHTML = html;
+
+    // Async: fill any dark/missing Route Grid cells with analytical estimates
+    if (allStationIds.length > 0) {
+      _fillGridGaps(allStationIds, gridLookup).catch(e => console.warn("Grid gap fill:", e));
+    }
+  }
+
+  async function _fillGridGaps(allStationIds, lookup) {
+    // Find which origins have at least one missing destination
+    const originsWithGaps = allStationIds.filter(orig =>
+      allStationIds.some(dest => dest !== orig && lookup[`${orig}|${dest}`] == null)
+    );
+
+    for (const orig of originsWithGaps) {
+      let data;
+      try {
+        const resp = await fetch(`/api/network/travel_times?origin=${encodeURIComponent(orig)}`);
+        if (!resp.ok) continue;
+        data = await resp.json();
+      } catch (_) { continue; }
+
+      const travelMin = data.travel_min || {};
+      allStationIds.forEach(dest => {
+        if (dest === orig) return;
+        if (lookup[`${orig}|${dest}`] != null) return;  // already has sim data
+        const min = travelMin[dest];
+        if (min == null) return;
+        const ms   = min * 60_000;
+        const cell = document.getElementById(_cellId(orig, dest));
+        if (!cell) return;
+        cell.style.background = _timeColor(ms, true);
+        cell.style.color      = _textColor(ms);
+        cell.title            = `${orig}→${dest}: ${_fmtCell(ms, true)} (analytical)`;
+        cell.textContent      = _fmtCell(ms, true);
+      });
+    }
   }
 
   return {
@@ -511,31 +587,58 @@ const Sim = (() => {
       _stopReplay();
 
       // Pre-fetch network geometry so loading animation starts immediately
-      // (no race condition — we have the geojson before the simulation POST begins)
       _geojson = await api("GET", "/api/network");
       _startLoadingAnim(_geojson);
+      _showSweepCircles(_geojson);   // orange rings on all stations
 
-      const result = await api("POST", "/api/simulation/run", { slots });
+      // Start async simulation
+      const started = await api("POST", "/api/simulation/run", { slots });
+      if (started.error) {
+        _stopLoadingAnim();
+        _clearSweepCircles();
+        alert(started.error);
+        return;
+      }
+
+      // Poll progress every 800 ms
+      let result = null;
+      let dotCount = 0;
+      while (!result) {
+        await new Promise(r => setTimeout(r, 800));
+        const prog = await api("GET", "/api/simulation/progress");
+
+        if (prog.status === "done") {
+          result = prog.result;
+        } else if (prog.status === "error") {
+          _stopLoadingAnim();
+          _clearSweepCircles();
+          alert("Simulation error: " + (prog.error || "unknown"));
+          return;
+        } else if (prog.status === "running") {
+          // Remove orange ring from each station that has completed all sweeps
+          _clearSweepCirclesFor(prog.completed_origins || []);
+          const n    = prog.total_stations || 0;
+          const done = (prog.completed_origins || []).length;
+          const cp   = prog.covered_pairs  || 0;
+          const tp   = prog.total_pairs    || (n * (n - 1));
+          const dots = ".".repeat((dotCount++ % 3) + 1);
+          setStatus(`Running simulation${dots} ${done}/${n} stations · ${cp}/${tp} pairs`);
+        }
+      }
+
       _stopLoadingAnim();
+      _clearSweepCircles();
 
       if (result.error) { alert(result.error); return; }
 
       _showResults(result);
-
-      // Build animation frames — reuse the already-fetched geojson
       await _buildFrames(result, _geojson);
 
       document.getElementById("btn-replay").disabled = false;
+      document.getElementById("btn-replay").textContent = "▶▶ Replay";
       const pax = result.simulation.passengers_served;
-      const frameCount = _frames.length;
-      console.log(`Simulation: ${pax} passengers served, ${frameCount} animation frames built`);
       setStatus(`Simulation complete — ${pax} passengers served`);
-
-      // Auto-start animation if frames were built
-      if (frameCount > 0) {
-        _startReplay();
-        document.getElementById("btn-replay").textContent = "⏹ Stop";
-      }
+      App.setReadOnly(true);
     },
 
     replay() {

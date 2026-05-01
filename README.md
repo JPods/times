@@ -30,6 +30,36 @@ python -m route_time <file>       # CLI only (no browser)
 
 ---
 
+## Kill / Restart
+
+**Check for ghost processes** (server still holding port 5050 from a previous session):
+
+```bash
+python route_time/tests/test_server.py
+# Prints OK if port is free, or PID(s) to kill if occupied.
+```
+
+**Restart cleanly** (kills old process, then starts fresh):
+
+```bash
+cd /Users/williamjames/Documents/08_JPods/03_Technology
+bash route_time/runserver.sh
+```
+
+**Manual kill** if you know the PID:
+
+```bash
+lsof -ti :5050          # find PID
+kill <PID>
+```
+
+> ⚠️ **The `&&` trap:** `kill <PID> && python -m route_time.gui` is unsafe.
+> If the PID no longer exists, `kill` returns exit 1, the `&&` short-circuits,
+> and the new server never starts.  Use `runserver.sh` or separate the
+> kill and start into two commands.
+
+---
+
 ## Architecture
 
 Three programs share the same network:

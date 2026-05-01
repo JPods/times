@@ -29,7 +29,13 @@ const Settings = (() => {
     "walkToStationSec",
     "walkFromStationSec",
     "simSpeedMultiplier",
+    "stationLabelSize",
   ];
+
+  function _applyDisplaySettings(data) {
+    const size = data.stationLabelSize ?? 3;
+    document.documentElement.style.setProperty("--station-label-size", size);
+  }
 
   async function _load() {
     const data = await api("GET", "/api/settings");
@@ -38,6 +44,7 @@ const Settings = (() => {
       const el = document.getElementById(`cfg-${k}`);
       if (el && data[k] !== undefined) el.value = data[k];
     });
+    _applyDisplaySettings(data);
   }
 
   return {
@@ -63,6 +70,7 @@ const Settings = (() => {
       });
       const r = await api("POST", "/api/settings", data);
       if (r && r.error) { alert("Settings save failed: " + r.error); return; }
+      _applyDisplaySettings(data);
       setStatus("Settings saved");
     },
 

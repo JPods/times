@@ -80,6 +80,7 @@ class TripRecord:
     generated_tick: int    # when passenger entered the waiting queue
     route_length_m: float  # total geodetic distance of the route
     arrive_tick: int = -1
+    trip_key: Optional[str] = None   # set for sweep passengers; None for random demand
 
     def travel_ms(self, tick_s: float) -> float:
         """Pod travel time only — does not include station overhead."""
@@ -105,6 +106,11 @@ class SimResult:
     line_stats: List[dict] = field(default_factory=list)
     trip_stats: List[dict] = field(default_factory=list)
     station_stats: List[dict] = field(default_factory=list)
+    # Sweep-only trips — one entry per completed sweep passenger.
+    # Used for isochrone coverage and saved to sweep_trips.json for inspection.
+    sweep_trips: List[dict] = field(default_factory=list)
+    # O-D pairs from either sweep that had no completed trip (disconnected or jammed).
+    missing_pairs: List[dict] = field(default_factory=list)
 
     def to_dict(self) -> dict:
         return {
@@ -120,6 +126,8 @@ class SimResult:
             "trip_stats": self.trip_stats,
             "line_stats": self.line_stats,
             "station_stats": self.station_stats,
+            "sweep_trips": self.sweep_trips,
+            "missing_pairs": self.missing_pairs,
         }
 
 
@@ -173,8 +181,9 @@ class Simulator:
         self._demand: LoadArray = demand or LoadArray(
             [s.station_id for s in network.stations.values()]
         )
-        # station_id → [(dest_station_id, generated_tick), ...]
-        self._waiting: Dict[str, List[Tuple[str, int]]] = {
+        # station_id → [(dest_station_id, generated_tick, trip_key), ...]
+        # trip_key is a unique string for sweep passengers; None for random demand.
+        self._waiting: Dict[str, List[Tuple[str, int, Optional[str]]]] = {
             sid: [] for sid in network.stations
         }
         self._passengers_generated = 0
@@ -196,27 +205,148 @@ class Simulator:
     # ------------------------------------------------------------------
 
     def run(self, total_slots: int = LoadArray.SLOTS) -> SimResult:
-        """Run simulation for total_slots demand slots."""
+        """
+        Three-phase simulation:
+
+        Phase 1 — Sweep 1
+          One vehicle dispatched from every station to every other station.
+          Runs until all those trips complete (or queue empties for disconnected
+          networks).  Establishes a baseline time for every reachable O-D pair.
+
+        Phase 2 — Random demand + Sweep 2 (concurrent)
+          Random passengers are generated according to the demand schedule.
+          Simultaneously a second full O-D sweep is queued.  The simulation
+          runs until the LAST vehicle from Sweep 2 completes its trip.
+          Sweep 2 times reflect real congestion from the mixed load.
+
+        Stopping: when Sweep 2 is fully covered, or when the queue is empty
+        and no pods are in flight (handles disconnected sub-networks gracefully).
+        """
         self.network.reset()
         wall_start = _time.time()
+        self._current_tick = 0
+
+        station_ids = list(self.network.stations.keys())
         ticks_per_slot = self._ticks_per_slot
-        total_ticks = total_slots * ticks_per_slot
 
-        for tick in range(total_ticks):
-            self._current_tick = tick
+        # Safety ceiling per phase: 3× the normal scheduled window
+        max_ticks_per_phase = total_slots * ticks_per_slot * 3
 
-            # Generate passengers every PASSENGER_GEN_INTERVAL ticks
-            if tick % ticks_per_slot == 0:
-                slot = tick // ticks_per_slot
-                self._generate_passengers(slot)
+        # ── helpers ───────────────────────────────────────────────────────────
 
-            # Move all active pods
+        def _queue_sweep(sweep_num: int) -> set:
+            """Queue one passenger from every station to every other.
+            Each passenger gets a unique trip_key so completion can be
+            tracked exactly — regardless of random demand completing the
+            same O-D pair independently.
+            Returns the set of trip_keys queued."""
+            keys: set = set()
+            for orig in station_ids:
+                for dest in station_ids:
+                    if dest != orig:
+                        key = f"sw{sweep_num}_{orig}_{dest}"
+                        self._waiting[orig].append((dest, self._current_tick, key))
+                        self._passengers_generated += 1
+                        keys.add(key)
+            return keys
+
+        def _tick():
             self._tick_pods()
-
-            # Dispatch pods from depot to meet demand
             self._dispatch()
+            self._current_tick += 1
 
-        return self._build_result(total_ticks, wall_elapsed_s=_time.time() - wall_start)
+        def _queue_empty() -> bool:
+            return (not any(self._waiting.values())) and (not self._pods)
+
+        # ── Phase 1: Sweep 1 ──────────────────────────────────────────────────
+        sweep1_remaining = _queue_sweep(1)
+        prev = 0
+
+        for _ in range(max_ticks_per_phase):
+            _tick()
+            for trip in self._completed_trips[prev:]:
+                if trip.trip_key:
+                    sweep1_remaining.discard(trip.trip_key)
+            prev = len(self._completed_trips)
+            if not sweep1_remaining or _queue_empty():
+                break
+
+        # ── Phase 2: Random demand concurrent with Sweep 2 ───────────────────
+        sweep2_remaining = _queue_sweep(2)
+        demand_ticks_total = total_slots * ticks_per_slot
+        demand_tick = 0
+
+        for _ in range(max_ticks_per_phase):
+            # Generate random demand in lock-step with scheduled slots
+            if demand_tick < demand_ticks_total and demand_tick % ticks_per_slot == 0:
+                self._generate_passengers(demand_tick // ticks_per_slot)
+
+            _tick()
+            demand_tick += 1
+
+            for trip in self._completed_trips[prev:]:
+                if trip.trip_key:
+                    sweep2_remaining.discard(trip.trip_key)
+            prev = len(self._completed_trips)
+
+            if not sweep2_remaining:
+                break  # all Sweep 2 trips done
+            if demand_tick >= demand_ticks_total and _queue_empty():
+                break  # random demand exhausted and nothing in flight
+
+        # ── Phase 3+: Coverage rounds ─────────────────────────────────────────
+        # After the two sweeps, check which O-D pairs still have no completed
+        # trip.  For each reachable-but-uncovered pair, dispatch another vehicle
+        # and wait for it to arrive.  Repeat until every topologically reachable
+        # pair is covered, or a pair proves disconnected (jam-free route = []).
+        # Each round uses a unique sweep number (3, 4, 5, …) for tracking.
+        coverage_sweep = 3
+        MAX_COVERAGE_ROUNDS = 20   # safety: stop after 20 extra rounds
+
+        for _round in range(MAX_COVERAGE_ROUNDS):
+            covered = {(t.origin_id, t.dest_id) for t in self._completed_trips}
+            all_pairs = {(o, d) for o in station_ids for d in station_ids if o != d}
+            missing = all_pairs - covered
+            if not missing:
+                break   # full coverage achieved
+
+            # Filter to pairs that have a topological route (jam-free)
+            reachable_missing = []
+            for (orig, dest) in missing:
+                src = self.network.stations[orig].node
+                dst = self.network.stations[dest].node
+                if find_path(self.network, src, dst, self.grace_distance, jam_free=True):
+                    reachable_missing.append((orig, dest))
+
+            if not reachable_missing:
+                break   # remaining gaps are truly disconnected
+
+            coverage_remaining: set = set()
+            for (orig, dest) in reachable_missing:
+                key = f"sw{coverage_sweep}_{orig}_{dest}"
+                self._waiting[orig].append((dest, self._current_tick, key))
+                self._passengers_generated += 1
+                coverage_remaining.add(key)
+
+            for _ in range(max_ticks_per_phase):
+                _tick()
+                for trip in self._completed_trips[prev:]:
+                    if trip.trip_key:
+                        coverage_remaining.discard(trip.trip_key)
+                prev = len(self._completed_trips)
+                if not coverage_remaining or _queue_empty():
+                    break
+
+            coverage_sweep += 1
+
+        # Build result — any pairs still missing are genuinely disconnected
+        all_remaining_keys: set = set()
+        # (coverage_remaining may be empty by now; that's fine)
+        return self._build_result(
+            self._current_tick,
+            wall_elapsed_s=_time.time() - wall_start,
+            incomplete_sweep_keys=all_remaining_keys,
+        )
 
     # ------------------------------------------------------------------
     # Internal
@@ -226,7 +356,7 @@ class Simulator:
         pairs = self._demand.get_passengers(slot)
         for origin_id, dest_id in pairs:
             if origin_id in self._waiting:
-                self._waiting[origin_id].append((dest_id, self._current_tick))
+                self._waiting[origin_id].append((dest_id, self._current_tick, None))
                 self._passengers_generated += 1
 
     def _tick_pods(self):
@@ -276,6 +406,14 @@ class Simulator:
                     self._pods.remove(pod)
                 # Check for waiting passengers at this station
                 self._board_from_station(station, pod)
+                # If pod was not immediately re-dispatched and this station is
+                # over its pod quota, return the surplus to the depot so other
+                # pod-starved stations can pull from it.
+                if pod in station.queued_pods:
+                    waiting_here = bool(self._waiting.get(station.station_id))
+                    if not waiting_here and len(station.queued_pods) > self.pods_per_station:
+                        station.queued_pods.remove(pod)
+                        self._return_to_depot(pod)
                 return
 
         # Continue on route
@@ -298,7 +436,7 @@ class Simulator:
         waiting = self._waiting.get(station.station_id, [])
         if not waiting:
             return
-        dest_id, gen_tick = waiting.pop(0)
+        dest_id, gen_tick, trip_key = waiting.pop(0)
         dest_station = self.network.stations.get(dest_id)
         if dest_station is None:
             return
@@ -308,8 +446,11 @@ class Simulator:
             station.node,
             dest_station.node,
             self.grace_distance,
+            jam_free=(trip_key is not None),  # sweep passengers always route
         )
         if not route:
+            # Re-queue at back — keep same trip_key so sweep tracking is exact.
+            waiting.append((dest_id, gen_tick, trip_key))
             return
 
         route_len = sum(line.length_m for line in route)
@@ -327,6 +468,7 @@ class Simulator:
             dispatch_tick=self._current_tick,
             generated_tick=gen_tick,
             route_length_m=route_len,
+            trip_key=trip_key,
         )
 
     def _dispatch(self):
@@ -345,7 +487,7 @@ class Simulator:
             if pod is None:
                 continue
 
-            dest_id, gen_tick = waiting.pop(0)
+            dest_id, gen_tick, trip_key = waiting.pop(0)
             dest_station = self.network.stations.get(dest_id)
             if dest_station is None:
                 self._depot.append(pod)
@@ -356,9 +498,13 @@ class Simulator:
                 station.node,
                 dest_station.node,
                 self.grace_distance,
+                jam_free=(trip_key is not None),  # sweep passengers always route
             )
             if not route:
-                log.warning("No route from %s to %s", station.station_id, dest_id)
+                # Re-queue at back — keep same trip_key so sweep tracking is exact.
+                # Permanently unreachable pairs will stay here until the safety
+                # ceiling ends the phase; they will simply not appear in trip_stats.
+                waiting.append((dest_id, gen_tick, trip_key))
                 self._depot.append(pod)
                 continue
 
@@ -374,6 +520,7 @@ class Simulator:
                 dispatch_tick=self._current_tick,
                 generated_tick=gen_tick,
                 route_length_m=route_len,
+                trip_key=trip_key,
             )
 
     def _enter_line(self, pod: Pod, line: Line):
@@ -392,7 +539,8 @@ class Simulator:
         pod.route.clear()
         self._depot.append(pod)
 
-    def _build_result(self, total_ticks: int, wall_elapsed_s: float = 0.0) -> SimResult:
+    def _build_result(self, total_ticks: int, wall_elapsed_s: float = 0.0,
+                      incomplete_sweep_keys: Optional[set] = None) -> SimResult:
         tick_s = self.tick_s
 
         # -------------------------------------------------------
@@ -537,6 +685,40 @@ class Simulator:
                 "passengers_waiting_end": waiting_count,
             })
 
+        # -------------------------------------------------------
+        # Sweep trips — one row per completed sweep passenger
+        # -------------------------------------------------------
+        sweep_trips = []
+        for trip in self._completed_trips:
+            if trip.trip_key is None:
+                continue
+            total_ms = trip.travel_ms(tick_s) + self._station_overhead_ms
+            wait_ms  = trip.wait_ms(tick_s)
+            sweep_trips.append({
+                "trip_key":   trip.trip_key,
+                "sweep":      int(trip.trip_key[2]) if len(trip.trip_key) > 2 else 0,
+                "origin_id":  trip.origin_id,
+                "dest_id":    trip.dest_id,
+                "travel_min": round(total_ms  / 60_000, 3),
+                "wait_min":   round(wait_ms   / 60_000, 3),
+                "dist_m":     round(trip.route_length_m, 1),
+            })
+        sweep_trips.sort(key=lambda r: (r["origin_id"], r["dest_id"], r["sweep"]))
+
+        # O-D pairs that had no completed sweep trip
+        missing_pairs = []
+        if incomplete_sweep_keys:
+            seen: set = set()
+            for key in sorted(incomplete_sweep_keys):
+                # key format: "sw{N}_{orig}_{dest}"
+                parts = key.split("_", 2)
+                if len(parts) == 3:
+                    _, orig, dest = parts
+                    pair = (orig, dest)
+                    if pair not in seen:
+                        seen.add(pair)
+                        missing_pairs.append({"origin_id": orig, "dest_id": dest})
+
         return SimResult(
             network_id=self.network.network_id,
             settings=self.settings,
@@ -547,6 +729,8 @@ class Simulator:
             trip_stats=trip_stats,
             line_stats=line_stats,
             station_stats=station_stats,
+            sweep_trips=sweep_trips,
+            missing_pairs=missing_pairs,
         )
 
 

@@ -243,7 +243,7 @@ _ledgerControl.onAdd = () => {
       `<span class="wrw-label">${label}</span>` +
       `</div>`
     ).join("") +
-    `<div class="wrw-hint">&#9711; Coverage → click map</div>`;
+    `<div class="wrw-hint">&#9711; Isochrone → click map</div>`;
   L.DomEvent.disableClickPropagation(div);
   return div;
 };
@@ -282,8 +282,10 @@ const _layers = {
 const _lineMap          = {};
 const _nodeMap          = {};
 const _partnerMap       = {};  // line_id → partner_line_id (for paired guideway movement)
-const _cpPropsMap       = {};  // cp_id → CP properties (for region-select)
-const _lineStructMap     = {};  // line_id → structure_id (derived from metadata.structures)
+const _cpPropsMap           = {};  // cp_id → CP properties (for region-select)
+const _cpMarkerMap          = {};  // cp_id → Leaflet marker (for tooltip updates on lock/unlock)
+const _structCenterMarkers  = {};  // structure_id → transparent hit-zone marker at center
+const _lineStructMap         = {};  // line_id → structure_id (derived from metadata.structures)
 const _structureMetaMap  = {};  // structure_id → {line_ids, node_ids, …} from server metadata
 const _structureLayerMap = {};  // structure_id → L.layerGroup holding all internal polylines
 const _lineNodeMap       = {};  // line_id → {s: startNodeId, e: endNodeId}
@@ -411,7 +413,7 @@ function _selectInBounds(bounds) {
     pl.setStyle({ color: "#f39c12", opacity: 1, weight: 4 });
   });
 
-  setStatus(`${n} item(s) selected — Delete to remove  ·  Esc to cancel`);
+  setStatus(`${n} item(s) selected — drag to move  ·  Delete to remove  ·  Esc to cancel`);
 }
 
 function _clearSelection() {
@@ -564,6 +566,9 @@ function _startMultiMove(latlng) {
 // Branches on what the cursor is hovering:
 //   _hoverStructSid → move the whole structure (or whole selection if selected)
 //   _hoverLineId    → inline bend-point drag on that guideway pair
+// NOTE: { capture: true } is required — bubble phase fires after Leaflet's map-drag
+// handler, which means plain-drag on a selected structure would pan the map instead
+// of moving the selection.
 document.addEventListener("mousedown", (e) => {
   if (!map.getContainer().contains(e.target)) return;
 
@@ -679,7 +684,7 @@ document.addEventListener("mousedown", (e) => {
 
     setStatus(`Bending ${nearLids.length} guideway(s) — release to set`);
   }
-}, { capture: true });
+}, { capture: true });  // capture: true — must fire before Leaflet's map-drag listener
 
 // Document-level mousemove — live preview (structure move OR guideway bend).
 document.addEventListener("mousemove", (e) => {
@@ -851,6 +856,16 @@ const App = {
       const el = document.getElementById(id);
       if (el) el.style.display = display;
     });
+    // Sync CP tooltips — edit mode shows connection info; locked mode shows nothing
+    // (the structure polyline tooltip already shows the structure name when locked)
+    Object.entries(_cpMarkerMap).forEach(([cpId, marker]) => {
+      if (ro) {
+        marker.unbindTooltip();
+      } else {
+        const props = _cpPropsMap[cpId];
+        if (props) marker.bindTooltip(_cpTooltipText(cpId, props), { direction: "top", offset: [0, -30] });
+      }
+    });
   },
 
   toggleReadOnly() {
@@ -990,6 +1005,8 @@ const App = {
     Object.keys(_nodeMap).forEach(k => delete _nodeMap[k]);
     Object.keys(_partnerMap).forEach(k => delete _partnerMap[k]);
     Object.keys(_cpPropsMap).forEach(k => delete _cpPropsMap[k]);
+    Object.keys(_cpMarkerMap).forEach(k => delete _cpMarkerMap[k]);
+    Object.keys(_structCenterMarkers).forEach(k => delete _structCenterMarkers[k]);
     Object.keys(_lineStructMap).forEach(k => delete _lineStructMap[k]);
     Object.keys(_structureMetaMap).forEach(k => delete _structureMetaMap[k]);
     Object.keys(_structureLayerMap).forEach(k => delete _structureLayerMap[k]);
@@ -1028,6 +1045,41 @@ const App = {
 
     // Flag structures with no connected CPs so users can see orphans
     _markOrphans();
+
+    // Transparent hit-zone markers at each structure center so hovering anywhere
+    // over the station rectangle or circle body shows the structure ID.
+    // circleMarker radius is in pixels so it scales naturally with zoom.
+    Object.entries(_structs).forEach(([sid, meta]) => {
+      const { center_lat, center_lon, structure_type } = meta;
+      if (center_lat == null || center_lon == null) return;
+      const radius = structure_type === "station" ? 28 : 18;
+      const hitZone = L.circleMarker([center_lat, center_lon], {
+        radius,
+        color:       "transparent",
+        fillColor:   "transparent",
+        fillOpacity: 0,
+        opacity:     0,
+        weight:      0,
+        interactive: true,
+      });
+      hitZone.bindTooltip(sid, { sticky: true, className: "line-tooltip" });
+      hitZone.on("mouseover", () => { _hoverStructSid = sid; });
+      hitZone.on("mouseout",  () => { if (_hoverStructSid === sid) _hoverStructSid = null; });
+      hitZone.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
+        if (typeof TimeMap !== "undefined" && TimeMap.isActive()) {
+          TimeMap.handleClick(e.latlng.lat, e.latlng.lng); return;
+        }
+        if (!_readOnly && !_moveState.active) {
+          _selectedStructSid = sid;
+          _selectedCpId      = null;
+          _selectedNodeId    = null;
+          setStatus(`${sid} selected — Delete to remove · Alt+drag to move`);
+        }
+      });
+      _layers.nodes.addLayer(hitZone);
+      _structCenterMarkers[sid] = hitZone;
+    });
 
     // Draw waypoint markers for all lines that have them
     geojson.features
@@ -1119,7 +1171,7 @@ function _addLineFeature(f) {
       _selectedNodeId    = null;
       setStatus(`${structSid} selected — Delete to remove · Alt+drag to move`);
     });
-    pl.bindTooltip(structSid, { sticky: true, className: "line-tooltip" });
+    // No tooltip on individual structure lines — the center hit-zone marker handles hover.
 
   } else {
     // ── Free guideway — individual behavior ───────────────────────────────
@@ -1277,11 +1329,24 @@ function _markOrphans() {
   return orphanSids.size;
 }
 
+// Strip ".CP_N" / ".CP0" suffix to get the human-readable structure name.
+function _cpStructName(cpId) {
+  const i = cpId.lastIndexOf('.');
+  return i >= 0 ? cpId.substring(0, i) : cpId;
+}
+
+// Build the edit-mode tooltip text for a CP (connection info + action hint).
+function _cpTooltipText(cpId, props) {
+  const connected = !!props.connected_to;
+  return connected
+    ? `${_cpStructName(cpId)} ↔ ${_cpStructName(props.connected_to)}  (Shift+click to disconnect)`
+    : `${_cpStructName(cpId)} (open — click to select)`;
+}
+
 function _addCpFeature(f) {
   const [lng, lat] = f.geometry.coordinates;
   const props      = f.properties;
   const cpId       = props.cp_id;
-  const connected  = !!props.connected_to;
   const isSelected = cpId === _selectedCpId;
 
   const marker = L.marker([lat, lng], {
@@ -1289,12 +1354,13 @@ function _addCpFeature(f) {
     draggable: false,
   });
 
-  marker.bindTooltip(
-    connected
-      ? `${cpId} ↔ ${props.connected_to}  (Shift+click to disconnect)`
-      : `${cpId} (open — click to select)`,
-    { direction: "top", offset: [0, -30] }
-  );
+  // In edit mode show connection info; in locked mode show nothing (structure
+  // body tooltip via the polyline already shows the structure name).
+  if (!_readOnly) {
+    marker.bindTooltip(_cpTooltipText(cpId, props), { direction: "top", offset: [0, -30] });
+  }
+
+  _cpMarkerMap[cpId] = marker;
 
   // Track hover so the document capture mousedown knows which structure to move
   marker.on("mouseover", () => { _hoverStructSid = props.structure_id; });

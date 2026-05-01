@@ -24,12 +24,17 @@ def find_path(
     source: Node,
     target: Node,
     grace_distance: float = 0.0,
+    jam_free: bool = False,
 ) -> List[Line]:
     """
     Dijkstra shortest path.
 
     Returns ordered list of Lines from source → target.
     Returns [] if no path exists (disconnected or all routes jammed).
+
+    jam_free=True: use line.length_m directly, ignoring jam weight.
+    Use this for sweep passengers so they always find a topological route
+    even when lines are temporarily congested.
     """
     # dist[node_id] = best known cost to reach that node
     dist: Dict[str, float] = {source.node_id: 0.0}
@@ -49,9 +54,12 @@ def find_path(
             break
 
         for line in node.outbound:
-            w = line.get_weight() + grace_distance
-            if w >= MAX_WEIGHT:
-                continue
+            if jam_free:
+                w = max(line.length_m, 0.001) + grace_distance
+            else:
+                w = line.get_weight() + grace_distance
+                if w >= MAX_WEIGHT:
+                    continue
             new_cost = cost + w
             nxt = line.end_node.node_id
             if new_cost < dist.get(nxt, MAX_WEIGHT):
