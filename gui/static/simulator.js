@@ -35,12 +35,15 @@ const Sim = (() => {
 
   function _drawPods(podList) {
     _clearPods();
-    podList.forEach(({ lat, lng, color, label }) => {
+    podList.forEach(({ lat, lng, color, label, isStopping, isApproaching }) => {
+      // Size: 16 = at station siding, 12 = approaching destination, 8 = cruising
+      const sz     = isStopping ? 16 : isApproaching ? 12 : 8;
+      const border = isStopping ? '2px solid #fff' : isApproaching ? '1px solid rgba(255,255,255,0.6)' : 'none';
       const icon = L.divIcon({
         className: "",
-        html: `<div class="pod-marker" style="background:${color}" title="${label||''}"></div>`,
-        iconSize: [8, 8],
-        iconAnchor: [4, 4],
+        html: `<div class="pod-marker" style="background:${color};width:${sz}px;height:${sz}px;border-radius:50%;border:${border}" title="${label||''}"></div>`,
+        iconSize:   [sz, sz],
+        iconAnchor: [sz / 2, sz / 2],
       });
       const m = L.marker([lat, lng], { icon, interactive: false });
       App.getLayers().pods.addLayer(m);
@@ -67,33 +70,116 @@ const Sim = (() => {
       .filter(f => f.properties.type === "line")
       .forEach(f => { lineFeatures[f.properties.line_id] = f; });
 
+    // Siding line suffixes — pod is "stopping" only while on these segments
+    const SIDING_SUFFIXES = [
+      "platform_in", "platform_parking_a", "platform_parking_b",
+      "platform_out",
+    ];
+
+    // Physics settings from panel (for transit time weighting)
+    const maxKmph = parseFloat(document.getElementById("cfg-maxVelocityInKMPH")?.value || 60);
+    const accG    = parseFloat(document.getElementById("cfg-accInG")?.value || 1.0);
+    const vMax    = maxKmph / 3.6;       // m/s
+    const acc     = accG * 9.81;         // m/s²
+    const lFull   = vMax * vMax / acc;   // distance to reach full speed
+
+    // Physics transit time for a single line segment
+    function _segTransitMs(length_m) {
+      const L = Math.max(length_m, 0.1);
+      const t = L >= lFull
+        ? 2 * vMax / acc + (L - lFull) / vMax   // accel + cruise + decel
+        : 2 * Math.sqrt(L / acc);                // short: accel+decel only
+      return t * 1000;
+    }
+
     // Build full-route coordinate chains from trip_stats
     const routes = [];
     (result.trip_stats || []).forEach(ts => {
       if (!ts.route_line_ids || ts.route_line_ids.length === 0) return;
       if (!ts.median_trip_ms) return;
 
-      // Concatenate all line coordinate arrays along the route
-      const coords = [];
+      // Build per-line segment data.
+      // Each segment carries:
+      //   - coords: geographic points for position interpolation
+      //   - segDeg: cumulative coordinate-degree length (for _interpolateChain)
+      //   - transitMs: physics time on this segment (for time-based travelRatio)
+      //   - isSiding: whether it is a station access line
+      const lineSegs = [];
+      let totalDeg = 0;
+      let totalTransitMs = 0;
+
       ts.route_line_ids.forEach(lid => {
         const feat = lineFeatures[lid];
         if (!feat) return;
         const c = feat.geometry.coordinates; // [[lng,lat], ...]
+        const length_m = feat.properties.length_m || 1;
+
+        // Geographic length in degrees (for coord-chain interpolation)
+        let segDeg = 0;
+        for (let i = 0; i < c.length - 1; i++) {
+          const dx = c[i+1][0] - c[i][0];
+          const dy = c[i+1][1] - c[i][1];
+          segDeg += Math.sqrt(dx*dx + dy*dy);
+        }
+
+        const transitMs = _segTransitMs(length_m);
+        lineSegs.push({
+          coords: c, lineId: lid,
+          segDeg, transitMs,
+          isSiding: SIDING_SUFFIXES.some(s => lid.endsWith(s)),
+          isApproaching: false,   // filled in below
+        });
+        totalDeg       += segDeg;
+        totalTransitMs += transitMs;
+      });
+
+      // Tag near-guideway lines of the destination station as "approaching".
+      // A segment is approaching when it belongs to the dest station's structure
+      // (lid starts with dest_id + '.') AND it is NOT a siding line AND the
+      // route does contain siding lines (confirming this pod is stopping there,
+      // not just passing through that station's body).
+      const destPrefix   = ts.dest_id + '.';
+      const routeHasSiding = lineSegs.some(s => s.isSiding);
+      if (routeHasSiding) {
+        lineSegs.forEach(seg => {
+          if (!seg.isSiding && seg.lineId.startsWith(destPrefix)) {
+            seg.isApproaching = true;
+          }
+        });
+      }
+
+      if (lineSegs.length === 0 || totalDeg === 0 || totalTransitMs === 0) return;
+
+      // Assign time-based fractions (used for isStopping and speed display)
+      // and geographic fractions (used for position in _interpolateChain).
+      let cumMs  = 0;
+      let cumDeg = 0;
+      const coords = [];
+      lineSegs.forEach(seg => {
+        seg.startTimeFrac = cumMs  / totalTransitMs;
+        seg.endTimeFrac   = (cumMs  + seg.transitMs) / totalTransitMs;
+        seg.startGeoFrac  = cumDeg / totalDeg;
+        seg.endGeoFrac    = (cumDeg + seg.segDeg)    / totalDeg;
+        cumMs  += seg.transitMs;
+        cumDeg += seg.segDeg;
+
         if (coords.length === 0) {
-          coords.push(...c);
+          coords.push(...seg.coords);
         } else {
-          // Skip first point — same as previous segment's last point
-          coords.push(...c.slice(1));
+          coords.push(...seg.coords.slice(1));
         }
       });
 
       if (coords.length < 2) return;
+
       routes.push({
         coords,
+        lineSegs,
+        totalDeg,
         transit_ms: ts.median_trip_ms,
         label: `${ts.origin_id} → ${ts.dest_id}`,
-        origin: coords[0],           // [lng, lat] of origin station platform
-        dest:   coords[coords.length - 1],  // [lng, lat] of dest station platform
+        origin: coords[0],
+        dest:   coords[coords.length - 1],
       });
     });
 
@@ -115,29 +201,55 @@ const Sim = (() => {
         const rawPos = (t / Math.max(cycleT, 0.001)) % 1;  // position in THIS route's cycle
 
         let travelRatio;  // 0 = origin platform, 1 = dest platform
-        let color;
+        let baseColor;
 
         if (rawPos < DWELL_FRAC) {
           // ── Parked at origin station ──
           travelRatio = 0;
-          color = "#ffffff";   // white = parked / loading
+          baseColor = "#ffffff";   // white = parked / loading
         } else if (rawPos > 1 - DWELL_FRAC) {
           // ── Parked at destination station ──
           travelRatio = 1;
-          color = "#ffffff";   // white = parked / unloading
+          baseColor = "#ffffff";   // white = parked / unloading
         } else {
           // ── Travelling ──
           travelRatio = (rawPos - DWELL_FRAC) / (1 - 2 * DWELL_FRAC);
           // Bell-shaped velocity: green at cruise, red at platforms
           const phase = Math.min(travelRatio * 4, 1) * Math.min((1 - travelRatio) * 4, 1);
-          color = _podColor(phase);
+          baseColor = _podColor(phase);
         }
 
-        const pos = _interpolateChain(route.coords, travelRatio);
+        // Determine current segment by time fraction (physics-accurate)
+        const curSeg = route.lineSegs.find(s =>
+          travelRatio >= s.startTimeFrac && travelRatio <= s.endTimeFrac
+        ) || route.lineSegs[route.lineSegs.length - 1];
+        const isStopping    = curSeg.isSiding;
+        const isApproaching = curSeg.isApproaching;
+
+        // Color by state (overrides velocity color for non-parked pods):
+        //   orange  = on station siding (exit / platform / reentry)
+        //   yellow  = on destination station's near-guideway (about to peel off)
+        //   red→grn = cruising on through guideway
+        //   white   = parked / loading
+        let color = baseColor;
+        if (baseColor !== "#ffffff") {
+          if (isStopping)      color = "#e67e22";   // orange  — in station
+          else if (isApproaching) color = "#f1c40f"; // yellow  — approaching
+        }
+
+        // Convert time fraction → geographic fraction for position
+        const segTimeFrac = (curSeg.endTimeFrac > curSeg.startTimeFrac)
+          ? (travelRatio - curSeg.startTimeFrac) / (curSeg.endTimeFrac - curSeg.startTimeFrac)
+          : 0;
+        const geoFrac = curSeg.startGeoFrac + segTimeFrac * (curSeg.endGeoFrac - curSeg.startGeoFrac);
+
+        const pos = _interpolateChain(route.coords, geoFrac);
         pods.push({
           lat: pos[1], lng: pos[0],
           color,
           label: route.label,
+          isStopping,
+          isApproaching,
         });
       });
 
@@ -591,8 +703,8 @@ const Sim = (() => {
       _startLoadingAnim(_geojson);
       _showSweepCircles(_geojson);   // orange rings on all stations
 
-      // Start async simulation
-      const started = await api("POST", "/api/simulation/run", { slots });
+      // Start async simulation — send current panel settings so server uses live values
+      const started = await api("POST", "/api/simulation/run", { slots, settings: Settings.current() });
       if (started.error) {
         _stopLoadingAnim();
         _clearSweepCircles();
@@ -631,6 +743,7 @@ const Sim = (() => {
 
       if (result.error) { alert(result.error); return; }
 
+      _result = result;
       _showResults(result);
       await _buildFrames(result, _geojson);
 
@@ -660,6 +773,57 @@ const Sim = (() => {
       document.getElementById("btn-replay").textContent = "▶▶ Replay";
       document.getElementById("btn-replay").disabled = true;
       setStatus("Ready");
+    },
+
+    // ── Focus mode: rebuild frames for a single station ─────────────────
+    // Shows only routes whose line list includes an internal line of sid.
+    // Runs at slow speed (60× default) so behavior is easy to follow.
+    // Call clearFocus() or Replay to return to full-network view.
+    async focusStation(sid) {
+      if (!_result) { alert("Run simulation first."); return; }
+      if (!_geojson) return;
+
+      // Filter to trips whose route passes through this station's internal lines
+      const filtered = (_result.trip_stats || []).filter(ts =>
+        (ts.route_line_ids || []).some(lid => lid.startsWith(sid + '.'))
+      );
+
+      if (filtered.length === 0) {
+        setStatus(`No routes visit ${sid}`);
+        return;
+      }
+
+      _stopReplay();
+      setStatus(`Building focus: ${sid} (${filtered.length} routes)…`);
+
+      // Build frames with only the filtered routes
+      const focusResult = { ..._result, trip_stats: filtered };
+      await _buildFrames(focusResult, _geojson);
+
+      // Override speed: force 60× regardless of settings panel
+      // so the user can actually watch individual pod movements.
+      const origInterval = _replayIntervalMs();
+      const slowInterval = Math.max(60, Math.round(1000 / 12 * 360 / 60));  // 60× speed
+
+      _animTimer = setInterval(() => {
+        if (_frameIdx >= _frames.length) _frameIdx = 0;
+        _drawPods(_frames[_frameIdx].pods);
+        _frameIdx++;
+      }, slowInterval);
+
+      document.getElementById("btn-replay").disabled = false;
+      document.getElementById("btn-replay").textContent = "⏹ Stop";
+      setStatus(`Watching ${sid} — ${filtered.length} route(s) at 60× — ▶▶ Replay to restore`);
+    },
+
+    // Restore full-network replay after focusStation
+    async clearFocus() {
+      if (!_result) return;
+      _stopReplay();
+      setStatus("Restoring full network…");
+      await _buildFrames(_result, _geojson);
+      document.getElementById("btn-replay").textContent = "▶▶ Replay";
+      setStatus("Ready — press Replay to resume full network");
     },
 
     // Accessors for TimeMap (walk-ride-walk circles)

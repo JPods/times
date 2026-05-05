@@ -69,7 +69,7 @@ def _default_settings() -> dict:
         "disembarkingTimeInSec": 20, "embarkingTimeInSec": 20,
         "ticketingTimeInSec": 30, "stationEntryTimeInSec": 40,
         "stationExitTimeInSec": 40, "timeResolutionPerSec": 9,
-        "podsPerStation": 4, "graceDistance": 0,
+        "podsPerStation": 8, "graceDistance": 0,
     }
 
 
@@ -137,7 +137,7 @@ def _reconstruct_structures_from_net(net) -> tuple:
     Derive Structure and ConnectionPoint objects from a legacy .jpd network
     (one saved before <StructureMeta> was added) using node naming conventions.
 
-    Stations:  all nodes with IDs starting "ST_"  → {sid}.NB_N_tip etc.
+    Stations:  all nodes with IDs starting "ST_"  → {sid}.guideway_near_out_tip etc.
     Circles:   all nodes with IDs starting "TC_"  → {sid}.A{i}_out / A{i}_in
 
     Returns (structures_dict, cps_dict).
@@ -169,16 +169,16 @@ def _reconstruct_structures_from_net(net) -> tuple:
 
         if _is_st(sid):
             # ── Station ────────────────────────────────────────────────────
-            nb_n_tip = nodes.get(f"{sid}.NB_N_tip")
-            sb_n_tip = nodes.get(f"{sid}.SB_N_tip")
-            nb_s_tip = nodes.get(f"{sid}.NB_S_tip")
-            sb_s_tip = nodes.get(f"{sid}.SB_S_tip")
+            nb_n_tip = nodes.get(f"{sid}.guideway_near_out_tip")
+            sb_n_tip = nodes.get(f"{sid}.guideway_far_in_tip")
+            nb_s_tip = nodes.get(f"{sid}.guideway_near_in_tip")
+            sb_s_tip = nodes.get(f"{sid}.guideway_far_out_tip")
             if not all([nb_n_tip, sb_n_tip, nb_s_tip, sb_s_tip]):
                 continue   # incomplete — skip
 
-            # Compute heading from NB_S → NB_N
-            nb_n = nodes.get(f"{sid}.NB_N")
-            nb_s = nodes.get(f"{sid}.NB_S")
+            # Compute heading from guideway_near_in_end → guideway_near_out_end
+            nb_n = nodes.get(f"{sid}.guideway_near_out_end")
+            nb_s = nodes.get(f"{sid}.guideway_near_in_end")
             heading_deg = 0.0
             if nb_n and nb_s:
                 dlat = nb_n.lat - nb_s.lat
@@ -191,13 +191,13 @@ def _reconstruct_structures_from_net(net) -> tuple:
             sb_h = (nb_h + 180) % 360
 
             cp_n = ConnectionPoint(
-                cp_id=f"{sid}.CP_N", structure_id=sid, heading_deg=nb_h,
+                cp_id=f"{sid}.CP_near_far", structure_id=sid, heading_deg=nb_h,
                 inbound_node=sb_n_tip, outbound_node=nb_n_tip,
                 center_lat=(nb_n_tip.lat + sb_n_tip.lat) / 2,
                 center_lon=(nb_n_tip.lon + sb_n_tip.lon) / 2,
             )
             cp_s = ConnectionPoint(
-                cp_id=f"{sid}.CP_S", structure_id=sid, heading_deg=sb_h,
+                cp_id=f"{sid}.CP_far_near", structure_id=sid, heading_deg=sb_h,
                 inbound_node=nb_s_tip, outbound_node=sb_s_tip,
                 center_lat=(nb_s_tip.lat + sb_s_tip.lat) / 2,
                 center_lon=(nb_s_tip.lon + sb_s_tip.lon) / 2,
@@ -379,6 +379,8 @@ def _network_to_geojson(net: Network) -> dict:
         is_cp_tip = nid in cp_tip_nodes
         # Hide all internal structure nodes (including CP tips — CPs get their own feature)
         is_hidden = struct_id is not None or is_cp_tip
+        struct_obj   = _state["structures"].get(struct_id) if struct_id else None
+        struct_type  = struct_obj.structure_type if struct_obj else None
         features.append({
             "type": "Feature",
             "id": f"node:{nid}",
@@ -389,6 +391,7 @@ def _network_to_geojson(net: Network) -> dict:
                 "label": nid,
                 "node_role": "station" if is_station else "switch",
                 "structure_id": struct_id,
+                "structure_type": struct_type,
                 "is_internal": is_hidden,
             },
         })
@@ -479,10 +482,10 @@ def load_network():
         return jsonify({"error": f"File not found: {path}"}), 400
 
     ext = os.path.splitext(path)[1].lower()
-    structs_data, cps_data = [], []
+    structs_data, cps_data, file_settings = [], [], {}
     try:
         if ext == ".jpd":
-            net, structs_data, cps_data = load_jpd(path)
+            net, structs_data, cps_data, file_settings = load_jpd(path)
         else:
             with open(path) as f:
                 raw = json.load(f)
@@ -504,8 +507,10 @@ def load_network():
         s, c = _reconstruct_structures_from_net(net)
         _state["structures"].update(s)
         _state["cps"].update(c)
+    if file_settings:
+        _state["settings"].update(file_settings)
     _sync_counters()
-    return jsonify(_network_to_geojson(net))
+    return jsonify({**_network_to_geojson(net), "settings": _state["settings"]})
 
 
 @api.post("/network/save")
@@ -520,7 +525,7 @@ def save_network():
     if not path.endswith(".jpd"):
         path = path + ".jpd"
     try:
-        save_jpd(net, path, _state["structures"], _state["cps"])
+        save_jpd(net, path, _state["structures"], _state["cps"], _state["settings"])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     _state["network_path"] = path
@@ -534,13 +539,14 @@ def download_network():
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
     try:
-        content = serialise_jpd(net, _state["structures"], _state["cps"])
+        content = serialise_jpd(net, _state["structures"], _state["cps"],
+                                _state["settings"])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     filename = f"{net.network_id}.jpd"
     return Response(
         content,
-        mimetype="application/xml",
+        mimetype="application/json",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
 
@@ -702,7 +708,8 @@ def add_station():
     _state["cps"].update(cps)
 
     # Tag siding lines so the renderer can invert their inbound/outbound colour
-    _siding_suffixes = ("NB_to_side", "SIDE_entry", "SIDE_exit", "SIDE_to_NB")
+    _siding_suffixes = ("platform_in", "platform_parking_a", "platform_parking_b",
+                        "platform_out")
     for lid in struct.line_ids:
         if any(lid.endswith(s) for s in _siding_suffixes):
             _state["line_roles"][lid] = "siding"
@@ -1117,17 +1124,17 @@ def network_grid():
             _state["cps"].update(st_cps)
             n_stations += 1
 
-            # North circle south arm ↔ station CP_N (north end, heading=0°)
+            # North circle south arm ↔ station CP_near_far (heading=0°)
             _, cp_dict_north = grid[r][c]
             tc_south = _cp_by_heading(cp_dict_north, 180.0)
-            st_north = st_cps.get(f"{st.structure_id}.CP_N")
+            st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
             if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
                 connect_cps(net, tc_south, st_north, _state["cps"])
 
-            # Station CP_S (south end, heading=180°) ↔ south circle north arm
+            # Station CP_far_near (heading=180°) ↔ south circle north arm
             _, cp_dict_south = grid[r + 1][c]
             tc_north = _cp_by_heading(cp_dict_south, 0.0)
-            st_south = st_cps.get(f"{st.structure_id}.CP_S")
+            st_south = st_cps.get(f"{st.structure_id}.CP_far_near")
             if tc_north and st_south and tc_north.connected_to is None and st_south.connected_to is None:
                 connect_cps(net, st_south, tc_north, _state["cps"])
 
@@ -1142,17 +1149,17 @@ def network_grid():
             _state["cps"].update(st_cps)
             n_stations += 1
 
-            # West circle east arm ↔ station CP_S (west end, heading=270°)
+            # West circle east arm ↔ station CP_far_near (west end, heading=270°)
             _, cp_dict_west = grid[r][c]
             tc_east = _cp_by_heading(cp_dict_west, 90.0)
-            st_west = st_cps.get(f"{st.structure_id}.CP_S")
+            st_west = st_cps.get(f"{st.structure_id}.CP_far_near")
             if tc_east and st_west and tc_east.connected_to is None and st_west.connected_to is None:
                 connect_cps(net, tc_east, st_west, _state["cps"])
 
-            # Station CP_N (east end, heading=90°) ↔ east circle west arm
+            # Station CP_near_far (east end, heading=90°) ↔ east circle west arm
             _, cp_dict_east = grid[r][c + 1]
             tc_west = _cp_by_heading(cp_dict_east, 270.0)
-            st_east = st_cps.get(f"{st.structure_id}.CP_N")
+            st_east = st_cps.get(f"{st.structure_id}.CP_near_far")
             if tc_west and st_east and tc_west.connected_to is None and st_east.connected_to is None:
                 connect_cps(net, st_east, tc_west, _state["cps"])
 
@@ -1297,7 +1304,10 @@ def run_simulation():
     data = request.json or {}
     slots = int(data.get("slots", 360))
     settings = _state["settings"].copy()
-    settings.update(data.get("settings", {}))
+    incoming = {k: v for k, v in data.get("settings", {}).items() if v is not None and v == v}  # drop None and NaN
+    settings.update(incoming)
+    if incoming:
+        _state["settings"].update(incoming)  # keep travel_times in sync
 
     demand_config = {}
     demand_path = os.path.join(_rt_dir, "demand.json")
@@ -1487,6 +1497,82 @@ def post_settings():
 _last_autoconnect_skipped: List[str] = []  # cp_ids skipped as outer boundary
 
 
+# ---------------------------------------------------------------------------
+# Auto-connect geometry helpers
+# ---------------------------------------------------------------------------
+
+def _bearing_deg(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Compass bearing from point 1 to point 2, degrees [0, 360)."""
+    import math
+    dlon = math.radians(lon2 - lon1)
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    x = math.sin(dlon) * math.cos(phi2)
+    y = math.cos(phi1) * math.sin(phi2) - math.sin(phi1) * math.cos(phi2) * math.cos(dlon)
+    return (math.degrees(math.atan2(x, y)) + 360) % 360
+
+
+def _angular_diff(a: float, b: float) -> float:
+    """Smallest unsigned angle between two headings, degrees [0, 180]."""
+    return abs((a - b + 180) % 360 - 180)
+
+
+def _cps_are_compatible(cp_a, cp_b) -> bool:
+    """
+    Two CPs are compatible for auto-connect when both directional rules pass:
+
+    Rule 1 — Direction cone (±45°):
+      The geographic bearing from cp_a to cp_b must lie within 45° of
+      cp_a's outbound heading.  A north-pointing CP (heading=0) will only
+      reach targets in the arc 315°–045°.
+
+    Rule 2 — Opposite polarity (±45°):
+      cp_b's outbound heading must be within 45° of the reverse of cp_a's
+      heading.  North CPs connect to south CPs; NE to SW; E to W; etc.
+      Prevents two same-direction stubs from being wired together.
+    """
+    bearing_a_to_b = _bearing_deg(cp_a.center_lat, cp_a.center_lon,
+                                   cp_b.center_lat, cp_b.center_lon)
+    # Rule 1 — cp_b lies inside cp_a's forward cone
+    if _angular_diff(bearing_a_to_b, cp_a.heading_deg) > 45:
+        return False
+    # Rule 2 — cp_b faces back (opposing polarity)
+    opposite_a = (cp_a.heading_deg + 180) % 360
+    if _angular_diff(cp_b.heading_deg, opposite_a) > 45:
+        return False
+    return True
+
+
+def _max_connect_dist_m(candidates) -> float:
+    """
+    Maximum allowed connection distance: 1.5× the median nearest-neighbor
+    distance between CPs on different structures.
+
+    This limits auto-connect to roughly one structure-span so that a CP
+    never leaps over an intermediate structure to reach a more distant one.
+    Returns inf when fewer than 2 candidates (no constraint applied).
+    """
+    import statistics
+    from route_time.engine.network import vincenty_m
+    if len(candidates) < 2:
+        return float("inf")
+    nn_dists = []
+    for cp_a in candidates:
+        best = float("inf")
+        for cp_b in candidates:
+            if cp_b.structure_id == cp_a.structure_id:
+                continue
+            d = vincenty_m(cp_a.center_lat, cp_a.center_lon,
+                           cp_b.center_lat, cp_b.center_lon)
+            if d < best:
+                best = d
+        if best < float("inf"):
+            nn_dists.append(best)
+    if not nn_dists:
+        return float("inf")
+    return statistics.median(nn_dists) * 1.5
+
+
 def _convex_hull_ids(points_xy: List[tuple]) -> set:
     """
     Gift-wrapping convex hull.  points_xy is a list of (x, y, id) tuples.
@@ -1603,6 +1689,9 @@ def _best_effort_connect(
     if len(candidates) < 2:
         return []
 
+    # --- Distance cap: no connection longer than 1 structure-span ---
+    max_dist = _max_connect_dist_m(candidates)
+
     # --- Greedy nearest-neighbor matching (each CP used at most once) ---
     used: set = set()
     matched_pairs = []
@@ -1621,8 +1710,14 @@ def _best_effort_connect(
             # Never connect two CPs on the same structure
             if cp_b.structure_id == cp_a.structure_id:
                 continue
+            # Rule: direction cone + opposite polarity
+            if not _cps_are_compatible(cp_a, cp_b):
+                continue
             d = vincenty_m(cp_a.center_lat, cp_a.center_lon,
                            cp_b.center_lat, cp_b.center_lon)
+            # Rule: no more than one structure-span away
+            if d > max_dist:
+                continue
             if d < best_dist:
                 best_dist = d
                 best_b = cp_b
@@ -1661,10 +1756,10 @@ def load_network_text():
         tmp.write(content)
         tmp_path = tmp.name
 
-    structs_data, cps_data = [], []
+    structs_data, cps_data, file_settings = [], [], {}
     try:
         if suffix == ".jpd":
-            net, structs_data, cps_data = load_jpd(tmp_path)
+            net, structs_data, cps_data, file_settings = load_jpd(tmp_path)
         else:
             with open(tmp_path) as f:
                 raw = json.load(f)
@@ -1688,8 +1783,10 @@ def load_network_text():
         s, c = _reconstruct_structures_from_net(net)
         _state["structures"].update(s)
         _state["cps"].update(c)
+    if file_settings:
+        _state["settings"].update(file_settings)
     _sync_counters()
-    return jsonify(_network_to_geojson(net))
+    return jsonify({**_network_to_geojson(net), "settings": _state["settings"]})
 
 
 @api.post("/network/load_suggestion")

@@ -82,7 +82,7 @@ class TestJpdReader:
     @pytest.mark.skipif(not os.path.exists(JPD_EXAMPLE), reason="jpd example not found")
     def test_load_ok_tulsa(self):
         from route_time.io import load_jpd
-        net = load_jpd(JPD_EXAMPLE)
+        net, _, _, _ = load_jpd(JPD_EXAMPLE)
         assert len(net.nodes) > 0
         assert len(net.lines) > 0
         assert len(net.stations) > 0
@@ -91,7 +91,7 @@ class TestJpdReader:
     @pytest.mark.skipif(not os.path.exists(JPD_EXAMPLE), reason="jpd example not found")
     def test_all_lines_have_length(self):
         from route_time.io import load_jpd
-        net = load_jpd(JPD_EXAMPLE)
+        net, _, _, _ = load_jpd(JPD_EXAMPLE)
         for line in net.lines.values():
             assert line.length_m > 0, f"Line {line.line_id} has zero length"
 

@@ -106,7 +106,7 @@ def main():
     # Load network
     fmt = _detect_format(args.network_file)
     if fmt == "jpd":
-        network = load_jpd(args.network_file)
+        network, _, _, _ = load_jpd(args.network_file)
     elif fmt == "podpresenter":
         network = load_podpresenter(args.network_file)
     else:

@@ -110,6 +110,10 @@ class Line:
     length_m: float                          # geodetic metres
     coordinates: List[tuple] = field(default_factory=list, repr=False)  # [(lat, lon), ...]
 
+    # If set, this line is a station access line (exit, platform, re-entry).
+    # Routing must not use it as a through-route for other stations.
+    station_access_id: Optional[str] = field(default=None, repr=False)
+
     # runtime state (reset each simulation run)
     pods_on_line: List["Pod"] = field(default_factory=list, repr=False)
 

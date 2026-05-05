@@ -63,15 +63,31 @@ const Settings = (() => {
     },
 
     async save() {
+      const data = this.current();
+      const r = await api("POST", "/api/settings", data);
+      if (r && r.error) { alert("Settings save failed: " + r.error); return; }
+      _applyDisplaySettings(data);
+      setStatus("Settings saved");
+    },
+
+    // Read current panel values without saving to server
+    current() {
       const data = {};
       _numFields.forEach(k => {
         const el = document.getElementById(`cfg-${k}`);
         if (el) data[k] = parseFloat(el.value);
       });
-      const r = await api("POST", "/api/settings", data);
-      if (r && r.error) { alert("Settings save failed: " + r.error); return; }
+      return data;
+    },
+
+    // Apply a settings dict to the panel (used after network load)
+    apply(data) {
+      if (!data) return;
+      _numFields.forEach(k => {
+        const el = document.getElementById(`cfg-${k}`);
+        if (el && data[k] !== undefined) el.value = data[k];
+      });
       _applyDisplaySettings(data);
-      setStatus("Settings saved");
     },
 
   };

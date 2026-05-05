@@ -443,12 +443,13 @@ function _clearSelection() {
 // This prevents the map from panning during the move.
 
 const _moveState = {
-  active:      false,
-  sid:         null,   // single-structure move
-  sids:        null,   // Set — multi-structure move (selection drag)
-  startLatlng: null,
-  origPos:     {},   // cpId → L.LatLng snapshot at drag start
-  connectors:  [],   // [{lid, endIdx, origLatlng}] connector lines whose endpoint moves
+  active:        false,
+  sid:           null,   // single-structure move
+  sids:          null,   // Set — multi-structure move (selection drag)
+  startLatlng:   null,
+  origPos:       {},   // cpId → L.LatLng snapshot at drag start
+  connectors:    [],   // [{lid, endIdx, origLatlng}] connector lines whose endpoint moves
+  internalLines: [],   // [{lid, origLls}] internal structure lines, moved live
 };
 
 let _hoverStructSid = null;   // CP or structure-line under cursor → triggers structure move
@@ -548,10 +549,16 @@ function _startMultiMove(latlng) {
       _moveState.connectors.push({ lid, endIdx: lls.length - 1, origLatlng: lls[lls.length - 1] });
   });
 
-  // Hide internal lines for all selected structures
+  // Snapshot internal lines for all selected structures — keep them visible and move live.
+  _moveState.internalLines = [];
   sids.forEach(sid => {
-    const lg = _structureLayerMap[sid];
-    if (lg) _layers.lines.removeLayer(lg);
+    const meta = _structureMetaMap[sid];
+    if (meta) {
+      (meta.line_ids || []).forEach(lid => {
+        const pl = _lineMap[lid];
+        if (pl) _moveState.internalLines.push({ lid, origLls: pl.getLatLngs().map(ll => ({ lat: ll.lat, lng: ll.lng })) });
+      });
+    }
   });
 
   _moveState.active      = true;
@@ -622,10 +629,18 @@ document.addEventListener("mousedown", (e) => {
       }
     });
 
-    // Hide all internal lines in one call — the structure layer group is
-    // removed from _layers.lines here and rebuilt by App._render() on drop.
-    const structLg = _structureLayerMap[sid];
-    if (structLg) _layers.lines.removeLayer(structLg);
+    // Snapshot internal line LatLngs so they can follow the drag live.
+    // (We keep the structure layer group visible — it looks much better than
+    //  hiding the body and only moving the CP dots.)
+    _moveState.internalLines = [];
+    const meta = _structureMetaMap[sid];
+    if (meta) {
+      (meta.line_ids || []).forEach(lid => {
+        const pl = _lineMap[lid];
+        if (pl) _moveState.internalLines.push({ lid, origLls: pl.getLatLngs().map(ll => ({ lat: ll.lat, lng: ll.lng })) });
+      });
+    }
+    dbg(`Alt+drag ${sid}: ${_moveState.connectors.length} connectors, ${_moveState.internalLines.length} internal lines`);
 
     _moveState.active      = true;
     _moveState.sid         = sid;
@@ -715,6 +730,12 @@ document.addEventListener("mousemove", (e) => {
       lls[c.endIdx] = L.latLng(c.origLatlng.lat + dlat, c.origLatlng.lng + dlon);
       pl.setLatLngs(lls);
     });
+    // Translate internal structure lines live
+    _moveState.internalLines.forEach(({ lid, origLls }) => {
+      const pl = _lineMap[lid];
+      if (!pl) return;
+      pl.setLatLngs(origLls.map(ll => L.latLng(ll.lat + dlat, ll.lng + dlon)));
+    });
   }
 
   if (_bendState.active) {
@@ -797,6 +818,7 @@ document.addEventListener("mouseup", async (e) => {
     return;
   }
 
+  setStatus("Saving…");
   if (sids) {
     // Multi-structure: move all selected structures in parallel
     const results = await Promise.all(
@@ -832,6 +854,54 @@ async function deleteSelection() {
   App._render(geojson);
   setStatus("Selection deleted");
 }
+
+// ── Network clipboard (copy .jpd text / paste to load) ───────────────────────
+
+const NetClipboard = (() => {
+  function _open() {
+    document.getElementById("netclip-dialog-backdrop").style.display = "flex";
+    document.getElementById("netclip-status").textContent = "";
+    const ta = document.getElementById("netclip-textarea");
+    ta.value = "Loading network…";
+    fetch("/api/network/download")
+      .then(r => r.text())
+      .then(xml => { ta.value = xml; })
+      .catch(() => { ta.value = ""; });
+  }
+
+  function _close() {
+    document.getElementById("netclip-dialog-backdrop").style.display = "none";
+  }
+
+  async function _copy() {
+    const text = document.getElementById("netclip-textarea").value;
+    if (!text.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+      document.getElementById("netclip-status").textContent = "Copied to clipboard.";
+    } catch {
+      document.getElementById("netclip-status").textContent = "Copy failed — select all and Ctrl+C manually.";
+    }
+  }
+
+  async function _load() {
+    const text = document.getElementById("netclip-textarea").value.trim();
+    if (!text) return;
+    const r = await _postRaw("/api/network/load_text", {
+      filename: "pasted.jpd",
+      content:  text,
+    });
+    if (r.error) { alert(r.error); return; }
+    _fitOnNextRender = true;
+    App._render(r);
+    Settings.apply(r.settings);
+    App.setReadOnly(true);
+    _close();
+    setStatus("Network loaded from clipboard");
+  }
+
+  return { open: _open, close: _close, copy: _copy, load: _load };
+})();
 
 // ── App module ────────────────────────────────────────────────────────────────
 
@@ -898,6 +968,7 @@ const App = {
     if (r.error) { alert(r.error); return; }
     _fitOnNextRender = true;
     App._render(r);
+    Settings.apply(r.settings);
     App.setReadOnly(true);
     setStatus(`Loaded: ${file.name}`);
     input.value = "";
@@ -1062,7 +1133,9 @@ const App = {
         weight:      0,
         interactive: true,
       });
-      hitZone.bindTooltip(sid, { sticky: true, className: "line-tooltip" });
+      const _lat = (center_lat || 0).toFixed(5);
+      const _lon = (center_lon || 0).toFixed(5);
+      hitZone.bindTooltip(`${sid}<br><span style="font-size:10px;color:#aaa">${_lat}, ${_lon}</span>`, { sticky: true, className: "line-tooltip" });
       hitZone.on("mouseover", () => { _hoverStructSid = sid; });
       hitZone.on("mouseout",  () => { if (_hoverStructSid === sid) _hoverStructSid = null; });
       hitZone.on("click", (e) => {
@@ -1107,6 +1180,17 @@ const App = {
       } else if (pts.length === 1) {
         map.setView(pts[0], 17);
       }
+    }
+  },
+
+  async refresh() {
+    setStatus("Refreshing…");
+    try {
+      const geojson = await api("GET", "/api/network");
+      App._render(geojson);
+      setStatus("Ready");
+    } catch (err) {
+      setStatus("Refresh failed — check server");
     }
   },
 
@@ -1376,8 +1460,10 @@ function _addCpFeature(f) {
     // In all other modes (including placement modes), fall through to CP connect/disconnect.
     // stopPropagation above already prevents the placement handler from also firing.
     const mode = Editor.getMode();
+    const connected = !!props.connected_to;   // re-read from closure; props stays current per render
 
     // Shift+click on a connected CP → disconnect
+    dbg(`CP click: ${cpId}  shift=${e.originalEvent.shiftKey}  connected=${connected}`);
     if (e.originalEvent.shiftKey && connected) {
       if (_roGuard()) return;
       _selectedCpId = null;
@@ -1510,7 +1596,88 @@ function _showLineInfo(props) {
 function _showStationPanel(nid) {
   document.getElementById("panel-station").style.display = "";
   document.getElementById("station-id").textContent = nid;
-  document.getElementById("station-detail").textContent = "Click 'Run Sim' for demand data.";
+
+  const result = (typeof Sim !== "undefined") ? Sim.getResult() : null;
+  const el = document.getElementById("station-detail");
+
+  if (!result) {
+    el.textContent = "Run simulation for station data.";
+    return;
+  }
+
+  const st       = (result.station_stats || []).find(s => s.station_id === nid);
+  const outbound = (result.trip_stats    || []).filter(t => t.origin_id === nid);
+  const inbound  = (result.trip_stats    || []).filter(t => t.dest_id   === nid);
+
+  function _fmtMs(ms) {
+    if (ms == null) return "—";
+    const s = ms / 1000;
+    return s < 60 ? `${Math.round(s)}s` : `${Math.floor(s/60)}m ${Math.round(s % 60)}s`;
+  }
+
+  let html = "";
+
+  if (st) {
+    html += `<div style="margin-bottom:8px;padding:5px 8px;background:#1a2a1a;
+                         border-radius:4px;font-size:11px;line-height:1.8">
+      <b>Boarded:</b> ${st.passengers_boarded} &nbsp;
+      <b>Alighted:</b> ${st.passengers_alighted} &nbsp;
+      <b>Waiting (end):</b> ${st.passengers_waiting_end}
+    </div>`;
+  }
+
+  if (outbound.length) {
+    html += `<div style="font-size:10px;color:#8bc;font-weight:600;margin:6px 0 2px">
+               Outbound (${outbound.length} destinations)</div>`;
+    html += `<table style="width:100%;border-collapse:collapse;font-size:10px;color:#bbb">
+      <tr style="color:#666"><th style="text-align:left">To</th>
+          <th style="text-align:right">Median</th><th style="text-align:right">Trips</th></tr>`;
+    outbound.sort((a, b) => (a.median_trip_ms || 0) - (b.median_trip_ms || 0))
+            .forEach(t => {
+      html += `<tr><td>${t.dest_id}</td>
+               <td style="text-align:right">${_fmtMs(t.median_trip_ms)}</td>
+               <td style="text-align:right">${t.sample_count}</td></tr>`;
+    });
+    html += `</table>`;
+  }
+
+  if (inbound.length) {
+    html += `<div style="font-size:10px;color:#8bc;font-weight:600;margin:8px 0 2px">
+               Inbound (${inbound.length} origins)</div>`;
+    html += `<table style="width:100%;border-collapse:collapse;font-size:10px;color:#bbb">
+      <tr style="color:#666"><th style="text-align:left">From</th>
+          <th style="text-align:right">Median</th><th style="text-align:right">Trips</th></tr>`;
+    inbound.sort((a, b) => (a.median_trip_ms || 0) - (b.median_trip_ms || 0))
+           .forEach(t => {
+      html += `<tr><td>${t.origin_id}</td>
+               <td style="text-align:right">${_fmtMs(t.median_trip_ms)}</td>
+               <td style="text-align:right">${t.sample_count}</td></tr>`;
+    });
+    html += `</table>`;
+  }
+
+  if (!st && !outbound.length && !inbound.length) {
+    html = `<div style="font-size:11px;color:#888">No simulation data for ${nid}.</div>`;
+  }
+
+  // Watch / clear-focus controls
+  const hasResult = !!(typeof Sim !== "undefined" && Sim.getResult());
+  html += `<div style="display:flex;gap:6px;margin-top:10px">
+    <button onclick="Sim.focusStation('${nid}')"
+            ${hasResult ? '' : 'disabled'}
+            style="flex:1;padding:5px 0;font-size:11px"
+            title="Replay showing only routes that visit this station, at 60× speed">
+      ▶ Watch this station
+    </button>
+    <button onclick="Sim.clearFocus()"
+            ${hasResult ? '' : 'disabled'}
+            style="flex:1;padding:5px 0;font-size:11px"
+            title="Restore full-network replay">
+      ⟳ All stations
+    </button>
+  </div>`;
+
+  el.innerHTML = html;
 }
 
 // ── Structure panel (rotation) ────────────────────────────────────────────────
@@ -1583,6 +1750,43 @@ const StructPanel = (() => {
     },
   };
 })();
+
+// ── Debug console ─────────────────────────────────────────────────────────────
+// Toggle with Ctrl+` (backtick).  Captures dbg() calls — keeps last 40 lines.
+
+const _dbgLines = [];
+let   _dbgVisible = false;
+let   _dbgEl = null;
+
+function _ensureDbgEl() {
+  if (_dbgEl) return;
+  _dbgEl = document.createElement("div");
+  _dbgEl.id = "rt-debug";
+  _dbgEl.style.cssText =
+    "position:fixed;bottom:32px;left:0;right:0;max-height:220px;overflow-y:auto;" +
+    "background:rgba(0,0,0,0.85);color:#0f0;font:11px/1.4 monospace;" +
+    "padding:6px 8px;z-index:9999;display:none;white-space:pre-wrap;";
+  document.body.appendChild(_dbgEl);
+}
+
+function dbg(msg) {
+  _ensureDbgEl();
+  const ts = new Date().toISOString().slice(11, 23);
+  _dbgLines.push(`[${ts}] ${msg}`);
+  if (_dbgLines.length > 40) _dbgLines.shift();
+  if (_dbgVisible) _dbgEl.textContent = _dbgLines.join("\n");
+  console.log("[dbg]", msg);
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "`" && e.ctrlKey) {
+    _ensureDbgEl();
+    _dbgVisible = !_dbgVisible;
+    _dbgEl.style.display = _dbgVisible ? "block" : "none";
+    if (_dbgVisible) _dbgEl.textContent = _dbgLines.join("\n");
+    e.preventDefault();
+  }
+});
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
@@ -1733,9 +1937,15 @@ map.on("mousedown", (e) => {
       const mk = _nodeMap[cpId];
       if (mk) _moveState.origPos[cpId] = mk.getLatLng();
     });
-    // Hide all internal lines in one call via the structure layer group
-    const wptStructLg = _structureLayerMap[structSid];
-    if (wptStructLg) _layers.lines.removeLayer(wptStructLg);
+    _moveState.connectors = [];
+    _moveState.internalLines = [];
+    const wptMeta = _structureMetaMap[structSid];
+    if (wptMeta) {
+      (wptMeta.line_ids || []).forEach(lid2 => {
+        const pl = _lineMap[lid2];
+        if (pl) _moveState.internalLines.push({ lid: lid2, origLls: pl.getLatLngs().map(ll => ({ lat: ll.lat, lng: ll.lng })) });
+      });
+    }
     _moveState.active      = true;
     _moveState.sid         = structSid;
     _moveState.startLatlng = e.latlng;

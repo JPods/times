@@ -406,32 +406,36 @@ def build_station(
         lat, lon = _offset(lat,        lon,        east_h, lat_m)
         return _node(net, f"{sid}.{name}", lat, lon)
 
-    # ── NB guideway (W/2 right of centre) ──────────────────────────────────
-    NB_N = pt("NB_N",  half,  +W/2)   # NB north end
-    NB_S = pt("NB_S", -half,  +W/2)   # NB south end
+    # ── guideway_near (W/2 right of centre — platform side) ────────────────
+    # _in_end: junction between guideway_near_in and guideway_near_main (uturn_far_near end)
+    # _out_end: junction between guideway_near_main and guideway_near_out (uturn_near_far end)
+    guideway_near_out_end = pt("guideway_near_out_end",  half,  +W/2)
+    guideway_near_in_end  = pt("guideway_near_in_end",  -half,  +W/2)
 
-    # ── SB guideway (W/2 left of centre) ───────────────────────────────────
-    SB_N = pt("SB_N",  half,  -W/2)
-    SB_S = pt("SB_S", -half,  -W/2)
+    # ── guideway_far (W/2 left of centre — opposite side) ──────────────────
+    # _in_end: junction between guideway_far_in and guideway_far_main (uturn_near_far end)
+    # _out_end: junction between guideway_far_main and guideway_far_out (uturn_far_near end)
+    guideway_far_in_end  = pt("guideway_far_in_end",   half,  -W/2)
+    guideway_far_out_end = pt("guideway_far_out_end", -half,  -W/2)
 
-    # ── Siding / platform (3W/2 right of centre = W right of NB) ───────────
-    SIDE_N   = pt("SIDE_N",    half * 0.4, +3*W/2)  # siding exit  (north of platform)
-    SIDE_S   = pt("SIDE_S",   -half * 0.4, +3*W/2)  # siding entry (south of platform)
-    PLATFORM = pt("PLATFORM",  0,          +3*W/2)
+    # ── Platform siding (3W/2 right of centre = W right of guideway_near) ──
+    platform_out_end = pt("platform_out_end",  half * 0.4, +3*W/2)  # platform_out junction
+    platform_in_end  = pt("platform_in_end",  -half * 0.4, +3*W/2)  # platform_in junction
+    platform_parking = pt("platform_parking",  0,           +3*W/2)
 
-    PLATFORM.is_station = mark_platform_as_station
+    platform_parking.is_station = mark_platform_as_station
     if mark_platform_as_station:
-        net.stations[PLATFORM.node_id] = Station(PLATFORM.node_id, PLATFORM)
+        net.stations[platform_parking.node_id] = Station(platform_parking.node_id, platform_parking)
 
-    # ── Turnabout midpoints (midway between NB and SB = on centre axis) ────
-    TA_N_mid = pt("TA_N_mid",  half, 0)
-    TA_S_mid = pt("TA_S_mid", -half, 0)
+    # ── U-turn midpoints (midway between near and far = on centre axis) ─────
+    uturn_near_far_mid = pt("uturn_near_far_mid",  half, 0)   # near→far end
+    uturn_far_near_mid = pt("uturn_far_near_mid", -half, 0)   # far→near end
 
     # ── External stub tips ──────────────────────────────────────────────────
-    NB_N_tip = pt("NB_N_tip",  half + S, +W/2)
-    SB_N_tip = pt("SB_N_tip",  half + S, -W/2)
-    NB_S_tip = pt("NB_S_tip", -half - S, +W/2)
-    SB_S_tip = pt("SB_S_tip", -half - S, -W/2)
+    guideway_near_out_tip = pt("guideway_near_out_tip",  half + S, +W/2)
+    guideway_far_in_tip   = pt("guideway_far_in_tip",    half + S, -W/2)
+    guideway_near_in_tip  = pt("guideway_near_in_tip",  -half - S, +W/2)
+    guideway_far_out_tip  = pt("guideway_far_out_tip",  -half - S, -W/2)
 
     # ---- Lines ----
     line_ids = []
@@ -441,74 +445,80 @@ def build_station(
         line_ids.append(l.line_id)
         return l
 
-    # NB main guideway (through the station, past both turnabouts)
-    ln("NB_S_in",   NB_S_tip, NB_S)      # approaching from south
-    ln("NB_main",   NB_S, NB_N)          # through the station length
-    ln("NB_N_out",  NB_N, NB_N_tip)      # departing to north
+    # guideway_near (platform side — through the station, uturn_far_near→uturn_near_far)
+    ln("guideway_near_in",   guideway_near_in_tip,  guideway_near_in_end)
+    ln("guideway_near_main", guideway_near_in_end,  guideway_near_out_end)
+    ln("guideway_near_out",  guideway_near_out_end, guideway_near_out_tip)
 
-    # SB main guideway
-    ln("SB_N_in",   SB_N_tip, SB_N)      # approaching from north
-    ln("SB_main",   SB_N, SB_S)          # through the station length
-    ln("SB_S_out",  SB_S, SB_S_tip)      # departing to south
+    # guideway_far (opposite side — through the station, uturn_near_far→uturn_far_near)
+    ln("guideway_far_in",   guideway_far_in_tip,   guideway_far_in_end)
+    ln("guideway_far_main", guideway_far_in_end,   guideway_far_out_end)
+    ln("guideway_far_out",  guideway_far_out_end,  guideway_far_out_tip)
 
-    # NB → siding entry (NB vehicle peels right into platform)
-    ln("NB_to_side", NB_S, SIDE_S)
+    # Platform siding — station-access only (routing must not use these as
+    # a through-bypass for other stations).
+    for l in [
+        ln("platform_in",        guideway_near_in_end,  platform_in_end),
+        ln("platform_parking_a", platform_in_end,       platform_parking),
+        ln("platform_parking_b", platform_parking,      platform_out_end),
+        ln("platform_out",       platform_out_end,      guideway_near_out_end),
+    ]:
+        l.station_access_id = sid
 
-    # Siding through platform (northward)
-    ln("SIDE_entry", SIDE_S, PLATFORM)
-    ln("SIDE_exit",  PLATFORM, SIDE_N)
+    # uturn_near_far: guideway_near → CCW loop → guideway_far (out_end/in_end)
+    ln("uturn_near_far_a", guideway_near_out_end, uturn_near_far_mid)
+    ln("uturn_near_far_b", uturn_near_far_mid,    guideway_far_in_end)
 
-    # Siding → NB merge (vehicle exits platform back onto NB)
-    ln("SIDE_to_NB", SIDE_N, NB_N)
-
-    # North turnabout: NB_N → CCW loop → SB_N (vehicle exits north, goes south)
-    ln("TA_N_a", NB_N,    TA_N_mid)
-    ln("TA_N_b", TA_N_mid, SB_N)
-
-    # South turnabout: SB_S → CCW loop → NB_S (SB vehicle accesses station)
-    ln("TA_S_a", SB_S,    TA_S_mid)
-    ln("TA_S_b", TA_S_mid, NB_S)
+    # uturn_far_near: guideway_far → CCW loop → guideway_near (out_end/in_end)
+    ln("uturn_far_near_a", guideway_far_out_end,  uturn_far_near_mid)
+    ln("uturn_far_near_b", uturn_far_near_mid,    guideway_near_in_end)
 
     # ---- ConnectionPoints ----
-    # North CP: NB_N_tip (outbound, vehicle exits north on NB)
-    #           SB_N_tip (inbound, vehicle enters from north on SB)
-    #   inbound_node  = SB_N_tip  (vehicle arrives at station from north via SB)
-    #   outbound_node = NB_N_tip  (vehicle departs station going north via NB)
-    north_clat, north_clon = _midpoint(NB_N_tip.lat, NB_N_tip.lon,
-                                       SB_N_tip.lat, SB_N_tip.lon)
-    cp_north = ConnectionPoint(
-        cp_id        = f"{sid}.CP_N",
-        structure_id = sid,
-        heading_deg  = nb_h,           # pointing northward
-        inbound_node = SB_N_tip,       # SB arrives from north
-        outbound_node= NB_N_tip,       # NB departs northward
-        center_lat   = north_clat,
-        center_lon   = north_clon,
+    # CP_near_far (uturn_near_far end):
+    #   outbound = guideway_near_out_tip  (departs on guideway_near)
+    #   inbound  = guideway_far_in_tip    (arrives on guideway_far)
+    near_far_clat, near_far_clon = _midpoint(
+        guideway_near_out_tip.lat, guideway_near_out_tip.lon,
+        guideway_far_in_tip.lat,   guideway_far_in_tip.lon)
+    cp_near_far = ConnectionPoint(
+        cp_id         = f"{sid}.CP_near_far",
+        structure_id  = sid,
+        heading_deg   = nb_h,
+        inbound_node  = guideway_far_in_tip,
+        outbound_node = guideway_near_out_tip,
+        center_lat    = near_far_clat,
+        center_lon    = near_far_clon,
     )
 
-    # South CP: NB_S_tip (inbound, NB vehicle approaches from south)
-    #           SB_S_tip (outbound, vehicle departs south on SB)
-    south_clat, south_clon = _midpoint(NB_S_tip.lat, NB_S_tip.lon,
-                                       SB_S_tip.lat, SB_S_tip.lon)
-    cp_south = ConnectionPoint(
-        cp_id        = f"{sid}.CP_S",
-        structure_id = sid,
-        heading_deg  = sb_h,           # pointing southward (stubs point away)
-        inbound_node = NB_S_tip,       # NB arrives from south
-        outbound_node= SB_S_tip,       # SB departs southward
-        center_lat   = south_clat,
-        center_lon   = south_clon,
+    # CP_far_near (uturn_far_near end):
+    #   outbound = guideway_far_out_tip   (departs on guideway_far)
+    #   inbound  = guideway_near_in_tip   (arrives on guideway_near)
+    far_near_clat, far_near_clon = _midpoint(
+        guideway_near_in_tip.lat, guideway_near_in_tip.lon,
+        guideway_far_out_tip.lat,  guideway_far_out_tip.lon)
+    cp_far_near = ConnectionPoint(
+        cp_id         = f"{sid}.CP_far_near",
+        structure_id  = sid,
+        heading_deg   = sb_h,
+        inbound_node  = guideway_near_in_tip,
+        outbound_node = guideway_far_out_tip,
+        center_lat    = far_near_clat,
+        center_lon    = far_near_clon,
     )
 
     all_node_ids = [n.node_id for n in [
-        NB_N, NB_S, SB_N, SB_S, SIDE_N, SIDE_S, PLATFORM,
-        TA_N_mid, TA_S_mid, NB_N_tip, SB_N_tip, NB_S_tip, SB_S_tip,
+        guideway_near_out_end, guideway_near_in_end,
+        guideway_far_in_end,   guideway_far_out_end,
+        platform_out_end, platform_in_end, platform_parking,
+        uturn_near_far_mid, uturn_far_near_mid,
+        guideway_near_out_tip, guideway_far_in_tip,
+        guideway_near_in_tip,  guideway_far_out_tip,
     ]]
 
     struct = Structure(
         structure_id   = sid,
         structure_type = "station",
-        cp_ids         = [cp_north.cp_id, cp_south.cp_id],
+        cp_ids         = [cp_near_far.cp_id, cp_far_near.cp_id],
         node_ids       = all_node_ids,
         line_ids       = line_ids,
         center_lat     = center_lat,
@@ -516,7 +526,7 @@ def build_station(
         heading_deg    = heading_deg,
     )
 
-    cps = {cp_north.cp_id: cp_north, cp_south.cp_id: cp_south}
+    cps = {cp_near_far.cp_id: cp_near_far, cp_far_near.cp_id: cp_far_near}
 
     net.build()
     return struct, cps
@@ -624,19 +634,19 @@ def rotate_station(
     # NB is W/2 right, SB is W/2 left, siding is 3W/2 right.
     # Stubs are symmetric: outbound (+W/2) and inbound (-W/2).
     offsets = {
-        "NB_N":     ( half,       +W/2),
-        "NB_S":     (-half,       +W/2),
-        "SB_N":     ( half,       -W/2),
-        "SB_S":     (-half,       -W/2),
-        "SIDE_N":   ( half*0.4,  +3*W/2),
-        "SIDE_S":   (-half*0.4,  +3*W/2),
-        "PLATFORM": ( 0,         +3*W/2),
-        "TA_N_mid": ( half,       0),
-        "TA_S_mid": (-half,       0),
-        "NB_N_tip": ( half + S,  +W/2),
-        "SB_N_tip": ( half + S,  -W/2),
-        "NB_S_tip": (-half - S,  +W/2),
-        "SB_S_tip": (-half - S,  -W/2),
+        "guideway_near_out_end":  ( half,       +W/2),
+        "guideway_near_in_end":   (-half,       +W/2),
+        "guideway_far_in_end":    ( half,       -W/2),
+        "guideway_far_out_end":   (-half,       -W/2),
+        "platform_out_end":       ( half*0.4,  +3*W/2),
+        "platform_in_end":        (-half*0.4,  +3*W/2),
+        "platform_parking":       ( 0,         +3*W/2),
+        "uturn_near_far_mid":     ( half,       0),
+        "uturn_far_near_mid":     (-half,       0),
+        "guideway_near_out_tip":  ( half + S,  +W/2),
+        "guideway_far_in_tip":    ( half + S,  -W/2),
+        "guideway_near_in_tip":   (-half - S,  +W/2),
+        "guideway_far_out_tip":   (-half - S,  -W/2),
     }
 
     for suffix, (fwd_m, lat_m) in offsets.items():
@@ -656,12 +666,13 @@ def rotate_station(
         cp = cps_dict.get(cp_id)
         if not cp:
             continue
-        cp.heading_deg = nb_h if cp_id.endswith(".CP_N") else sb_h
-        cp.center_lat  = (cp.inbound_node.lat + cp.outbound_node.lat) / 2
-        cp.center_lon  = (cp.inbound_node.lon + cp.outbound_node.lon) / 2
+        cp.heading_deg = nb_h if cp_id.endswith(".CP_near_far") else sb_h
+        cp.center_lat  = (cp.inbound_node.lat  + cp.outbound_node.lat)  / 2
+        cp.center_lon  = (cp.inbound_node.lon  + cp.outbound_node.lon)  / 2
 
     struct.heading_deg = new_heading_deg
     net.build()
+
 
 
 def rotate_traffic_circle(

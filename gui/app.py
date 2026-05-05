@@ -47,7 +47,7 @@ def _preload(path: str):
     import json as _json
     ext = os.path.splitext(path)[1].lower()
     if ext == ".jpd":
-        net = load_jpd(path)
+        net, structs_data, cps_data, file_settings = load_jpd(path)
     else:
         with open(path) as f:
             raw = _json.load(f)
@@ -55,8 +55,14 @@ def _preload(path: str):
             net = load_podpresenter(path)
         else:
             net = load_sketchup_map(path)
+        structs_data, cps_data, file_settings = [], [], {}
     _state["network"] = net
     _state["network_path"] = path
+    if structs_data or cps_data:
+        from route_time.gui.api import _restore_structures
+        _restore_structures(structs_data, cps_data, net)
+    if file_settings:
+        _state["settings"].update(file_settings)
 
 
 def main():

@@ -45,14 +45,28 @@ const TimeMap = (() => {
   const MAX_SPEED_M_PER_MIN = 3333;
 
   // Draw largest budgets first so smaller (more reachable) areas render on top
-  const BUDGETS = [30, 20, 10, 5];
+  // Base budgets — 60-min ring is added dynamically when network spans >20 miles
+  const BUDGETS_BASE = [30, 20, 10, 5];
 
   const STYLE = {
     5:  { color: "#00aa00", fillColor: "#00ff44" },
     10: { color: "#0044cc", fillColor: "#4488ff" },
     20: { color: "#aaaa00", fillColor: "#ffff00" },
     30: { color: "#cc2200", fillColor: "#ff6644" },
+    60: { color: "#7700cc", fillColor: "#cc66ff" },
   };
+
+  // Network span threshold (metres) above which a 60-min ring is drawn
+  const LARGE_NETWORK_M = 32187;   // 20 miles
+
+  // Compute the bounding-box diagonal of a set of {lat, lng} station objects
+  function _networkSpanM(stations) {
+    const lats = Object.values(stations).map(s => s.lat);
+    const lngs = Object.values(stations).map(s => s.lng);
+    if (lats.length < 2) return 0;
+    return L.latLng(Math.min(...lats), Math.min(...lngs))
+             .distanceTo(L.latLng(Math.max(...lats), Math.max(...lngs)));
+  }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -139,20 +153,25 @@ const TimeMap = (() => {
 
     const speedMperMin = _walkSpeedMperMin();
     const fillOpacity  = _fillOpacity();
-    const MAX_BUDGET   = BUDGETS[0];   // 30 min (BUDGETS = [30, 20, 10, 5])
 
     // Station positions from last-fetched geojson
     const geojson  = Sim.getGeojson();
     const stations = {};
     if (geojson) {
       (geojson.features || [])
-        .filter(f => f.properties.type === "station")
+        .filter(f => f.properties.type === "station" &&
+                     f.properties.structure_type !== "traffic_circle")
         .forEach(f => {
           const [lng, lat] = f.geometry.coordinates;
           stations[f.properties.node_id] = { lat, lng };
         });
     }
     const stationIds = Object.keys(stations);
+
+    // Add 60-min ring when network spans more than 20 miles
+    const span     = _networkSpanM(stations);
+    const BUDGETS  = span > LARGE_NETWORK_M ? [60, ...BUDGETS_BASE] : BUDGETS_BASE;
+    const MAX_BUDGET = BUDGETS[0];
 
     // Walk time (minutes) from clicked point to each station
     const walkToStation = {};
@@ -243,7 +262,7 @@ const TimeMap = (() => {
       });
       _boardingMarker.bindTooltip(
         `${bsName}<br>${walkToBoarding.toFixed(1)} min walk` +
-        (tooFar ? "<br>⚠ beyond 30 min budget" : ""),
+        (tooFar ? `<br>⚠ beyond ${MAX_BUDGET} min budget` : ""),
         { direction: "top", className: "line-tooltip" }
       );
       App.getLayers().timemap.addLayer(_boardingMarker);
@@ -325,6 +344,7 @@ const TimeMap = (() => {
           else if (totalMin < 10) dotColor = STYLE[10].color;
           else if (totalMin < 20) dotColor = STYLE[20].color;
           else if (totalMin < 30) dotColor = STYLE[30].color;
+          else if (totalMin < 60) dotColor = STYLE[60].color;
           else                    dotColor = "#888";
         }
 
@@ -361,7 +381,7 @@ const TimeMap = (() => {
       const simNote = hasSim ? "" : "  ·  est. times (run sim for congestion data)";
       setStatus(
         tooFar
-          ? `⚠ Nearest station ${bsName} is ${walkMin} min walk — beyond 30 min budget`
+          ? `⚠ Nearest station ${bsName} is ${walkMin} min walk — beyond ${MAX_BUDGET} min budget`
           : `Isochrone — boarding: ${bsName} (${walkMin} min walk)${simNote}`
       );
     }

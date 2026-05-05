@@ -19,6 +19,51 @@
 <!-- ===== Right sidebar ===== -->
 <div id="sidebar">
 
+  <!-- Key commands reference — collapsible -->
+  <div class="panel" id="panel-help" style="padding:0">
+    <div id="help-header"
+         onclick="(function(){var b=document.getElementById('help-body');var a=document.getElementById('help-arrow');var open=b.style.display!=='none';b.style.display=open?'none':'block';a.textContent=open?'▸':'▾';})()"
+         style="display:flex;justify-content:space-between;align-items:center;
+                padding:6px 10px;cursor:pointer;user-select:none;
+                background:#1e2a1e;border-radius:4px">
+      <span style="font-size:11px;font-weight:600;color:#9dc;letter-spacing:.04em">&#9875; Key Commands</span>
+      <span id="help-arrow" style="color:#9dc;font-size:11px">▸</span>
+    </div>
+    <div id="help-body" style="display:none;padding:6px 10px 8px">
+      <table style="width:100%;border-collapse:collapse;font-size:10px;color:#bbb;line-height:1.6">
+        <tbody>
+          <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:4px">Placement</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap;padding-right:8px">Click map</td>     <td>Place selected structure</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Esc</td>                             <td>Cancel active tool</td></tr>
+
+          <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:6px">Connection points (CPs)</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Click CP</td>                        <td>Select (first click)</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Click 2nd CP</td>                    <td>Connect pair</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Shift+click CP</td>                  <td>Disconnect pair</td></tr>
+
+          <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:6px">Moving structures</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Alt+drag CP</td>                     <td>Move structure</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Esc during drag</td>                 <td>Cancel, restore position</td></tr>
+
+          <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:6px">Guideway waypoints</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Waypoint tool + click line</td>      <td>Add bend point</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Drag waypoint</td>                   <td>Move bend point</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Shift+click waypoint</td>            <td>Remove bend point</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Right-click line</td>                <td>Add alignment point</td></tr>
+
+          <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:6px">Selection &amp; delete</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Shift+drag map</td>                  <td>Select region</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Delete / Backspace</td>              <td>Remove selection</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Shift+click node</td>                <td>Remove node</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Ctrl+click line</td>                 <td>Remove guideway pair</td></tr>
+
+          <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:6px">Other</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Ctrl+` (backtick)</td>              <td>Toggle debug console</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Network summary — always visible -->
   <div class="panel" id="panel-network">
     <h3>Network</h3>
@@ -80,8 +125,8 @@
       <div class="cfg-row">
         <label class="cfg-lbl" title="Pods waiting at each station at simulation start">Pods/station</label>
         <select id="cfg-podsPerStation" class="cfg-sel">
-          <option>2</option><option selected>4</option><option>6</option>
-          <option>8</option><option>12</option>
+          <option>2</option><option>4</option><option>6</option>
+          <option selected>8</option><option>12</option>
         </select>
         <span class="cfg-unit"></span>
       </div>
@@ -269,7 +314,12 @@
 
   <!-- ── Station detail ── -->
   <div class="panel" id="panel-station" style="display:none">
-    <h3>Station: <span id="station-id"></span></h3>
+    <h3 style="display:flex;justify-content:space-between;align-items:center">
+      <span>Station: <span id="station-id"></span></span>
+      <button onclick="document.getElementById('panel-station').style.display='none'"
+              title="Close" style="background:none;border:none;color:#c44;font-size:16px;
+                                   cursor:pointer;line-height:1;padding:0 2px">&times;</button>
+    </h3>
     <div id="station-detail"></div>
   </div>
 
@@ -325,6 +375,8 @@
       <button onclick="App.newNetwork()">New</button>
       <button onclick="App.openFile()">Open</button>
       <button onclick="App.saveFile()">Save</button>
+      <button onclick="App.refresh()" title="Re-fetch network from server and redraw all lines">&#8635; Refresh</button>
+      <button onclick="NetClipboard.open()" title="Copy network to clipboard or load from pasted text">&#128203; Clipboard…</button>
       <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button>
     </div>
 
@@ -522,6 +574,38 @@
 
   </div><!-- /dialog -->
 </div><!-- /backdrop -->
+
+<!-- ===== Network Clipboard Dialog ===== -->
+<div id="netclip-dialog-backdrop" class="dialog-backdrop" style="display:none"
+     onclick="if(event.target===this) NetClipboard.close()">
+  <div class="dialog" id="netclip-dialog" style="width:520px">
+
+    <div class="dialog-header">
+      <span>&#128203; Network — Copy / Paste</span>
+      <button class="dialog-close" onclick="NetClipboard.close()" title="Close">&times;</button>
+    </div>
+
+    <div class="dialog-body">
+      <p class="dialog-hint">
+        Copy the network text below to share it, or paste a network here and click <strong>Load</strong>.
+        All station and circle positions include latitude &amp; longitude.
+      </p>
+      <textarea id="netclip-textarea"
+                style="width:100%;height:220px;font-size:10px;font-family:monospace;
+                       background:#111;color:#9dc;border:1px solid #444;border-radius:3px;
+                       padding:6px;resize:vertical;box-sizing:border-box"
+                spellcheck="false" autocomplete="off"></textarea>
+      <div id="netclip-status" style="font-size:10px;color:#7a7;margin-top:4px;min-height:14px"></div>
+    </div>
+
+    <div class="dialog-footer">
+      <button class="btn-secondary" onclick="NetClipboard.close()">Cancel</button>
+      <button class="btn-secondary" onclick="NetClipboard.copy()" title="Copy network text to clipboard">&#128203; Copy</button>
+      <button class="btn-primary"   onclick="NetClipboard.load()" title="Load the network in the text area">&#8594; Load</button>
+    </div>
+
+  </div>
+</div>
 
 <script src="app.js"></script>
 <script src="editor.js"></script>
