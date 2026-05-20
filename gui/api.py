@@ -54,6 +54,83 @@ from route_time.io.jpd_writer import save_jpd, serialise_jpd
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
+# ---------------------------------------------------------------------------
+# Allie capture helpers — fire-and-forget, never raise
+# ---------------------------------------------------------------------------
+import subprocess as _subprocess
+import pathlib as _pathlib
+
+_ALLIE_CAPTURE = _pathlib.Path.home() / "Allie" / "scripts" / "allie-capture.py"
+
+
+def _allie_capture_simulation(result, net):
+    """Log simulation completion to Allie's events.jsonl."""
+    if not _ALLIE_CAPTURE.exists():
+        return
+    try:
+        summary = result.summary if hasattr(result, "summary") else {}
+        stations = summary.get("station_count", len(getattr(net, "stations", {})))
+        lines = summary.get("line_count", len(getattr(net, "lines", {})))
+        network_id = getattr(result, "network_id", "") or ""
+        data = json.dumps({
+            "network_id": network_id,
+            "stations": stations,
+            "lines": lines,
+        })
+        _subprocess.Popen(
+            ["python3", str(_ALLIE_CAPTURE),
+             "--source", "route-time",
+             "--event",  "simulation_complete",
+             "--message", f"{stations} stations, {lines} lines",
+             "--data", data],
+            stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL
+        )
+    except Exception:
+        pass
+
+
+def _allie_capture_error(event: str, message: str):
+    """Log an error event to Allie's events.jsonl."""
+    if not _ALLIE_CAPTURE.exists():
+        return
+    try:
+        _subprocess.Popen(
+            ["python3", str(_ALLIE_CAPTURE),
+             "--source", "route-time",
+             "--event",  event,
+             "--message", message[:200]],
+            stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL
+        )
+    except Exception:
+        pass
+
+
+def _write_fault(fault_text: str, context: str = "", detected_by: str = "Claude") -> None:
+    """Write a FAULT file to ~/Allie/process/inbox/.
+
+    Called at the tool boundary when a simulation or network load fails.
+    Allie reads these nightly:
+      - Recurring unresolved faults → ouch-list candidates
+      - FAULT + TFTS pairs → Understanding candidates
+    """
+    from datetime import datetime, timezone
+    ts_str  = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ts_file = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    inbox = _pathlib.Path.home() / "Allie" / "process" / "inbox"
+    if not inbox.parent.parent.exists():
+        return   # Allie drive not mounted — skip silently
+    inbox.mkdir(parents=True, exist_ok=True)
+    path = inbox / f"{ts_file}-fault.md"
+    path.write_text(
+        f"# FAULT — {ts_str}\n\n"
+        f"system:      RT\n"
+        f"detected_by: {detected_by}\n"
+        f"fault:       {fault_text}\n"
+        f"context:     {context}\n"
+        f"resolved_at: \n"
+    )
+    log.info("[fault] → %s", path.name)
+
 
 # ---------------------------------------------------------------------------
 # Settings helper (defined before _state so it can be called inline)
@@ -440,12 +517,14 @@ def _network_to_geojson(net: Network) -> dict:
 
 
 def _line_coords(line: Line) -> List[List[float]]:
-    if line.coordinates:
-        return [[lon, lat] for lat, lon in line.coordinates]
-    return [
-        [line.start_node.lon, line.start_node.lat],
-        [line.end_node.lon,   line.end_node.lat],
-    ]
+    start = [line.start_node.lon, line.start_node.lat]
+    end   = [line.end_node.lon,   line.end_node.lat]
+    coords = line.coordinates
+    if coords and len(coords) > 2:
+        # Preserve interior waypoints; always use live node positions for endpoints
+        mid = [[lon, lat] for lat, lon in coords[1:-1]]
+        return [start] + mid + [end]
+    return [start, end]
 
 
 def _network_center(net: Network) -> List[float]:
@@ -494,6 +573,7 @@ def load_network():
             else:
                 net = load_sketchup_map(path)
     except Exception as e:
+        _write_fault(f"Network load failed: {e}", f"path={path}")
         return jsonify({"error": str(e)}), 500
 
     _state["network"] = net
@@ -561,6 +641,127 @@ def new_network():
     _state["sim_result"] = None
     _clear_edit_state()
     return jsonify({"network_id": nid})
+
+
+@api.post("/network/reload")
+def reload_network():
+    """Re-read the current network file without restarting the server.
+
+    Equivalent to the SketchUp Reload Plugin button for Route-Time.
+    The developer edits a .jpd or map.json file, then clicks Reload Network
+    in the GUI — this is the tool boundary for the process capture cycle.
+    """
+    path = _state.get("network_path")
+    if not path:
+        return jsonify({"error": "No network path on record — load a file first"}), 400
+    if not os.path.exists(path):
+        return jsonify({"error": f"File not found: {path}"}), 400
+
+    ext = os.path.splitext(path)[1].lower()
+    structs_data, cps_data, file_settings = [], [], {}
+    try:
+        if ext == ".jpd":
+            net, structs_data, cps_data, file_settings = load_jpd(path)
+        else:
+            with open(path) as f:
+                raw = json.load(f)
+            if "lines" in raw:
+                net = load_podpresenter(path)
+            else:
+                net = load_sketchup_map(path)
+    except Exception as e:
+        _write_fault(f"Network reload failed: {e}", f"path={path}")
+        return jsonify({"error": str(e)}), 500
+
+    # Clear old simulation results — they are stale after a file change
+    _state["network"]      = net
+    _state["sim_frames"]   = []
+    _state["sim_result"]   = None
+    _clear_edit_state()
+    if structs_data or cps_data:
+        _restore_structures(structs_data, cps_data, net)
+    else:
+        s, c = _reconstruct_structures_from_net(net)
+        _state["structures"].update(s)
+        _state["cps"].update(c)
+    if file_settings:
+        _state["settings"].update(file_settings)
+    _sync_counters()
+
+    # Capture the reload event — this is the tool boundary
+    if _ALLIE_CAPTURE.exists():
+        try:
+            _subprocess.Popen(
+                ["python3", str(_ALLIE_CAPTURE),
+                 "--source", "route-time",
+                 "--event",  "network_reload",
+                 "--message", f"Reloaded {os.path.basename(path)}",
+                 "--data",   json.dumps({"path": path, "network_id": net.network_id})],
+                stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL,
+            )
+        except Exception:
+            pass
+
+    return jsonify({**_network_to_geojson(net),
+                    "settings": _state["settings"],
+                    "reloaded": path})
+
+
+@api.post("/process/log_event")
+def process_log_event():
+    """Write a TF or DNW process file from the browser TF/DNW prompt.
+
+    Called when the developer clicks 'Log TF' or 'Log DNW' after a
+    simulation run. Body:
+      { "type": "TF" | "DNW" | "skip",
+        "summary": "one-sentence description",
+        "network": "CA_Gilroy_Clean",
+        "passengers_served": 847,
+        "passengers_generated": 850 }
+
+    Writes to ~/Allie/process/inbox/. No-op if Allie drive not mounted.
+    """
+    from datetime import datetime, timezone
+    data = request.json or {}
+    event_type = data.get("type", "skip").upper()
+    if event_type == "SKIP":
+        return jsonify({"ok": True, "written": False})
+
+    ts_str  = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ts_file = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+    inbox = _pathlib.Path.home() / "Allie" / "process" / "inbox"
+    if not inbox.parent.parent.exists():
+        return jsonify({"ok": True, "written": False, "note": "Allie drive not mounted"})
+    inbox.mkdir(parents=True, exist_ok=True)
+
+    network  = data.get("network", "")
+    summary  = data.get("summary", "").strip()
+    pax_s    = data.get("passengers_served", "?")
+    pax_g    = data.get("passengers_generated", "?")
+
+    if event_type == "TF":
+        path = inbox / f"{ts_file}-tf.md"
+        path.write_text(
+            f"# TF — {ts_str}\n\n"
+            f"summary: {summary or '(edit me)'}\n"
+            f"code:    route_time/gui/api.py\n"
+            f"context: network={network} passengers={pax_s}/{pax_g}\n"
+            f"domain:  RT\n"
+        )
+    elif event_type == "DNW":
+        path = inbox / f"{ts_file}-dnw.md"
+        path.write_text(
+            f"# DNW — {ts_str}\n\n"
+            f"tried:    {summary or '(edit me)'}\n"
+            f"result:   simulation ran — passengers_served={pax_s}/{pax_g}\n"
+            f"revealed: \n"
+            f"domain:  RT\n"
+        )
+    else:
+        return jsonify({"error": f"Unknown type: {event_type}"}), 400
+
+    log.info("[process] → %s", path.name)
+    return jsonify({"ok": True, "written": True, "file": path.name})
 
 
 @api.post("/network/node")
@@ -1327,15 +1528,52 @@ def run_simulation():
     _state["sim_result"]   = None
     _state["sim_error"]    = None
 
+    # Tool boundary — simulation start captured.
+    # This is the "Reload Plugin" moment for Route-Time: the developer changed
+    # something and is now testing it. If a fix was being tested, write a TF
+    # or TFTS after the run (the browser will prompt).
+    network_name = getattr(net, "network_id", "") or ""
+    _allie_capture_simulation.__func__ if hasattr(_allie_capture_simulation, "__func__") else None
+    if _ALLIE_CAPTURE.exists():
+        try:
+            _subprocess.Popen(
+                ["python3", str(_ALLIE_CAPTURE),
+                 "--source", "route-time",
+                 "--event",  "simulation_start",
+                 "--message", f"{network_name} — {len(station_ids)} stations, {slots} slots",
+                 "--data",   json.dumps({"network_id": network_name, "slots": slots,
+                                         "stations": len(station_ids)})],
+                stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL,
+            )
+        except Exception:
+            pass
+
     def _run_thread():
         try:
             result = sim.run(total_slots=slots)
             _state["sim_result"] = result
+
+            # Detect silent failure: passengers generated but none served
+            pax_served    = getattr(result.simulation if hasattr(result, "simulation")
+                                    else result, "passengers_served", None)
+            pax_generated = getattr(result.simulation if hasattr(result, "simulation")
+                                    else result, "passengers_generated", None)
+            if (pax_served is not None and pax_generated is not None
+                    and pax_generated > 0 and pax_served == 0):
+                _write_fault(
+                    "0 passengers served with non-zero demand",
+                    f"network={network_name}, stations={len(station_ids)}, slots={slots}; "
+                    f"check station connectivity and routing",
+                )
+
             _save_sweep_json(result)
+            _allie_capture_simulation(result, net)
         except Exception as exc:
             import traceback
             _state["sim_error"] = str(exc)
             log.error("Simulation thread error: %s", traceback.format_exc())
+            _write_fault(f"Simulation exception: {exc}", f"network={network_name}")
+            _allie_capture_error("simulation_error", str(exc))
         finally:
             _state["sim_active"]   = False
             _state["sim_instance"] = None

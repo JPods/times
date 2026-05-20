@@ -20,6 +20,7 @@ const Sim = (() => {
   let _animTimer   = null;
   let _loadingAnim = null;  // interval handle for the sim-running loading animation
   let _podMarkers  = [];
+  let _replayPool  = [];    // persistent L.circleMarker pool — reused across replay frames
 
   // HSV interpolation red→green for velocity ratio 0→1
   function _podColor(ratio) {
@@ -33,22 +34,35 @@ const Sim = (() => {
     _podMarkers = [];
   }
 
-  function _drawPods(podList) {
-    _clearPods();
-    podList.forEach(({ lat, lng, color, label, isStopping, isApproaching }) => {
-      // Size: 16 = at station siding, 12 = approaching destination, 8 = cruising
-      const sz     = isStopping ? 16 : isApproaching ? 12 : 8;
-      const border = isStopping ? '2px solid #fff' : isApproaching ? '1px solid rgba(255,255,255,0.6)' : 'none';
-      const icon = L.divIcon({
-        className: "",
-        html: `<div class="pod-marker" style="background:${color};width:${sz}px;height:${sz}px;border-radius:50%;border:${border}" title="${label||''}"></div>`,
-        iconSize:   [sz, sz],
-        iconAnchor: [sz / 2, sz / 2],
+  // Grow the circleMarker pool to at least `n` entries (never shrinks).
+  function _ensureReplayPool(n) {
+    while (_replayPool.length < n) {
+      const m = L.circleMarker([0, 0], {
+        radius: 4, color: 'transparent',
+        fillColor: '#3498db', fillOpacity: 0,
+        interactive: false,
       });
-      const m = L.marker([lat, lng], { icon, interactive: false });
       App.getLayers().pods.addLayer(m);
-      _podMarkers.push(m);
+      _replayPool.push(m);
+    }
+  }
+
+  function _clearReplayPool() {
+    _replayPool.forEach(m => m.setStyle({ fillOpacity: 0 }));
+  }
+
+  // Draw pods using a persistent circleMarker pool — no addLayer/removeLayer per frame.
+  function _drawPods(podList) {
+    _ensureReplayPool(podList.length);
+    podList.forEach(({ lat, lng, color, isStopping, isApproaching }, i) => {
+      const r = isStopping ? 8 : isApproaching ? 6 : 4;
+      _replayPool[i].setLatLng([lat, lng]);
+      _replayPool[i].setStyle({ fillColor: color, radius: r, fillOpacity: 1 });
     });
+    // Hide unused pool entries
+    for (let i = podList.length; i < _replayPool.length; i++) {
+      _replayPool[i].setStyle({ fillOpacity: 0 });
+    }
   }
 
   // Build animation frames — one pod per station-to-station route.
@@ -72,8 +86,8 @@ const Sim = (() => {
 
     // Siding line suffixes — pod is "stopping" only while on these segments
     const SIDING_SUFFIXES = [
-      "platform_in", "platform_parking_a", "platform_parking_b",
-      "platform_out",
+      "platform_in", "platform_parking_a", "platform_parking_b", "platform_out",  // current
+      "platform_exit", "platform_reentry",                                          // legacy
     ];
 
     // Physics settings from panel (for transit time weighting)
@@ -185,20 +199,35 @@ const Sim = (() => {
 
     if (routes.length === 0) return;
 
+    // Cap animation routes — creating/animating thousands of markers freezes the browser.
+    // 400 routes = 400 circleMarkers updating at 12 fps, which is comfortably smooth.
+    const MAX_ANIM_ROUTES = 400;
+    if (routes.length > MAX_ANIM_ROUTES) {
+      const step = routes.length / MAX_ANIM_ROUTES;
+      const sampled = [];
+      for (let i = 0; i < MAX_ANIM_ROUTES; i++) {
+        sampled.push(routes[Math.floor(i * step)]);
+      }
+      routes.length = 0;
+      routes.push(...sampled);
+    }
+
     const fps = 12;
     const totalFrames = fps * 10;  // 10-second loop
 
-    // Normalise so slowest route sets the cycle length
-    const maxMs = Math.max(...routes.map(r => r.transit_ms));
-
     for (let frame = 0; frame < totalFrames; frame++) {
+      // Yield every 20 frames so the browser stays responsive during build.
+      if (frame > 0 && frame % 20 === 0) {
+        await new Promise(r => setTimeout(r, 0));
+      }
       const t = frame / totalFrames;  // 0..1 across replay window
       const pods = [];
 
       routes.forEach(route => {
-        // Each route has a cycle proportional to its transit time
-        const cycleT = route.transit_ms / maxMs;   // 0..1 relative to slowest
-        const rawPos = (t / Math.max(cycleT, 0.001)) % 1;  // position in THIS route's cycle
+        // All pods synchronized: rawPos = t
+        // At frame 0 every pod is at its origin platform.
+        // Pods travel during the middle 70% of the loop, dwell at each end.
+        const rawPos = t;
 
         let travelRatio;  // 0 = origin platform, 1 = dest platform
         let baseColor;
@@ -307,7 +336,7 @@ const Sim = (() => {
 
   function _stopReplay() {
     if (_animTimer) { clearInterval(_animTimer); _animTimer = null; }
-    _clearPods();
+    _clearReplayPool();
   }
 
   // ── Loading animation (runs while simulation POST is in flight) ─────────────
@@ -317,7 +346,12 @@ const Sim = (() => {
   function _startLoadingAnim(geojson) {
     if (_loadingAnim) return;
 
-    const lines = (geojson.features || []).filter(f => f.properties.type === "line");
+    // Only animate on inter-station connector lines (not internal station or circle lines).
+    // Internal lines (platform sidings, circle ring segments, uturn arms) have structure_id set.
+    // Showing vehicles on those during loading confused users into thinking vehicles originate there.
+    const lines = (geojson.features || []).filter(f =>
+        f.properties.type === "line" && !f.properties.structure_id
+    );
     if (lines.length === 0) return;
 
     // Group lines by their end_node — pods heading to the same junction
@@ -553,7 +587,15 @@ const Sim = (() => {
       gridLookup[`${t.origin_id}|${t.dest_id}`] = t.median_trip_ms;
     });
 
-    if (allStationIds.length > 0) {
+    // Route grid: skip for large networks — N²×200-char HTML freezes innerHTML.
+    const MAX_GRID_STATIONS = 50;
+    if (allStationIds.length > 0 && allStationIds.length > MAX_GRID_STATIONS) {
+      html += _sectionHead("Route Grid");
+      html += `<div style="color:#888;font-size:11px">` +
+              `${allStationIds.length} stations — grid hidden above ${MAX_GRID_STATIONS}. ` +
+              `Use the Isochrone tab to explore travel times.</div>`;
+    }
+    if (allStationIds.length > 0 && allStationIds.length <= MAX_GRID_STATIONS) {
       // Strip .PLATFORM suffix and any legacy hex prefix, keep the s# / c# label
       const short = id => id.replace(/\.PLATFORM$/, "").replace(/^[A-Z]+_[0-9A-F]+$/, id);
       html += _sectionHead("Route Grid");
@@ -596,7 +638,7 @@ const Sim = (() => {
         <span style="background:rgb(255,28,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>30m+
         <span style="opacity:0.6;background:rgb(191,255,0);width:14px;height:10px;display:inline-block;border-radius:2px"></span>~est
       </div>`;
-    }
+    }  // end grid ≤ MAX_GRID_STATIONS
 
     // --- TRIP TIMES (origin → destination) ---
     const trips = [...(result.trip_stats || [])]
@@ -655,7 +697,7 @@ const Sim = (() => {
     document.getElementById("sim-lines").innerHTML = html;
 
     // Async: fill any dark/missing Route Grid cells with analytical estimates
-    if (allStationIds.length > 0) {
+    if (allStationIds.length > 0 && allStationIds.length <= MAX_GRID_STATIONS) {
       _fillGridGaps(allStationIds, gridLookup).catch(e => console.warn("Grid gap fill:", e));
     }
   }
@@ -690,6 +732,69 @@ const Sim = (() => {
       });
     }
   }
+
+  // ---------------------------------------------------------------------------
+  // TF/DNW log prompt — shown after every simulation run.
+  // The developer just crossed a tool boundary (Run Simulation). If they were
+  // testing a fix, this is the moment to capture it — intent is unambiguous.
+  // ---------------------------------------------------------------------------
+
+  function _showLogPrompt(result) {
+    const existing = document.getElementById("log-prompt");
+    if (existing) existing.remove();
+
+    const sim  = result.simulation || {};
+    const pax  = sim.passengers_served    ?? "?";
+    const gen  = sim.passengers_generated ?? "?";
+    const net  = (result.network_id || "").replace(/\.\w+$/, "");
+    const pct  = (gen > 0) ? ((pax / gen) * 100).toFixed(1) + "%" : "—";
+
+    const div = document.createElement("div");
+    div.id = "log-prompt";
+    div.style.cssText = [
+      "position:fixed", "bottom:14px", "right:14px", "z-index:9999",
+      "background:#1a2a1a", "border:1px solid #3a5a3a", "border-radius:6px",
+      "padding:10px 14px", "font-size:11px", "color:#ccc", "max-width:280px",
+      "box-shadow:0 2px 12px rgba(0,0,0,.6)",
+    ].join(";");
+
+    div.innerHTML = `
+      <div style="font-weight:600;color:#9dc;margin-bottom:6px">
+        Simulation complete — ${pax}/${gen} served (${pct})
+      </div>
+      <div style="color:#aaa;margin-bottom:8px;font-size:10px">
+        Were you testing a fix? Log it while intent is clear.
+      </div>
+      <input id="log-summary" placeholder="One-sentence summary (optional)"
+             style="width:100%;box-sizing:border-box;background:#111;border:1px solid #444;
+                    color:#ddd;padding:4px 6px;border-radius:3px;font-size:10px;
+                    margin-bottom:8px"/>
+      <div style="display:flex;gap:6px">
+        <button onclick="Sim.logEvent('TF',  '${net}', ${pax}, ${gen})"
+                style="flex:1;background:#1a3a1a;border:1px solid #3a6a3a;
+                       color:#9d9;padding:4px;border-radius:3px;cursor:pointer;
+                       font-size:10px">
+          Log TF
+        </button>
+        <button onclick="Sim.logEvent('DNW', '${net}', ${pax}, ${gen})"
+                style="flex:1;background:#3a1a1a;border:1px solid #6a3a3a;
+                       color:#d99;padding:4px;border-radius:3px;cursor:pointer;
+                       font-size:10px">
+          Log DNW
+        </button>
+        <button onclick="document.getElementById('log-prompt').remove()"
+                style="flex:1;background:#222;border:1px solid #444;
+                       color:#888;padding:4px;border-radius:3px;cursor:pointer;
+                       font-size:10px">
+          Skip
+        </button>
+      </div>`;
+
+    document.body.appendChild(div);
+    // Auto-dismiss after 30 s if ignored
+    setTimeout(() => { if (div.parentNode) div.remove(); }, 30_000);
+  }
+
 
   return {
 
@@ -748,10 +853,12 @@ const Sim = (() => {
       await _buildFrames(result, _geojson);
 
       document.getElementById("btn-replay").disabled = false;
-      document.getElementById("btn-replay").textContent = "▶▶ Replay";
+      document.getElementById("btn-replay").textContent = "⏹ Stop";
+      _startReplay();   // auto-start animation immediately after build
       const pax = result.simulation.passengers_served;
       setStatus(`Simulation complete — ${pax} passengers served`);
       App.setReadOnly(true);
+      _showLogPrompt(result);
     },
 
     replay() {
@@ -829,6 +936,42 @@ const Sim = (() => {
     // Accessors for TimeMap (walk-ride-walk circles)
     getResult()  { return _result;  },
     getGeojson() { return _geojson; },
+
+    // ── Process capture — TF/DNW log from the browser prompt ─────────────
+    async logEvent(type, network, paxServed, paxGenerated) {
+      const summary = (document.getElementById("log-summary")?.value || "").trim();
+      const prompt  = document.getElementById("log-prompt");
+      if (prompt) prompt.remove();
+      try {
+        const r = await api("POST", "/api/process/log_event", {
+          type, summary, network,
+          passengers_served:    paxServed,
+          passengers_generated: paxGenerated,
+        });
+        if (r.written) {
+          setStatus(`${type} logged → ${r.file}`);
+        } else {
+          setStatus(`${type} skipped — Allie drive not mounted`);
+        }
+      } catch (e) {
+        setStatus(`Log failed: ${e}`);
+      }
+    },
+
+    // ── Reload network file without restarting server ─────────────────────
+    // Equivalent to "Reload Plugin" for Route-Time: edit .jpd, click Reload.
+    // The simulation state is cleared; run again to test the change.
+    async reloadNetwork() {
+      setStatus("Reloading network file…");
+      try {
+        const r = await api("POST", "/api/network/reload");
+        if (r.error) { setStatus(`Reload error: ${r.error}`); return; }
+        App.renderNetwork(r);
+        setStatus(`Reloaded: ${r.reloaded || "network"}`);
+      } catch (e) {
+        setStatus(`Reload failed: ${e}`);
+      }
+    },
 
   };
 

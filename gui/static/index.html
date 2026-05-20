@@ -195,15 +195,19 @@
     <div class="cfg-group">
       <div class="cfg-group-label">Playback speed</div>
       <div style="font-size:10px;color:#555;padding:2px 8px 4px">
-        How many times faster than real time the animation plays.<br>
-        360× = 1 hour of simulation in 10 seconds.
+        Slow speeds (5×–20×) let you watch individual pod movements.<br>
+        Fast speeds (360×+) show network-level traffic patterns.<br>
+        5× = one frame every ~6 s &nbsp;|&nbsp; 60× = ~2 fps &nbsp;|&nbsp; 360× = 12 fps smooth
       </div>
       <div class="cfg-row">
         <label class="cfg-lbl">Speed</label>
         <select id="cfg-simSpeedMultiplier" class="cfg-sel">
-          <option value="60">60×</option>
+          <option value="5">5×</option>
+          <option value="10">10×</option>
+          <option value="20">20×</option>
+          <option value="60" selected>60×</option>
           <option value="180">180×</option>
-          <option value="360" selected>360×</option>
+          <option value="360">360×</option>
           <option value="720">720×</option>
           <option value="3600">3600×</option>
         </select>
@@ -378,6 +382,7 @@
       <button onclick="App.refresh()" title="Re-fetch network from server and redraw all lines">&#8635; Refresh</button>
       <button onclick="NetClipboard.open()" title="Copy network to clipboard or load from pasted text">&#128203; Clipboard…</button>
       <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button>
+      <button onclick="Guide.open()" title="User guide — how to build and simulate a JPods network">? Guide</button>
     </div>
 
     <!-- LOCK -->
@@ -432,7 +437,8 @@
     <!-- SIMULATE -->
     <div class="pal-section">
       <div class="pal-label">Simulate</div>
-      <button onclick="Sim.run()"    title="Run simulation">&#9654; Run</button>
+      <button onclick="Sim.run()"           title="Run simulation">&#9654; Run</button>
+      <button onclick="Sim.reloadNetwork()" title="Re-read network file from disk without restarting server">&#8635; Reload</button>
       <button id="btn-replay" onclick="Sim.replay()" title="Replay animation" disabled>&#9654;&#9654; Replay</button>
       <button id="btn-timemap" onclick="TimeMap.toggle()"
               title="Isochrone: click a point to see walk-ride-walk travel-time zones (5/10/20/30 min)">&#9711; Isochrone</button>
@@ -607,6 +613,163 @@
   </div>
 </div>
 
+<!-- ===== User Guide Dialog ===== -->
+<div id="guide-dialog-backdrop" class="dialog-backdrop" style="display:none"
+     onclick="if(event.target===this) Guide.close()">
+  <div class="dialog" id="guide-dialog" style="width:560px;max-height:85vh;display:flex;flex-direction:column">
+
+    <div class="dialog-header">
+      <span>? Route-Time — User Guide</span>
+      <button class="dialog-close" onclick="Guide.close()" title="Close">&times;</button>
+    </div>
+
+    <div class="dialog-body" style="overflow-y:auto;flex:1;font-size:12px;line-height:1.6;color:#bbb">
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">What It Is</div>
+        <p class="dialog-hint" style="margin:0">
+          Route-Time designs and simulates JPods networks on a real map.
+          Place stations and traffic circles, connect them, then run a simulation
+          to get door-to-door travel times for every station pair.
+        </p>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Build a Network — Step by Step</div>
+        <ol style="margin:4px 0 0 16px;padding:0;color:#9dc">
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb">Choose a <strong style="color:#ddd">station orientation</strong>
+            (N–S, E–W, NE–SW, NW–SE) in the Stations panel, then click the map to place it.
+            The platform side loads passengers; the far side reverses direction.</span>
+          </li>
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb">Place <strong style="color:#ddd">traffic circles</strong>
+            at intersections (⬡ Circle or ⬡ /45°).
+            Circles connect up to four guideway arms.</span>
+          </li>
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb"><strong style="color:#ddd">Connect</strong> structures:
+            click a <span style="color:#4af">blue outbound</span> CP dot, then click the
+            <span style="color:#f44">red inbound</span> CP dot on the adjacent structure.
+            Or click <strong style="color:#ddd">⚡ Auto-Connect</strong> to wire everything automatically.</span>
+          </li>
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb">Click <strong style="color:#ddd">▶ Run</strong> to simulate.
+            Results appear in the sidebar; the animation starts automatically.</span>
+          </li>
+        </ol>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Connection Points (CPs)</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#4af;white-space:nowrap">Blue dot</td>
+            <td style="color:#bbb">Outbound — vehicles depart this end</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#f44;white-space:nowrap">Red dot</td>
+            <td style="color:#bbb">Inbound — vehicles arrive this end</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Shift+click CP</td>
+            <td style="color:#bbb">Disconnect a connected pair</td>
+          </tr>
+        </table>
+        <p style="margin:4px 0 0;color:#888;font-size:11px">
+          Always connect blue → red. Each connection creates one directed guideway segment.
+          Two segments (one each direction) form a complete two-way corridor.
+        </p>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Station Layout</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Near side</td>
+            <td style="color:#bbb">Platform — passengers board and alight here</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Far side</td>
+            <td style="color:#bbb">No platform — internal U-turn reverses direction</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">CP_near_far</td>
+            <td style="color:#bbb">Exit toward near-guideway direction</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">CP_far_near</td>
+            <td style="color:#bbb">Exit toward far-guideway direction (via internal U-turn)</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Animation — Pod Colors</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr>
+            <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#fff;vertical-align:middle"></span></td>
+            <td style="color:#bbb">White — parked at platform (loading or unloading)</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e67e22;vertical-align:middle"></span></td>
+            <td style="color:#bbb">Orange — in station siding (entering or leaving platform)</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f1c40f;vertical-align:middle"></span></td>
+            <td style="color:#bbb">Yellow — approaching destination station</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:hsl(60,100%,50%);vertical-align:middle"></span></td>
+            <td style="color:#bbb">Red→Green — in transit (red = slow ends, green = cruise speed)</td>
+          </tr>
+        </table>
+        <p style="margin:4px 0 0;color:#888;font-size:11px">
+          Use 5×–20× playback speed to follow individual pods.
+          360×+ shows network-level flow. All station pairs are simulated simultaneously.
+        </p>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Simulation Results</div>
+        <ul style="margin:4px 0 0 16px;padding:0;color:#bbb">
+          <li style="margin-bottom:3px">The sweep dispatches one pod from every station to every other station.</li>
+          <li style="margin-bottom:3px">Travel times include station overhead (ticketing, boarding, alighting) — default 150 sec total.</li>
+          <li style="margin-bottom:3px">The travel time matrix shows median door-to-door minutes for each pair.</li>
+          <li style="margin-bottom:3px"><strong style="color:#ddd">⊙ Isochrone</strong> — click any map point to see walk-ride-walk coverage zones (5/10/20/30 min).</li>
+        </ul>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Files</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">.jpd</td>
+            <td style="color:#bbb">Network file — save and open with the File buttons</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">📋 Clipboard</td>
+            <td style="color:#bbb">Copy or paste a network as text — useful for sharing</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">📷 Capture</td>
+            <td style="color:#bbb">Save the current map view as a PNG image</td>
+          </tr>
+        </table>
+        <p style="margin:4px 0 0;color:#888;font-size:11px">
+          Networks are not auto-saved. Save before closing the browser.
+        </p>
+      </div>
+
+    </div><!-- /dialog-body -->
+
+    <div class="dialog-footer">
+      <button class="btn-primary" onclick="Guide.close()">Close</button>
+    </div>
+
+  </div><!-- /dialog -->
+</div><!-- /backdrop -->
+
 <script src="app.js"></script>
 <script src="editor.js"></script>
 <script src="simulator.js"></script>
@@ -615,5 +778,19 @@
 <script src="demand.js"></script>
 <script src="overlays.js"></script>
 <script src="ai.js"></script>
+
+<script>
+const Guide = (() => {
+  function open()  { document.getElementById("guide-dialog-backdrop").style.display = "flex"; }
+  function close() { document.getElementById("guide-dialog-backdrop").style.display = "none"; }
+  // Close on Escape
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && document.getElementById("guide-dialog-backdrop").style.display !== "none") {
+      close();
+    }
+  });
+  return { open, close };
+})();
+</script>
 </body>
 </html>
