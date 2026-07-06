@@ -11,7 +11,7 @@
  *
  * Colors follow a standard gradient:
  *   AADT:     low (blue) → high (red)
- *   Accident: low (yellow) → high (red)
+ *   Accident: single (light blue) → multiple fatal (dark blue)
  *   Mobility: low (transparent) → high (orange/red) heatmap
  */
 
@@ -113,10 +113,10 @@ const Overlays = (() => {
         const severity = Math.min(fatals, 3);
         return L.circleMarker(latlng, {
           radius: 10 + severity * 8,
-          color: _severityColor(severity),
+          color: "transparent",
           fillColor: _severityColor(severity),
-          fillOpacity: 0.4,
-          weight: 2,
+          fillOpacity: 0.5,
+          weight: 0,
         });
       },
       onEachFeature: (f, layer) => {
@@ -137,8 +137,8 @@ const Overlays = (() => {
   }
 
   function _severityColor(s) {
-    // 1=minor (yellow), 2=serious (orange), 3=fatal (red)
-    const colors = ["#f1c40f", "#e67e22", "#e74c3c"];
+    // 1=single (light blue), 2=serious (medium blue), 3=multiple fatal (dark blue)
+    const colors = ["#2471a3", "#1a5276", "#0b2f4a"];
     return colors[Math.min(Math.round(s) - 1, 2)] || "#aaa";
   }
 

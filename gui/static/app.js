@@ -967,7 +967,8 @@ const App = {
     App._dirty = false;
     const r = await api("POST", "/api/network/new", { network_id: "untitled" });
     App._dirty = false;  // api() sets dirty on POST — clear it, this isn't an edit
-    App._render(r);
+    // New returns no features — render an empty collection to clear the map
+    App._render({ type: "FeatureCollection", features: [], metadata: { structures: {} } });
     App.setReadOnly(false);
     setStatus("New network");
   },

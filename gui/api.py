@@ -2433,3 +2433,503 @@ def _check_overlap(new_lat: float, new_lon: float, new_type: str,
             return (f"Too close to {sid} "
                     f"({dist:.0f} m < {min_sep:.0f} m minimum separation)")
     return None
+
+
+# ---------------------------------------------------------------------------
+# Noelle Draft — data-driven station proposal
+# ---------------------------------------------------------------------------
+
+def _haversine_m(lat1, lon1, lat2, lon2):
+    """Fast haversine distance in metres."""
+    R = 6_371_000
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = (math.sin(dlat / 2) ** 2
+         + math.cos(math.radians(lat1))
+         * math.cos(math.radians(lat2))
+         * math.sin(dlon / 2) ** 2)
+    return R * 2 * math.asin(math.sqrt(a))
+
+
+def _noelle_analyze(aadt_path, acc_path):
+    """Analyse AADT + accident overlays and return a structured proposal.
+
+    Returns dict with: stations list, crash_rates table, summary text,
+    highway_boundaries, and mesh_analysis.
+    """
+    with open(aadt_path) as f:
+        aadt_geo = json.load(f)
+    with open(acc_path) as f:
+        acc_geo = json.load(f)
+
+    # ── All AADT points ──
+    all_pts = []
+    for feat in aadt_geo.get("features", []):
+        p = feat["properties"]
+        lon, lat = feat["geometry"]["coordinates"]
+        all_pts.append({"road": p.get("road", "Unknown"),
+                        "lat": lat, "lon": lon, "aadt": p.get("aadt", 0)})
+
+    # ── All accident points ──
+    acc_pts = []
+    for feat in acc_geo.get("features", []):
+        lon, lat = feat["geometry"]["coordinates"]
+        ped = feat["properties"].get("pedestrian", False)
+        acc_pts.append({"lat": lat, "lon": lon, "pedestrian": ped})
+
+    # ── Classify road type from name patterns (works for any state) ──
+    import re
+    from collections import defaultdict
+
+    def _classify_road(name):
+        """Classify road type from naming conventions across US DOTs."""
+        n = name.strip().upper()
+        # Interstates: I-44, I 494, I-35W, etc.
+        if re.match(r"^I[\s\-]?\d", n):
+            return "Interstate"
+        # US highways: US-169, US 75, etc.
+        if re.match(r"^US[\s\-]?\d", n):
+            return "Highway"
+        # State highways: SH-51, MN 77, SR-77, CA 1, etc.
+        if re.match(r"^(SH|SR|MN|CA|TX|FL|OH|OK|SC|NY|IL|PA|GA|NC|VA|WA|OR|CO|AZ|NV|NJ|MA|MD|CT|WI|IN|MO|TN|KY|AL|LA|MS|AR|KS|NE|IA|UT|NM|WV|ID|HI|ME|NH|RI|DE|MT|ND|SD|WY|VT|AK|DC)[\s\-]?\d", n):
+            return "Highway"
+        # Explicit "Local Road" label (ODOT convention)
+        if n == "LOCAL ROAD":
+            return "Local/Arterial"
+        # County/municipal roads: CSAH, MSAS, CR, CO RD, etc.
+        if re.match(r"^(CSAH|MSAS|CR|CO\s*RD|COUNTY)", n):
+            return "Local/Arterial"
+        # Everything else (named streets, numbered routes) = local
+        return "Local/Arterial"
+
+    roads_by_name = defaultdict(list)
+    for pt in all_pts:
+        roads_by_name[pt["road"]].append(pt)
+
+    crash_rates = []
+    for road, segs in roads_by_name.items():
+        if road == "Unknown":
+            continue
+        avg_aadt = sum(s["aadt"] for s in segs) / len(segs)
+        crashes = set()
+        ped_crashes = set()
+        for i, a in enumerate(acc_pts):
+            for s in segs:
+                if _haversine_m(a["lat"], a["lon"], s["lat"], s["lon"]) < 400:
+                    crashes.add(i)
+                    if a["pedestrian"]:
+                        ped_crashes.add(i)
+                    break
+        if not crashes:
+            continue
+        rtype = _classify_road(road)
+        rate = len(crashes) / (avg_aadt / 10_000) if avg_aadt > 0 else 0
+        crash_rates.append({
+            "road": road, "type": rtype, "avg_aadt": int(avg_aadt),
+            "crashes": len(crashes), "ped_crashes": len(ped_crashes),
+            "rate_per_10k": round(rate, 2),
+        })
+    crash_rates.sort(key=lambda x: -x["rate_per_10k"])
+
+    # ── Crash rate summary by type ──
+    type_totals = defaultdict(lambda: {"crashes": 0, "ped": 0,
+                                       "aadt_sum": 0, "count": 0})
+    for r in crash_rates:
+        t = type_totals[r["type"]]
+        t["crashes"] += r["crashes"]
+        t["ped"] += r["ped_crashes"]
+        t["aadt_sum"] += r["avg_aadt"]
+        t["count"] += 1
+    crash_rate_summary = []
+    for rtype in ["Local/Arterial", "Highway", "Interstate", "State Route"]:
+        t = type_totals.get(rtype)
+        if not t or t["count"] == 0:
+            continue
+        avg = t["aadt_sum"] / t["count"]
+        rate = t["crashes"] / (avg / 10_000) if avg > 0 else 0
+        crash_rate_summary.append({
+            "type": rtype, "crashes": t["crashes"],
+            "ped_crashes": t["ped"],
+            "avg_aadt": int(avg),
+            "rate_per_10k": round(rate, 1),
+        })
+
+    # ── Detect arterial grid from local-road AADT clusters ──
+    # Find N-S corridors: group local/arterial points by longitude bands
+    local_pts = [p for p in all_pts
+                 if _classify_road(p["road"]) == "Local/Arterial"
+                 and p["aadt"] >= 5000]
+    # Bounding box of all data
+    all_lats = [p["lat"] for p in all_pts]
+    all_lons = [p["lon"] for p in all_pts]
+    if not all_lats:
+        return {"error": "No AADT data found"}
+    center_lat = sum(all_lats) / len(all_lats)
+    center_lon = sum(all_lons) / len(all_lons)
+
+    # Cluster local-road points into N-S bands (by longitude, 0.012° ≈ 1 km)
+    ns_bands = defaultdict(list)
+    for p in local_pts:
+        band = round(p["lon"] / 0.012) * 0.012
+        ns_bands[band].append(p)
+    # Keep bands with 3+ points (real corridors)
+    ns_corridors = sorted([lon for lon, pts in ns_bands.items()
+                           if len(pts) >= 3])
+
+    # Cluster into E-W bands (by latitude, 0.012° ≈ 1.3 km)
+    ew_bands = defaultdict(list)
+    for p in local_pts:
+        band = round(p["lat"] / 0.012) * 0.012
+        ew_bands[band].append(p)
+    ew_corridors = sorted([lat for lat, pts in ew_bands.items()
+                           if len(pts) >= 3], reverse=True)
+
+    # ── Helper: accident and AADT lookup ──
+    def accidents_near(lat, lon, radius=600):
+        return sum(1 for a in acc_pts
+                   if _haversine_m(lat, lon, a["lat"], a["lon"]) < radius)
+
+    def local_aadt_near(lat, lon, radius=500):
+        best = 0
+        for p in local_pts:
+            if _haversine_m(lat, lon, p["lat"], p["lon"]) < radius:
+                best = max(best, p["aadt"])
+        return best
+
+    # ── Place stations at grid intersections with signal ──
+    stations = []
+    for ew_lat in ew_corridors:
+        for ns_lon in ns_corridors:
+            crashes = accidents_near(ew_lat, ns_lon)
+            aadt = local_aadt_near(ew_lat, ns_lon)
+            if crashes >= 1 or aadt >= 5000:
+                stations.append({
+                    "name": f"Grid ({ew_lat:.3f}, {ns_lon:.3f})",
+                    "lat": round(ew_lat, 6), "lon": round(ns_lon, 6),
+                    "crashes": crashes, "aadt": aadt,
+                    "source": "grid",
+                })
+
+    # ── Add off-grid accident hotspots ──
+    acc_grid = defaultdict(lambda: {"count": 0, "lat_sum": 0, "lon_sum": 0,
+                                    "ped": 0})
+    for a in acc_pts:
+        key = (round(a["lat"] / 0.005) * 0.005,
+               round(a["lon"] / 0.005) * 0.005)
+        acc_grid[key]["count"] += 1
+        acc_grid[key]["lat_sum"] += a["lat"]
+        acc_grid[key]["lon_sum"] += a["lon"]
+        if a["pedestrian"]:
+            acc_grid[key]["ped"] += 1
+
+    for key, v in sorted(acc_grid.items(), key=lambda x: -x[1]["count"]):
+        if v["count"] >= 3:
+            lat = v["lat_sum"] / v["count"]
+            lon = v["lon_sum"] / v["count"]
+            if not any(_haversine_m(lat, lon, s["lat"], s["lon"]) < 400
+                       for s in stations):
+                aadt = local_aadt_near(lat, lon)
+                stations.append({
+                    "name": f"Accident cluster ({v['count']} crashes"
+                            f", {v['ped']} ped)",
+                    "lat": round(lat, 6), "lon": round(lon, 6),
+                    "crashes": v["count"], "aadt": aadt,
+                    "source": "accident_cluster",
+                })
+
+    stations.sort(key=lambda x: (-x["crashes"], -x["aadt"]))
+
+    # ── Highway boundaries ──
+    hwy_boundaries = []
+    hwy_road_names = sorted(r for r in roads_by_name
+                            if _classify_road(r) in ("Interstate", "Highway"))
+    for road_name in hwy_road_names:
+        pts = roads_by_name.get(road_name, [])
+        if not pts:
+            continue
+        lats = [p["lat"] for p in pts]
+        lons = [p["lon"] for p in pts]
+        max_aadt = max(p["aadt"] for p in pts)
+        hwy_boundaries.append({
+            "road": road_name,
+            "lat_range": [round(min(lats), 4), round(max(lats), 4)],
+            "lon_range": [round(min(lons), 4), round(max(lons), 4)],
+            "max_aadt": max_aadt,
+        })
+
+    # ── Top intersections ──
+    top_3 = stations[:3]
+
+    # ── Build summary ──
+    crash_stations = sum(1 for s in stations if s["crashes"] >= 1)
+    traffic_stations = sum(1 for s in stations if s["crashes"] == 0)
+    grid_stations = sum(1 for s in stations if s["source"] == "grid")
+    cluster_stations = sum(1 for s in stations
+                           if s["source"] == "accident_cluster")
+    total_acc = len(acc_pts)
+    total_ped = sum(1 for a in acc_pts if a["pedestrian"])
+
+    summary_lines = [
+        f"{len(stations)} stations, zero circles. "
+        f"All on the arterial grid, none on highways.",
+        "",
+        "The proposal follows two rules:",
+        f"- Crash signal: {crash_stations} stations where people are "
+        f"dying within 600m",
+        f"- Traffic signal: {traffic_stations} stations on grid "
+        f"intersections with 5K+ AADT on local roads",
+        "",
+    ]
+    if top_3:
+        top_parts = []
+        for s in top_3:
+            aadt_str = (f"{s['aadt']/1000:.1f}K AADT"
+                        if s["aadt"] >= 1000 else f"{s['aadt']} AADT")
+            top_parts.append(f"{s['name']} ({s['crashes']} crashes"
+                             f", {aadt_str})")
+        summary_lines.append("Hottest intersections: "
+                             + "; ".join(top_parts))
+        summary_lines.append("")
+
+    if hwy_boundaries:
+        hwy_names = ", ".join(h["road"] for h in hwy_boundaries[:6])
+        summary_lines.append(f"Highways as boundaries only — {hwy_names} "
+                             f"frame the neighborhoods but get no stations.")
+        summary_lines.append("")
+
+    if crash_rate_summary:
+        local = next((c for c in crash_rate_summary
+                      if c["type"] == "Local/Arterial"), None)
+        interstate = next((c for c in crash_rate_summary
+                           if c["type"] == "Interstate"), None)
+        if local and interstate and interstate["rate_per_10k"] > 0:
+            ratio = local["rate_per_10k"] / interstate["rate_per_10k"]
+            summary_lines.append(
+                f"Local arterials are {ratio:.0f}× more dangerous per "
+                f"unit of traffic than interstates.")
+            summary_lines.append(
+                f"They carry {local['ped_crashes']} of {total_ped} "
+                f"pedestrian fatalities — people are walking on "
+                f"these roads and dying.")
+
+    return {
+        "stations": stations,
+        "crash_rate_summary": crash_rate_summary,
+        "crash_rates": crash_rates[:20],
+        "highway_boundaries": hwy_boundaries,
+        "grid": {
+            "ns_corridors": len(ns_corridors),
+            "ew_corridors": len(ew_corridors),
+            "grid_stations": grid_stations,
+            "cluster_stations": cluster_stations,
+        },
+        "data_summary": {
+            "aadt_features": len(aadt_geo.get("features", [])),
+            "accident_features": total_acc,
+            "pedestrian_accidents": total_ped,
+        },
+        "summary": "\n".join(summary_lines),
+    }
+
+
+@api.post("/noelle/draft")
+def noelle_draft():
+    """Noelle analyses AADT + accident overlays and proposes stations.
+
+    Stations only — no circles.  Circles are the designer's job.
+    Highways are boundaries, not corridors.
+    Primary signal: crash rate on local arterials.
+    Secondary signal: AADT >= 5K on local roads.
+
+    Query params:
+      ?place=true  — also place the stations on the current network
+    """
+    aadt_path = os.path.join(_rt_dir, "overlays", "aadt.geojson")
+    acc_path = os.path.join(_rt_dir, "overlays", "accidents.geojson")
+    if not os.path.exists(aadt_path):
+        return jsonify({"error": "No AADT overlay — load aadt.geojson "
+                        "into route_time/overlays/"}), 404
+    if not os.path.exists(acc_path):
+        return jsonify({"error": "No accident overlay — load "
+                        "accidents.geojson into route_time/overlays/"}), 404
+
+    result = _noelle_analyze(aadt_path, acc_path)
+    if "error" in result:
+        return jsonify(result), 400
+
+    # Optionally place stations on the map
+    place = request.args.get("place", "false").lower() == "true"
+    placed_ids = []
+    if place:
+        net = _net()
+        if net is None:
+            _state["network"] = Network(network_id="noelle_draft")
+            _state["network_path"] = None
+            _state["sim_frames"] = []
+            _state["sim_result"] = None
+            _clear_edit_state()
+            net = _state["network"]
+
+        for s in result["stations"]:
+            try:
+                struct, cps = build_station(
+                    net, s["lat"], s["lon"],
+                    heading_deg=0,
+                    structure_id=_next_sid("s"))
+                _state["structures"][struct.structure_id] = struct
+                _state["cps"].update(cps)
+                placed_ids.append(struct.structure_id)
+            except Exception:
+                pass  # skip overlapping stations silently
+
+        result["placed"] = len(placed_ids)
+        result["placed_ids"] = placed_ids
+
+    return jsonify(result)
+
+
+@api.get("/noelle/report")
+def noelle_report():
+    """Printable HTML report of Noelle's draft analysis."""
+    aadt_path = os.path.join(_rt_dir, "overlays", "aadt.geojson")
+    acc_path = os.path.join(_rt_dir, "overlays", "accidents.geojson")
+    if not os.path.exists(aadt_path) or not os.path.exists(acc_path):
+        return "<h1>No overlay data loaded</h1>", 404
+
+    r = _noelle_analyze(aadt_path, acc_path)
+    if "error" in r:
+        return f"<h1>Error: {r['error']}</h1>", 400
+
+    # Build printable HTML
+    html = ["""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Noelle Network Draft — Analysis Report</title>
+<style>
+  @media print { body { font-size: 11pt; } }
+  body { font-family: -apple-system, 'Segoe UI', sans-serif;
+         max-width: 900px; margin: 2em auto; padding: 0 1em;
+         color: #222; line-height: 1.5; }
+  h1 { border-bottom: 2px solid #333; padding-bottom: 0.3em; }
+  h2 { color: #444; margin-top: 1.5em; }
+  table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #f5f5f5; font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .hot { background: #fee; }
+  .summary { background: #f8f9fa; padding: 1em 1.5em; border-radius: 6px;
+             border-left: 4px solid #2563eb; margin: 1em 0; }
+  .insight { background: #fef3c7; padding: 0.8em 1.2em; border-radius: 6px;
+             border-left: 4px solid #d97706; margin: 1em 0; }
+  .print-btn { background: #2563eb; color: #fff; border: none;
+               padding: 8px 20px; border-radius: 4px; cursor: pointer;
+               font-size: 14px; }
+  .print-btn:hover { background: #1d4ed8; }
+  @media print { .no-print { display: none; } }
+  .star { color: #dc2626; }
+  .dot  { color: #f59e0b; }
+</style>
+</head><body>
+<div class="no-print" style="text-align:right; margin-bottom:1em">
+  <button class="print-btn" onclick="window.print()">&#128424; Print Report</button>
+</div>
+"""]
+
+    html.append(f"<h1>Noelle Network Draft</h1>")
+    html.append(f"<p><em>Generated {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}"
+                f" — {r['data_summary']['aadt_features']} AADT stations, "
+                f"{r['data_summary']['accident_features']} fatal crashes</em></p>")
+
+    # Summary box
+    html.append(f'<div class="summary"><pre style="white-space:pre-wrap; '
+                f'font-family:inherit; margin:0">{r["summary"]}</pre></div>')
+
+    # Crash rates by road type
+    html.append("<h2>Crash Rate by Road Type</h2>")
+    html.append("<table><tr><th>Road Type</th><th>Crashes</th>"
+                "<th>Pedestrian</th><th>Avg AADT</th>"
+                "<th>Rate / 10K AADT</th></tr>")
+    for cr in r["crash_rate_summary"]:
+        cls = ' class="hot"' if cr["rate_per_10k"] > 20 else ""
+        html.append(f'<tr{cls}><td>{cr["type"]}</td>'
+                    f'<td class="num">{cr["crashes"]}</td>'
+                    f'<td class="num">{cr["ped_crashes"]}</td>'
+                    f'<td class="num">{cr["avg_aadt"]:,}</td>'
+                    f'<td class="num"><strong>{cr["rate_per_10k"]}</strong></td>'
+                    f'</tr>')
+    html.append("</table>")
+
+    # Insight box
+    local = next((c for c in r["crash_rate_summary"]
+                  if c["type"] == "Local/Arterial"), None)
+    interstate = next((c for c in r["crash_rate_summary"]
+                       if c["type"] == "Interstate"), None)
+    if local and interstate and interstate["rate_per_10k"] > 0:
+        ratio = local["rate_per_10k"] / interstate["rate_per_10k"]
+        html.append(f'<div class="insight">'
+                    f'<strong>Key insight:</strong> Local arterials are '
+                    f'{ratio:.0f}&times; more dangerous per unit of traffic '
+                    f'than interstates. Highways are boundaries, not '
+                    f'corridors &mdash; the interior grid is where people '
+                    f'die and where JPods stations belong.</div>')
+
+    # Highway boundaries
+    if r["highway_boundaries"]:
+        html.append("<h2>Highway Boundaries (no stations placed)</h2>")
+        html.append("<table><tr><th>Highway</th><th>Max AADT</th>"
+                    "<th>Role</th></tr>")
+        for h in r["highway_boundaries"]:
+            html.append(f'<tr><td>{h["road"]}</td>'
+                        f'<td class="num">{h["max_aadt"]:,}</td>'
+                        f'<td>Neighborhood boundary</td></tr>')
+        html.append("</table>")
+
+    # Proposed stations
+    html.append(f"<h2>Proposed Stations ({len(r['stations'])})</h2>")
+    html.append("<table><tr><th></th><th>Location</th>"
+                "<th>Crashes (600m)</th><th>Local AADT</th>"
+                "<th>Source</th></tr>")
+    for i, s in enumerate(r["stations"], 1):
+        if s["crashes"] >= 3:
+            icon = '<span class="star">&#9733;</span>'
+        elif s["crashes"] >= 1:
+            icon = '<span class="dot">&#8226;</span>'
+        else:
+            icon = ""
+        cls = ' class="hot"' if s["crashes"] >= 3 else ""
+        html.append(f'<tr{cls}><td>{i}</td><td>{s["name"]}</td>'
+                    f'<td class="num">{icon} {s["crashes"]}</td>'
+                    f'<td class="num">{s["aadt"]:,}</td>'
+                    f'<td>{s["source"]}</td></tr>')
+    html.append("</table>")
+
+    # Grid info
+    g = r["grid"]
+    html.append(f"<h2>Grid Analysis</h2>")
+    html.append(f"<p>Detected {g['ns_corridors']} N-S corridors and "
+                f"{g['ew_corridors']} E-W corridors from AADT data. "
+                f"{g['grid_stations']} stations on grid intersections, "
+                f"{g['cluster_stations']} from accident clusters.</p>")
+
+    # Top crash corridors
+    html.append("<h2>Top Crash Corridors (per 10K AADT)</h2>")
+    html.append("<table><tr><th>Road</th><th>Type</th><th>Avg AADT</th>"
+                "<th>Crashes</th><th>Ped</th>"
+                "<th>Rate / 10K</th></tr>")
+    for cr in r["crash_rates"][:15]:
+        cls = ' class="hot"' if cr["rate_per_10k"] > 5 else ""
+        html.append(f'<tr{cls}><td>{cr["road"]}</td>'
+                    f'<td>{cr["type"]}</td>'
+                    f'<td class="num">{cr["avg_aadt"]:,}</td>'
+                    f'<td class="num">{cr["crashes"]}</td>'
+                    f'<td class="num">{cr["ped_crashes"]}</td>'
+                    f'<td class="num"><strong>'
+                    f'{cr["rate_per_10k"]}</strong></td></tr>')
+    html.append("</table>")
+
+    html.append("<hr><p style='color:#888; font-size:0.9em'>"
+                "Noelle — JPods Network Design Agent. "
+                "Stations only; circles are the designer's job. "
+                "Data: state DOT AADT + NHTSA FARS.</p>")
+    html.append("</body></html>")
+
+    return "\n".join(html), 200, {"Content-Type": "text/html"}

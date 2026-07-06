@@ -454,6 +454,15 @@
               title="Design a grid network — circles at intersections, stations mid-block">&#9783; Grid…</button>
     </div>
 
+    <!-- NOELLE DRAFT -->
+    <div class="pal-section" id="pal-noelle">
+      <div class="pal-label">Noelle</div>
+      <button onclick="Noelle.draft()" style="width:100%"
+              title="Noelle analyses AADT + accident data and proposes stations on the arterial grid. Stations only — you add circles.">&#128300; Draft…</button>
+      <button onclick="Noelle.report()" style="width:100%"
+              title="Open printable analysis report in new tab">&#128196; Report</button>
+    </div>
+
     <!-- SIMULATE -->
     <div class="pal-section">
       <div class="pal-label">Simulate</div>
@@ -804,6 +813,7 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
 <script src="demand.js"></script>
 <script src="overlays.js"></script>
 <script src="ai.js"></script>
+<script src="noelle.js"></script>
 
 <script>
 const Guide = (() => {
