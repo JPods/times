@@ -1,0 +1,36 @@
+{
+  "timestamp": "20260705T213555",
+  "note": "Noelle v2 \u2014 fully connected mesh. 19 circles (junctions) + 19 stations (stops). 1 component, 0 orphans. Circles at corridor intersections, stations mid-block. Auto-connect + manual bridging.",
+  "network_id": "noelle_greenville_v2",
+  "topology": {
+    "circles": 19,
+    "components": 1,
+    "connected_cps": 78,
+    "degree_distribution": {
+      "1": 11,
+      "2": 18,
+      "3": 5,
+      "4": 4
+    },
+    "largest_component": 38,
+    "open_cps": 36,
+    "orphans": [],
+    "stations": 19
+  },
+  "spatial": {
+    "center": [
+      34.840142,
+      -82.385237
+    ],
+    "extent_km": [
+      7.55,
+      11.98
+    ],
+    "nn_spacing_m": {
+      "avg": 660.0,
+      "max": 1367.0,
+      "min": 274.0
+    }
+  },
+  "jpd_file": "/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/route_time/noelle_history/20260705T213555.jpd"
+}

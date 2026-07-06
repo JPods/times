@@ -20,34 +20,57 @@
 const Overlays = (() => {
 
   const _layers = {
-    aadt:     null,
-    accident: null,
-    mobility: null,
+    aadt_core:      null,
+    aadt_secondary: null,
+    accident:       null,
+    mobility:       null,
   };
 
   const _active = {
-    aadt:     false,
-    accident: false,
-    mobility: false,
+    aadt_core:      false,
+    aadt_secondary: false,
+    accident:       false,
+    mobility:       false,
   };
+
+  let _aadtData = null;  // cached GeoJSON
 
   // ── AADT ────────────────────────────────────────────────────────────────────
 
-  async function _loadAADT() {
-    // Fetch from server — server proxies FHWA HPMS or state DOT API
-    // Falls back to a local GeoJSON file if no API key configured.
+  async function _ensureAADTData() {
+    if (_aadtData) return _aadtData;
     const r = await fetch("/api/overlays/aadt");
     if (!r.ok) {
       _showOverlayNote("aadt", "AADT data not configured. See overlays/README.md.");
       return null;
     }
-    const geojson = await r.json();
-    return L.geoJSON(geojson, {
-      style: (f) => ({
-        color: _aadtColor(f.properties.aadt || 0),
-        weight: 3 + Math.min(f.properties.aadt / 10000, 5),
-        opacity: 0.75,
+    _aadtData = await r.json();
+    return _aadtData;
+  }
+
+  function _buildAADTLayer(tier) {
+    if (!_aadtData) return null;
+    const filtered = {
+      type: "FeatureCollection",
+      features: _aadtData.features.filter(f => {
+        const aadt = f.properties.aadt || 0;
+        if (tier === "core") return aadt >= 10000;
+        if (tier === "secondary") return aadt >= 5000 && aadt < 10000;
+        return aadt >= 5000;  // "all"
       }),
+    };
+    return L.geoJSON(filtered, {
+      pointToLayer: (f, latlng) => {
+        const aadt = f.properties.aadt || 0;
+        const radius = 8 + Math.min(aadt / 2000, 30);
+        return L.circleMarker(latlng, {
+          radius: radius,
+          color: _aadtColor(aadt),
+          fillColor: _aadtColor(aadt),
+          fillOpacity: 0.35,
+          weight: 0,
+        });
+      },
       onEachFeature: (f, layer) => {
         layer.bindTooltip(
           `${f.properties.route_name || "Road"}<br>AADT: ${(f.properties.aadt || 0).toLocaleString()}/day`,
@@ -58,10 +81,21 @@ const Overlays = (() => {
   }
 
   function _aadtColor(aadt) {
-    // Blue (low) → yellow → red (high), log scale
-    const t = Math.min(Math.log10(Math.max(aadt, 1)) / 5, 1); // log10(100000) = 5
-    const h = Math.round((1 - t) * 240); // 240° blue → 0° red
-    return `hsl(${h},90%,50%)`;
+    // Light red (low traffic) → dark red (high traffic)
+    const t = Math.min(Math.log10(Math.max(aadt, 1)) / 5, 1);
+    const r = 255;
+    const g = Math.round(200 * (1 - t));
+    const b = Math.round(180 * (1 - t));
+    return `rgb(${r},${g},${b})`;
+  }
+
+  function _aadtColorSecondary(aadt) {
+    // Orange/amber for secondary corridors (5k-10k)
+    const t = Math.min((aadt - 5000) / 5000, 1);
+    const r = 255;
+    const g = Math.round(200 - t * 60);  // 200 → 140 (amber range)
+    const b = Math.round(100 - t * 60);  // 100 → 40
+    return `rgb(${r},${g},${b})`;
   }
 
   // ── Accident data ────────────────────────────────────────────────────────────
@@ -75,20 +109,27 @@ const Overlays = (() => {
     const geojson = await r.json();
     return L.geoJSON(geojson, {
       pointToLayer: (f, latlng) => {
-        const severity = f.properties.severity || 1;
+        const fatals = f.properties.fatals || f.properties.severity || 1;
+        const severity = Math.min(fatals, 3);
         return L.circleMarker(latlng, {
-          radius: 3 + severity,
+          radius: 10 + severity * 8,
           color: _severityColor(severity),
           fillColor: _severityColor(severity),
-          fillOpacity: 0.6,
-          weight: 1,
+          fillOpacity: 0.4,
+          weight: 2,
         });
       },
       onEachFeature: (f, layer) => {
+        const p = f.properties;
+        const fatals = p.fatals || p.severity || "?";
+        const road = p.road || p.description || "";
+        const county = p.county || "";
+        const conditions = [p.weather, p.light, p.manner].filter(Boolean).join(", ");
         layer.bindTooltip(
-          `Severity: ${f.properties.severity || "?"}<br>
-           ${f.properties.date || ""}<br>
-           ${f.properties.description || ""}`,
+          `<b>${road}</b>${county ? " — " + county : ""}<br>` +
+          `Fatalities: ${fatals}<br>` +
+          `${p.month || p.date || ""} ${p.hour ? "Hour: " + p.hour : ""}<br>` +
+          `${conditions}`,
           { sticky: true }
         );
       },
@@ -167,7 +208,29 @@ const Overlays = (() => {
   }
 
   return {
-    toggleAADT()     { _toggle("aadt",     _loadAADT);     },
+    toggleAADT(tier) {
+      tier = tier || "core";
+      const key = "aadt_" + tier;
+      const m = App.getMap();
+      if (_active[key]) {
+        if (_layers[key]) m.removeLayer(_layers[key]);
+        _layers[key] = null;
+        _active[key] = false;
+        setStatus(`Traffic ${tier} overlay off`);
+        return;
+      }
+      (async () => {
+        setStatus(`Loading traffic ${tier}…`);
+        await _ensureAADTData();
+        const layer = _buildAADTLayer(tier);
+        if (layer) {
+          layer.addTo(m);
+          _layers[key] = layer;
+          _active[key] = true;
+          setStatus(`Traffic ${tier} overlay on`);
+        }
+      })();
+    },
     toggleAccident() { _toggle("accident", _loadAccidents); },
     toggleMobility() { _toggle("mobility", _loadMobility);  },
   };

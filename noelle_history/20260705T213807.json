@@ -1,0 +1,36 @@
+{
+  "timestamp": "20260705T213807",
+  "note": "Noelle v3 \u2014 primary + secondary parallel mesh. 30 stations, 32 circles. 1 component, 0 orphans. Parallel processors built.",
+  "network_id": "noelle_greenville_v2",
+  "topology": {
+    "circles": 32,
+    "components": 1,
+    "connected_cps": 126,
+    "degree_distribution": {
+      "1": 19,
+      "2": 30,
+      "3": 5,
+      "4": 8
+    },
+    "largest_component": 62,
+    "open_cps": 62,
+    "orphans": [],
+    "stations": 30
+  },
+  "spatial": {
+    "center": [
+      34.840389,
+      -82.382591
+    ],
+    "extent_km": [
+      7.55,
+      11.98
+    ],
+    "nn_spacing_m": {
+      "avg": 445.0,
+      "max": 1367.0,
+      "min": 183.0
+    }
+  },
+  "jpd_file": "/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/route_time/noelle_history/20260705T213807.jpd"
+}

@@ -6,7 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-arrowheads@1.4.0/dist/leaflet-arrowheads.js"></script>
+  <script src="leaflet-geometryutil.js"></script>
+  <script src="leaflet-arrowheads.js"></script>
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
   <script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <link rel="stylesheet" href="style.css">
@@ -33,7 +34,13 @@
       <table style="width:100%;border-collapse:collapse;font-size:10px;color:#bbb;line-height:1.6">
         <tbody>
           <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:4px">Placement</td></tr>
-          <tr><td style="color:#ddd;white-space:nowrap;padding-right:8px">Click map</td>     <td>Place selected structure</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap;padding-right:8px">1</td>             <td>Station N–S</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">2</td>                               <td>Station E–W</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">3</td>                               <td>Station NW–SE</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">4</td>                               <td>Station NE–SW</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">5</td>                               <td>Circle</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">6</td>                               <td>Circle 45°</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Click map</td>                       <td>Place selected structure</td></tr>
           <tr><td style="color:#ddd;white-space:nowrap">Esc</td>                             <td>Cancel active tool</td></tr>
 
           <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:6px">Connection points (CPs)</td></tr>
@@ -373,6 +380,19 @@
 
   <div id="palette-body">
 
+    <!-- CITY SEARCH -->
+    <div class="pal-section">
+      <div class="pal-row">
+        <input id="city-search" type="text" placeholder="City, State or Country"
+               title="Type a city name and press Enter or click Go"
+               style="flex:1;min-width:0"
+               onkeydown="if(event.key==='Enter') CitySearch.go()">
+        <button onclick="CitySearch.go()" title="Center map on city">Go</button>
+        <button onclick="CitySearch.clearFence()" title="Remove city boundary" style="padding:3px 5px !important">&#10005;</button>
+      </div>
+      <div id="city-error" style="display:none;font-size:10px;color:#c44;margin-top:3px"></div>
+    </div>
+
     <!-- FILE -->
     <div class="pal-section">
       <div class="pal-label">File</div>
@@ -397,8 +417,8 @@
       <div class="pal-grid2">
         <button class="btn-station" onclick="Editor.startPlace('station',   0)" title="North–South (0°)">N–S</button>
         <button class="btn-station" onclick="Editor.startPlace('station',  90)" title="East–West (90°)">E–W</button>
-        <button class="btn-station" onclick="Editor.startPlace('station',  45)" title="NE–SW (45°)">NE–SW</button>
         <button class="btn-station" onclick="Editor.startPlace('station', 135)" title="NW–SE (135°)">NW–SE</button>
+        <button class="btn-station" onclick="Editor.startPlace('station',  45)" title="NE–SW (45°)">NE–SW</button>
       </div>
       <div class="pal-row">
         <label title="Custom heading °">°</label>
@@ -450,7 +470,7 @@
       </div>
     </div>
 
-    <!-- MAP TILES + CITY SEARCH -->
+    <!-- MAP TILES -->
     <div class="pal-section">
       <div class="pal-label">Map</div>
       <select id="tile-select" onchange="Map.setTiles(this.value)">
@@ -459,23 +479,14 @@
         <option value="topo">Topo</option>
         <option value="dark">Dark</option>
       </select>
-      <div class="pal-row" style="margin-top:5px">
-        <input id="city-search" type="text" placeholder="City, State or Country"
-               title="Type a city name and press Enter or click Go"
-               style="flex:1;min-width:0"
-               onkeydown="if(event.key==='Enter') CitySearch.go()">
-        <button onclick="CitySearch.go()" title="Center map on city">Go</button>
-        <button onclick="CitySearch.clearFence()" title="Remove city boundary" style="padding:3px 5px !important">&#10005;</button>
-      </div>
-      <div id="city-error" style="display:none;font-size:10px;color:#c44;margin-top:3px"></div>
     </div>
 
     <!-- OVERLAYS -->
     <div class="pal-section">
       <div class="pal-label">Overlays</div>
-      <button onclick="Overlays.toggleAADT()"     title="Annual Average Daily Traffic">AADT</button>
-      <button onclick="Overlays.toggleAccident()" title="Accident data">Accidents</button>
-      <button onclick="Overlays.toggleMobility()" title="Cell mobility">Mobility</button>
+      <button onclick="Overlays.toggleAADT('all')"         title="Annual Average Daily Traffic — all 5,000+">Traffic (AADT)</button>
+      <button onclick="Overlays.toggleAccident()"         title="Fatal crash locations">Accidents</button>
+      <button onclick="Overlays.toggleMobility()"         title="Pedestrian density (pending data)">Pedestrian (pend)</button>
     </div>
 
     <!-- ALLIE AI -->
@@ -517,6 +528,21 @@
 
   </div><!-- /palette-body -->
 </div><!-- /palette -->
+<script>
+// Collapsible palette sections — click label to toggle
+document.querySelectorAll('#palette-body .pal-label').forEach(label => {
+  label.addEventListener('click', () => {
+    label.parentElement.classList.toggle('collapsed');
+  });
+});
+// Start these sections collapsed to keep overlays visible
+['pal-components', 'pal-circles', 'pal-grid'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('collapsed');
+});
+// Collapse all hint sections
+document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapsed'));
+</script>
 
 <!-- Hidden file input -->
 <input type="file" id="file-input" accept=".jpd,.json" style="display:none"

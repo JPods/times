@@ -1,0 +1,40 @@
+{
+  "timestamp": "20260705T232714",
+  "note": "Designer filled out and connected Noelle v4 \u2014 ready for team critique",
+  "network_id": "noelle_greenville_v4",
+  "topology": {
+    "circles": 34,
+    "components": 3,
+    "connected_cps": 234,
+    "degree_distribution": {
+      "0": 2,
+      "1": 14,
+      "2": 74,
+      "3": 16,
+      "4": 6
+    },
+    "largest_component": 110,
+    "open_cps": 58,
+    "orphans": [
+      "c10",
+      "s86"
+    ],
+    "stations": 78
+  },
+  "spatial": {
+    "center": [
+      34.844472,
+      -82.373133
+    ],
+    "extent_km": [
+      16.91,
+      24.3
+    ],
+    "nn_spacing_m": {
+      "avg": 750.0,
+      "max": 5961.0,
+      "min": 166.0
+    }
+  },
+  "jpd_file": "/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/route_time/noelle_history/20260705T232714.jpd"
+}

@@ -1061,24 +1061,61 @@ def _recalc_line_length(net: Network, line_id: str):
     )
 
 
+def _find_closest_open_pair(struct_a_id: str, struct_b_id: str):
+    """Find the closest pair of open CPs between two structures."""
+    import math
+    cps = _state["cps"]
+    open_a = [cp for cp in cps.values() if cp.structure_id == struct_a_id and not cp.connected_to]
+    open_b = [cp for cp in cps.values() if cp.structure_id == struct_b_id and not cp.connected_to]
+    if not open_a:
+        return None, None, f"No open CPs on {struct_a_id}"
+    if not open_b:
+        return None, None, f"No open CPs on {struct_b_id}"
+    best_dist = float("inf")
+    best_a = best_b = None
+    for a in open_a:
+        for b in open_b:
+            dlat = a.center_lat - b.center_lat
+            dlon = a.center_lon - b.center_lon
+            d = math.sqrt(dlat * dlat + dlon * dlon)
+            if d < best_dist:
+                best_dist = d
+                best_a, best_b = a, b
+    return best_a, best_b, None
+
+
 @api.post("/network/connect_cps")
 def connect_cps_endpoint():
-    """Connect two stub-pairs: cp_a.out→cp_b.in and cp_b.out→cp_a.in."""
+    """Connect two stub-pairs: cp_a.out→cp_b.in and cp_b.out→cp_a.in.
+
+    Accepts either explicit CP IDs (cp_a, cp_b) or structure IDs
+    (struct_a, struct_b). When structure IDs are given, the closest
+    pair of open CPs between the two structures is selected automatically.
+    """
     net = _net()
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
-    data   = request.json or {}
-    cp_a_id = data.get("cp_a")
-    cp_b_id = data.get("cp_b")
+    data = request.json or {}
 
-    cp_a = _state["cps"].get(cp_a_id)
-    cp_b = _state["cps"].get(cp_b_id)
-    if cp_a is None or cp_b is None:
-        return jsonify({"error": "CP not found"}), 404
-    if cp_a.connected_to:
-        return jsonify({"error": f"{cp_a_id} is already connected to {cp_a.connected_to}"}), 400
-    if cp_b.connected_to:
-        return jsonify({"error": f"{cp_b_id} is already connected to {cp_b.connected_to}"}), 400
+    struct_a = data.get("struct_a")
+    struct_b = data.get("struct_b")
+    if struct_a and struct_b:
+        # Structure-level connect — find closest open pair
+        cp_a, cp_b, err = _find_closest_open_pair(struct_a, struct_b)
+        if err:
+            return jsonify({"error": err}), 400
+        cp_a_id, cp_b_id = cp_a.cp_id, cp_b.cp_id
+    else:
+        cp_a_id = data.get("cp_a")
+        cp_b_id = data.get("cp_b")
+        cp_a = _state["cps"].get(cp_a_id)
+        cp_b = _state["cps"].get(cp_b_id)
+        if cp_a is None or cp_b is None:
+            return jsonify({"error": "CP not found"}), 404
+        if cp_a.connected_to:
+            return jsonify({"error": f"{cp_a_id} is already connected to {cp_a.connected_to}"}), 400
+        if cp_b.connected_to:
+            return jsonify({"error": f"{cp_b_id} is already connected to {cp_b.connected_to}"}), 400
 
     lines = connect_cps(net, cp_a, cp_b, _state["cps"])
     if len(lines) == 2:
@@ -2149,6 +2186,209 @@ def ai_recommend():
         ),
         "options": [],
         "network": None,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Network descriptor (Noelle's view)
+# ---------------------------------------------------------------------------
+
+@api.get("/network/describe")
+def describe_network():
+    """Generate a structured description of the current network for Noelle.
+
+    Returns topology, spatial layout, quality metrics, and a natural-language
+    summary that can be indexed into a vector store.
+    """
+    net = _net()
+    if net is None:
+        return jsonify({"error": "No network loaded"}), 400
+
+    structs_raw = _state.get("structures", {})
+    # Normalize: Structure dataclass objects → dicts
+    structs = {}
+    for sid, s in structs_raw.items():
+        structs[sid] = s.to_dict() if hasattr(s, "to_dict") else s
+
+    cps_list = _state.get("cps", {})
+    if isinstance(cps_list, list):
+        cps_map = {}
+        for cp in cps_list:
+            d = cp.to_dict() if hasattr(cp, "to_dict") else cp
+            cps_map[d["cp_id"]] = d
+    elif isinstance(cps_list, dict):
+        cps_map = {}
+        for k, cp in cps_list.items():
+            cps_map[k] = cp.to_dict() if hasattr(cp, "to_dict") else cp
+    else:
+        cps_map = {}
+
+    # Classify structures
+    stations = {}
+    circles = {}
+    for sid, s in structs.items():
+        if s.get("structure_type") == "station":
+            stations[sid] = s
+        else:
+            circles[sid] = s
+
+    # Spatial metrics
+    all_lats = [s["center_lat"] for s in structs.values()]
+    all_lons = [s["center_lon"] for s in structs.values()]
+    if not all_lats:
+        return jsonify({"error": "Empty network"}), 400
+
+    center_lat = sum(all_lats) / len(all_lats)
+    center_lon = sum(all_lons) / len(all_lons)
+    lat_span = max(all_lats) - min(all_lats)
+    lon_span = max(all_lons) - min(all_lons)
+    # Approximate km
+    ns_km = lat_span * 111.0
+    ew_km = lon_span * 111.0 * math.cos(math.radians(center_lat))
+
+    # Connection analysis
+    open_cps = []
+    connected_cps = []
+    for cp in cps_map.values():
+        cp_id = cp["cp_id"]
+        if cp.get("connected_to"):
+            connected_cps.append(cp_id)
+        else:
+            open_cps.append(cp_id)
+
+    # Structure spacing — distances between all pairs (sample if large)
+    import itertools
+    pair_dists = []
+    struct_items = list(structs.items())
+    pairs = list(itertools.combinations(struct_items, 2))
+    if len(pairs) > 5000:
+        import random
+        pairs = random.sample(pairs, 5000)
+    for (sid_a, sa), (sid_b, sb) in pairs:
+        dlat = sa["center_lat"] - sb["center_lat"]
+        dlon = (sa["center_lon"] - sb["center_lon"]) * math.cos(math.radians(center_lat))
+        d_km = math.sqrt(dlat**2 + dlon**2) * 111.0
+        pair_dists.append(d_km)
+
+    # Nearest-neighbor for each structure
+    nn_dists = []
+    for sid_a, sa in struct_items:
+        best = float("inf")
+        for sid_b, sb in struct_items:
+            if sid_a == sid_b:
+                continue
+            dlat = sa["center_lat"] - sb["center_lat"]
+            dlon = (sa["center_lon"] - sb["center_lon"]) * math.cos(math.radians(center_lat))
+            d = math.sqrt(dlat**2 + dlon**2) * 111.0
+            if d < best:
+                best = d
+        if best < float("inf"):
+            nn_dists.append(best)
+
+    # Orphan detection — structures with ALL CPs open
+    orphan_sids = []
+    for sid, s in structs.items():
+        cp_ids = s.get("cp_ids", [])
+        if cp_ids and all(cpid in [c for c in open_cps] for cpid in cp_ids):
+            orphan_sids.append(sid)
+
+    # Build neighbor map — which structures connect to which
+    neighbors = {}  # sid → set of neighbor sids
+    for cp in cps_map.values():
+        conn = cp.get("connected_to")
+        struct_id = cp.get("structure_id")
+        if conn and struct_id:
+            conn_obj = cps_map.get(conn)
+            if conn_obj:
+                conn_struct = conn_obj.get("structure_id")
+                if conn_struct:
+                    neighbors.setdefault(struct_id, set()).add(conn_struct)
+                    neighbors.setdefault(conn_struct, set()).add(struct_id)
+
+    # Degree distribution
+    degrees = {sid: len(neighbors.get(sid, set())) for sid in structs}
+    degree_counts = {}
+    for d in degrees.values():
+        degree_counts[d] = degree_counts.get(d, 0) + 1
+
+    # Connected components (BFS)
+    visited = set()
+    components = []
+    for sid in structs:
+        if sid in visited:
+            continue
+        comp = set()
+        queue = [sid]
+        while queue:
+            s = queue.pop()
+            if s in visited:
+                continue
+            visited.add(s)
+            comp.add(s)
+            for nb in neighbors.get(s, set()):
+                if nb not in visited:
+                    queue.append(nb)
+        components.append(comp)
+
+    # Natural-language summary
+    nn_avg = sum(nn_dists) / len(nn_dists) * 1000 if nn_dists else 0  # meters
+    nn_min = min(nn_dists) * 1000 if nn_dists else 0
+    nn_max = max(nn_dists) * 1000 if nn_dists else 0
+
+    summary_lines = [
+        f"Network '{_state.get('network', net).network_id}' centered at ({center_lat:.4f}, {center_lon:.4f}).",
+        f"Coverage: {ns_km:.1f} km N-S × {ew_km:.1f} km E-W.",
+        f"Structures: {len(stations)} stations, {len(circles)} traffic circles ({len(structs)} total).",
+        f"CPs: {len(connected_cps)} connected, {len(open_cps)} open.",
+        f"Orphaned structures (all CPs open): {len(orphan_sids)}.",
+        f"Connected components: {len(components)} (largest: {max(len(c) for c in components)} structures).",
+        f"Nearest-neighbor spacing: avg {nn_avg:.0f} m, min {nn_min:.0f} m, max {nn_max:.0f} m.",
+        f"Degree distribution: {dict(sorted(degree_counts.items()))}.",
+    ]
+    if orphan_sids:
+        summary_lines.append(f"Orphans: {', '.join(orphan_sids[:20])}{'...' if len(orphan_sids) > 20 else ''}.")
+
+    # Structure list with relative positions
+    struct_descs = []
+    for sid, s in structs.items():
+        stype = s.get("structure_type", "unknown")
+        lat, lon = s["center_lat"], s["center_lon"]
+        deg = degrees.get(sid, 0)
+        nbs = sorted(neighbors.get(sid, set()))
+        struct_descs.append({
+            "id": sid,
+            "type": stype,
+            "lat": round(lat, 6),
+            "lon": round(lon, 6),
+            "heading": s.get("heading_deg", 0),
+            "connections": deg,
+            "neighbors": nbs,
+            "open_cps": [cpid for cpid in s.get("cp_ids", []) if cpid in open_cps],
+        })
+
+    return jsonify({
+        "network_id": getattr(_state.get("network", net), "network_id", "untitled"),
+        "summary": "\n".join(summary_lines),
+        "spatial": {
+            "center": [round(center_lat, 6), round(center_lon, 6)],
+            "extent_km": [round(ns_km, 2), round(ew_km, 2)],
+            "nn_spacing_m": {
+                "avg": round(nn_avg, 0),
+                "min": round(nn_min, 0),
+                "max": round(nn_max, 0),
+            },
+        },
+        "topology": {
+            "stations": len(stations),
+            "circles": len(circles),
+            "connected_cps": len(connected_cps),
+            "open_cps": len(open_cps),
+            "orphans": orphan_sids,
+            "components": len(components),
+            "largest_component": max(len(c) for c in components),
+            "degree_distribution": dict(sorted(degree_counts.items())),
+        },
+        "structures": struct_descs,
     })
 
 

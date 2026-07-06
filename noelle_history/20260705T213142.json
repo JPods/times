@@ -1,0 +1,56 @@
+{
+  "timestamp": "20260705T213142",
+  "note": "Auto-connected \u2014 Noelle nearest-neighbor",
+  "network_id": "noelle_greenville_draft",
+  "topology": {
+    "circles": 12,
+    "components": 23,
+    "connected_cps": 20,
+    "degree_distribution": {
+      "0": 19,
+      "1": 10,
+      "2": 3,
+      "4": 1
+    },
+    "largest_component": 6,
+    "open_cps": 70,
+    "orphans": [
+      "s1",
+      "s2",
+      "s3",
+      "c5",
+      "s4",
+      "c6",
+      "s5",
+      "s6",
+      "c8",
+      "s7",
+      "s8",
+      "s11",
+      "s12",
+      "s13",
+      "s16",
+      "s17",
+      "c12",
+      "s20",
+      "s21"
+    ],
+    "stations": 21
+  },
+  "spatial": {
+    "center": [
+      34.841224,
+      -82.381212
+    ],
+    "extent_km": [
+      8.1,
+      13.67
+    ],
+    "nn_spacing_m": {
+      "avg": 883.0,
+      "max": 2400.0,
+      "min": 266.0
+    }
+  },
+  "jpd_file": "/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/route_time/noelle_history/20260705T213142.jpd"
+}

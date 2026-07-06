@@ -149,6 +149,18 @@ body {
   letter-spacing: 0.8px;
   color: #666;
   margin-bottom: 2px;
+  cursor: pointer;
+  user-select: none;
+}
+.pal-label::before {
+  content: "▾ ";
+  font-size: 8px;
+}
+.pal-section.collapsed .pal-label::before {
+  content: "▸ ";
+}
+.pal-section.collapsed > *:not(.pal-label) {
+  display: none !important;
 }
 
 /* Palette buttons */

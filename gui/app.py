@@ -16,7 +16,7 @@ import argparse
 import threading
 import webbrowser
 
-from flask import Flask, send_from_directory
+from flask import Flask, send_from_directory, make_response
 
 _gui_dir = os.path.dirname(os.path.abspath(__file__))
 _rt_dir  = os.path.dirname(_gui_dir)
@@ -32,14 +32,52 @@ app = Flask(__name__, static_folder=os.path.join(_gui_dir, "static"))
 app.register_blueprint(api)
 
 
+_MIME = {
+    ".html": "text/html; charset=utf-8",
+    ".css":  "text/css; charset=utf-8",
+    ".js":   "application/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png":  "image/png",
+    ".jpg":  "image/jpeg",
+    ".svg":  "image/svg+xml",
+    ".ico":  "image/x-icon",
+}
+
+
+def _serve_static(filename):
+    """Serve static files by reading content directly.
+    Werkzeug 3.1 send_from_directory has a Content-Length mismatch bug
+    when the browser sends Accept-Encoding — the server declares the raw
+    file size but closes the connection before delivering the body.
+    Reading the file ourselves avoids the broken code path."""
+    import mimetypes
+    path = os.path.join(app.static_folder, filename)
+    if not os.path.isfile(path):
+        return "Not found", 404
+    # Prevent path traversal
+    real = os.path.realpath(path)
+    if not real.startswith(os.path.realpath(app.static_folder)):
+        return "Forbidden", 403
+    ext = os.path.splitext(filename)[1].lower()
+    mime = _MIME.get(ext, mimetypes.guess_type(filename)[0] or "application/octet-stream")
+    if mime.startswith("text/") or mime.startswith("application/"):
+        data = open(path, "r", encoding="utf-8").read()
+    else:
+        data = open(path, "rb").read()
+    resp = make_response(data)
+    resp.headers["Content-Type"] = mime
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @app.route("/")
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    return _serve_static("index.html")
 
 
 @app.route("/<path:filename>")
 def static_files(filename):
-    return send_from_directory(app.static_folder, filename)
+    return _serve_static(filename)
 
 
 def _preload(path: str):

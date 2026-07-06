@@ -468,6 +468,68 @@ const Sim = (() => {
   function _clearSweepCircles() {
     Object.values(_sweepCircles).forEach(m => App.getLayers().pods.removeLayer(m));
     _sweepCircles = {};
+    _clearNetworkIssues();
+  }
+
+  let _issueCircles = [];
+
+  function _showNetworkIssues(geojson) {
+    _clearNetworkIssues();
+
+    // Build structure → CPs map
+    const structCps = {};
+    const structCoords = {};
+    (geojson.features || [])
+      .filter(f => f.properties.type === "cp")
+      .forEach(f => {
+        const sid = f.properties.structure_id;
+        if (!structCps[sid]) structCps[sid] = [];
+        structCps[sid].push(f.properties);
+        const [lng, lat] = f.geometry.coordinates;
+        if (!structCoords[sid]) structCoords[sid] = { lats: [], lngs: [] };
+        structCoords[sid].lats.push(lat);
+        structCoords[sid].lngs.push(lng);
+      });
+
+    // Orphans — all CPs unconnected (green dashed)
+    const orphanSids = new Set();
+    for (const [sid, cps] of Object.entries(structCps)) {
+      if (cps.every(cp => !cp.connected_to)) orphanSids.add(sid);
+    }
+
+    // Dead ends — exactly one CP connected, rest open (yellow dashed)
+    const deadEndSids = new Set();
+    for (const [sid, cps] of Object.entries(structCps)) {
+      if (orphanSids.has(sid)) continue;
+      const connCount = cps.filter(cp => cp.connected_to).length;
+      if (connCount === 1) deadEndSids.add(sid);
+    }
+
+    function _addCircle(sid, color, radius) {
+      const coords = structCoords[sid];
+      if (!coords) return;
+      const lat = coords.lats.reduce((a, b) => a + b, 0) / coords.lats.length;
+      const lng = coords.lngs.reduce((a, b) => a + b, 0) / coords.lngs.length;
+      const m = L.circleMarker([lat, lng], {
+        radius, color, weight: 3, fill: false,
+        interactive: false, dashArray: "6,4",
+      });
+      App.getLayers().pods.addLayer(m);
+      _issueCircles.push(m);
+    }
+
+    orphanSids.forEach(sid => _addCircle(sid, "#00aa00", 44));   // green, 2x bigger, darker
+    deadEndSids.forEach(sid => _addCircle(sid, "#ccaa00", 36));  // yellow, 2x bigger, darker
+
+    const msgs = [];
+    if (orphanSids.size) msgs.push(`${orphanSids.size} orphan(s) [green]`);
+    if (deadEndSids.size) msgs.push(`${deadEndSids.size} dead end(s) [yellow]`);
+    if (msgs.length) flashWarning(msgs.join(", "));
+  }
+
+  function _clearNetworkIssues() {
+    _issueCircles.forEach(m => App.getLayers().pods.removeLayer(m));
+    _issueCircles = [];
   }
 
   function _fmtMin(min) {
@@ -807,6 +869,7 @@ const Sim = (() => {
       _geojson = await api("GET", "/api/network");
       _startLoadingAnim(_geojson);
       _showSweepCircles(_geojson);   // orange rings on all stations
+      _showNetworkIssues(_geojson);  // green=orphans, yellow=dead ends
 
       // Start async simulation — send current panel settings so server uses live values
       const started = await api("POST", "/api/simulation/run", { slots, settings: Settings.current() });

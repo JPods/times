@@ -1,0 +1,36 @@
+{
+  "timestamp": "20260705T235155",
+  "note": "Greenville v4 final \u2014 designer connected, interior gaps fixed, 60% mode shift model validated. 2.1yr payback.",
+  "network_id": "noelle_greenville_v4",
+  "topology": {
+    "circles": 33,
+    "components": 1,
+    "connected_cps": 240,
+    "degree_distribution": {
+      "1": 10,
+      "2": 76,
+      "3": 18,
+      "4": 6
+    },
+    "largest_component": 110,
+    "open_cps": 46,
+    "orphans": [],
+    "stations": 77
+  },
+  "spatial": {
+    "center": [
+      34.8445,
+      -82.373005
+    ],
+    "extent_km": [
+      16.91,
+      24.3
+    ],
+    "nn_spacing_m": {
+      "avg": 758.0,
+      "max": 5961.0,
+      "min": 166.0
+    }
+  },
+  "jpd_file": "/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/route_time/noelle_history/20260705T235155.jpd"
+}

@@ -1,0 +1,67 @@
+{
+  "timestamp": "20260705T212913",
+  "note": "Initial Noelle proposal \u2014 33 structures placed at AADT 10k+ intersections, not connected",
+  "network_id": "noelle_greenville_draft",
+  "topology": {
+    "circles": 12,
+    "components": 33,
+    "connected_cps": 0,
+    "degree_distribution": {
+      "0": 33
+    },
+    "largest_component": 1,
+    "open_cps": 90,
+    "orphans": [
+      "c1",
+      "s1",
+      "c2",
+      "s2",
+      "c3",
+      "s3",
+      "c4",
+      "c5",
+      "s4",
+      "c6",
+      "s5",
+      "s6",
+      "c7",
+      "c8",
+      "s7",
+      "s8",
+      "c9",
+      "s9",
+      "s10",
+      "c10",
+      "s11",
+      "s12",
+      "s13",
+      "c11",
+      "s15",
+      "s16",
+      "s17",
+      "s18",
+      "c12",
+      "s19",
+      "s20",
+      "s21",
+      "s22"
+    ],
+    "stations": 21
+  },
+  "spatial": {
+    "center": [
+      34.841224,
+      -82.381212
+    ],
+    "extent_km": [
+      8.1,
+      13.67
+    ],
+    "nn_spacing_m": {
+      "avg": 883.0,
+      "max": 2400.0,
+      "min": 266.0
+    }
+  },
+  "jpd_file": "/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/route_time/noelle_history/20260705T212913.jpd"
+}

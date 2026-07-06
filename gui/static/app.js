@@ -456,20 +456,24 @@ let _hoverStructSid = null;   // CP or structure-line under cursor → triggers 
 let _hoverLineId    = null;   // free guideway under cursor → triggers inline bend drag
 
 // Show circle cursor whenever Alt is held over the map — signals "grab radius active"
+// Also disable map panning while Alt is held so Alt+drag never accidentally pans.
 document.addEventListener("keydown", (e) => {
   if (e.key === "Alt" && !e.repeat) {
     map.getContainer().classList.add("alt-grab-mode");
+    map.dragging.disable();
     e.preventDefault();   // suppress browser menu-bar activation (Windows/Linux)
   }
 });
 document.addEventListener("keyup", (e) => {
   if (e.key === "Alt") {
     map.getContainer().classList.remove("alt-grab-mode");
+    if (!_moveState.active) map.dragging.enable();
   }
 });
 // Also clear if window loses focus mid-drag
 window.addEventListener("blur", () => {
   map.getContainer().classList.remove("alt-grab-mode");
+  if (!_moveState.active) map.dragging.enable();
 });
 
 // ── Inline guideway-bend drag state ──────────────────────────────────────────
@@ -569,6 +573,8 @@ function _startMultiMove(latlng) {
   setStatus(`Moving ${sids.size} structure(s) — release to drop`);
 }
 
+let _lastDragEnd = 0;  // timestamp of last Alt+drag completion — suppresses click
+
 // Capture-phase mousedown — intercepts Alt+mousedown before Leaflet's drag handler.
 // Branches on what the cursor is hovering:
 //   _hoverStructSid → move the whole structure (or whole selection if selected)
@@ -645,6 +651,7 @@ document.addEventListener("mousedown", (e) => {
     _moveState.active      = true;
     _moveState.sid         = sid;
     _moveState.startLatlng = latlng;
+    map.dragging.disable();
     setStatus(`Moving ${sid} — release to drop`);
     return;
   }
@@ -792,7 +799,7 @@ document.addEventListener("mouseup", async (e) => {
         lids.map(lid => api("POST", `/api/network/line/${lid}/waypoint`,
                             { lat: latlng.lat, lon: latlng.lng }))
       );
-      if (results.some(r => r.error)) { alert(results.find(r => r.error).error); }
+      if (results.some(r => r.error)) { flashWarning(results.find(r => r.error).error); }
     }
 
     const geojson = await api("GET", "/api/network");
@@ -804,7 +811,9 @@ document.addEventListener("mouseup", async (e) => {
   if (!_moveState.active) return;
   _moveState.active = false;
   _moveState.connectors = [];
-  map.dragging.enable();   // re-enable in case waypoint handler disabled it
+  _lastDragEnd = Date.now();  // suppress CP click after drag
+  // Re-enable map panning only if Alt is no longer held
+  if (!e.altKey) map.dragging.enable();
 
   const dlat = latlng.lat - _moveState.startLatlng.lat;
   const dlon = latlng.lng - _moveState.startLatlng.lng;
@@ -824,13 +833,13 @@ document.addEventListener("mouseup", async (e) => {
     const results = await Promise.all(
       [...sids].map(s => api("POST", `/api/network/structure/${s}/move`, { dlat, dlon }))
     );
-    if (results.some(r => r.error)) { alert(results.find(r => r.error).error); }
+    if (results.some(r => r.error)) { flashWarning(results.find(r => r.error).error); }
     const geojson = await api("GET", "/api/network");
     App._render(geojson);
     setStatus(`Moved ${sids.size} structure(s)`);
   } else {
     const r = await api("POST", `/api/network/structure/${sid}/move`, { dlat, dlon });
-    if (r.error) { alert(r.error); }
+    if (r.error) { flashWarning(r.error); }
     const geojson = await api("GET", "/api/network");
     App._render(geojson);
     setStatus(`Moved ${sid}`);
@@ -943,33 +952,73 @@ const App = {
     if (!_readOnly) setStatus("Editing enabled");
   },
 
+  _saveHandle: null,   // remembered File System Access handle
+  _dirty: false,       // true when network has unsaved changes
+
+  _checkUnsaved() {
+    // Returns true if OK to proceed (no changes, or user chose to continue)
+    if (!App._dirty) return true;
+    return confirm("You have unsaved changes. Continue without saving?");
+  },
+
   async newNetwork() {
-    if (!confirm("Start a new empty network?")) return;
+    if (!App._checkUnsaved()) return;
+    App._saveHandle = null;
+    App._dirty = false;
     const r = await api("POST", "/api/network/new", { network_id: "untitled" });
+    App._dirty = false;  // api() sets dirty on POST — clear it, this isn't an edit
     App._render(r);
     App.setReadOnly(false);
     setStatus("New network");
   },
 
-  openFile() {
+  async openFile() {
+    if (!App._checkUnsaved()) return;
+    // Use File System Access API to get a reusable handle for Save
+    if (window.showOpenFilePicker) {
+      try {
+        const [handle] = await window.showOpenFilePicker({
+          types: [{ description: "JPods network file", accept: { "application/xml": [".jpd"], "application/json": [".json"] } }],
+          multiple: false,
+        });
+        const file = await handle.getFile();
+        const text = await file.text();
+        const r = await _postRaw("/api/network/load_text", {
+          filename: file.name,
+          content: text,
+        });
+        if (r.error) { alert(r.error); return; }
+        App._saveHandle = handle;
+        App._dirty = false;
+        _fitOnNextRender = true;
+        App._render(r);
+        Settings.apply(r.settings);
+        App.setReadOnly(false);
+        setStatus(`Loaded: ${file.name}`);
+        return;
+      } catch (e) {
+        if (e.name === "AbortError") return;
+        // Fall through to file input
+      }
+    }
     document.getElementById("file-input").click();
   },
 
   async onFileSelected(input) {
     const file = input.files[0];
     if (!file) return;
-    // We need a server-side path; upload or read directly.
-    // For desktop use: read file content and POST to server which saves to temp, then loads.
     const text = await file.text();
     const r = await _postRaw("/api/network/load_text", {
       filename: file.name,
       content: text,
     });
     if (r.error) { alert(r.error); return; }
+    App._saveHandle = null;  // file input doesn't give a writable handle
+    App._dirty = false;
     _fitOnNextRender = true;
     App._render(r);
     Settings.apply(r.settings);
-    App.setReadOnly(true);
+    App.setReadOnly(false);
     setStatus(`Loaded: ${file.name}`);
     input.value = "";
   },
@@ -997,17 +1046,24 @@ const App = {
     // Native OS save dialog via File System Access API (Chrome 86+, Safari 15.2+, Edge 86+)
     if (window.showSaveFilePicker) {
       try {
-        const handle = await window.showSaveFilePicker({
-          suggestedName: filename,
-          types: [{ description: "JPods network file", accept: { "application/xml": [".jpd"] } }],
-        });
+        // Reuse the remembered handle if we have one — no dialog
+        let handle = App._saveHandle;
+        if (!handle) {
+          handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{ description: "JPods network file", accept: { "application/xml": [".jpd"] } }],
+          });
+          App._saveHandle = handle;
+        }
         const writable = await handle.createWritable();
         await writable.write(blob);
         await writable.close();
-        setStatus(`Saved: ${handle.name}`);
+        App._dirty = false;
+        flashSuccess(`Saved: ${handle.name}`);
         return;
       } catch (e) {
         if (e.name === "AbortError") return;  // user cancelled — do nothing
+        App._saveHandle = null;  // handle may be stale — clear it
         // Fall through to blob-download fallback on other errors
       }
     }
@@ -1019,7 +1075,8 @@ const App = {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
-    setStatus(`Saved: ${filename}`);
+    App._dirty = false;
+    flashSuccess(`Saved: ${filename}`);
   },
 
   async captureMap() {
@@ -1452,6 +1509,8 @@ function _addCpFeature(f) {
 
   marker.on("click", async (e) => {
     L.DomEvent.stopPropagation(e);  // prevent click reaching map (avoids accidental placement)
+    // Suppress CP click right after an Alt+drag move (altKey is released before click fires)
+    if (e.originalEvent.altKey || Date.now() - _lastDragEnd < 300) return;
     if (typeof TimeMap !== "undefined" && TimeMap.isActive()) {
       TimeMap.handleClick(e.latlng.lat, e.latlng.lng); return;
     }
@@ -1468,7 +1527,7 @@ function _addCpFeature(f) {
       if (_roGuard()) return;
       _selectedCpId = null;
       const r = await api("POST", "/api/network/disconnect_cp", { cp_id: cpId });
-      if (r.error) { alert(r.error); return; }
+      if (r.error) { flashWarning(r.error); return; }
       const gj = await api("GET", "/api/network");
       App._render(gj);
       setStatus(`Disconnected ${cpId}`);
@@ -1500,16 +1559,18 @@ function _addCpFeature(f) {
       setStatus("Ready");
 
     } else {
-      // Second click — connect the two CPs
+      // Second click — connect the two structures via their closest open CPs
       if (_roGuard()) return;
       const partnerCpId = _selectedCpId;
       _selectedCpId = null;
+      const structA = (_cpPropsMap[partnerCpId] || {}).structure_id;
+      const structB = props.structure_id;
       const r = await api("POST", "/api/network/connect_cps",
-                          { cp_a: partnerCpId, cp_b: cpId });
-      if (r.error) { alert(r.error); return; }
+                          { struct_a: structA, struct_b: structB });
+      if (r.error) { flashWarning(r.error); return; }
       const gj = await api("GET", "/api/network");
       App._render(gj);
-      setStatus(`Connected ${partnerCpId} ↔ ${cpId}  (${r.lines_added.length} guideways added)`);
+      setStatus(`Connected ${r.connected[0]} ↔ ${r.connected[1]}  (${r.lines_added.length} guideways added)`);
     }
   });
 
@@ -1779,6 +1840,20 @@ function dbg(msg) {
 }
 
 document.addEventListener("keydown", (e) => {
+  // Skip shortcuts when typing in an input/textarea
+  const tag = e.target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+  // Placement shortcuts — digits select tool, then click map to place
+  switch (e.key) {
+    case "1": Editor.startPlace("station",   0); e.preventDefault(); return;  // N–S
+    case "2": Editor.startPlace("station",  90); e.preventDefault(); return;  // E–W
+    case "3": Editor.startPlace("station", 135); e.preventDefault(); return;  // NW–SE
+    case "4": Editor.startPlace("station",  45); e.preventDefault(); return;  // NE–SW
+    case "5": Editor.startPlace("circle",    0); e.preventDefault(); return;  // Circle
+    case "6": Editor.startPlace("circle",   45); e.preventDefault(); return;  // Circle 45°
+  }
+
   if (e.key === "`" && e.ctrlKey) {
     _ensureDbgEl();
     _dbgVisible = !_dbgVisible;
@@ -1794,12 +1869,31 @@ function setStatus(msg) {
   document.getElementById("status-mode").textContent = msg;
 }
 
+let _flashTimer = null;
+function flashWarning(msg, ms = 2000) {
+  _flashMsg("⚠ " + msg, "#f90", ms);
+}
+function flashSuccess(msg, ms = 1500) {
+  _flashMsg("✓ " + msg, "#4c4", ms);
+}
+function _flashMsg(msg, color, ms) {
+  const el = document.getElementById("status-mode");
+  const prev = el.textContent;
+  const prevColor = el.style.color;
+  el.textContent = msg;
+  el.style.color = color;
+  clearTimeout(_flashTimer);
+  _flashTimer = setTimeout(() => { el.textContent = prev; el.style.color = prevColor; }, ms);
+}
+
 // ── API helpers ───────────────────────────────────────────────────────────────
 
 async function api(method, path, body) {
   const opts = { method, headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(path, opts);
+  // Any mutation to the network marks it dirty
+  if (method !== "GET" && path.startsWith("/api/network")) App._dirty = true;
   return r.json();
 }
 
