@@ -131,7 +131,10 @@ def _load_json(path: str, network_id: str
         # Legacy .jpd with no overlay data — try to match by centroid
         overlays = _detect_city_from_network(net, raw)
 
-    return net, structures_data, cps_data, settings, overlays
+    # Restore QA if present
+    qa = raw.get("qa")
+
+    return net, structures_data, cps_data, settings, overlays, qa
 
 
 def _detect_city_from_network(net, raw):
@@ -277,7 +280,7 @@ def _load_xml(path: str, network_id: str
         except Exception:
             pass
 
-    return net, structures_data, cps_data, {}, None   # legacy: no settings/overlays
+    return net, structures_data, cps_data, {}, None, None  # legacy: no settings/overlays/qa
 
 
 # ---------------------------------------------------------------------------

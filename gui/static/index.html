@@ -458,11 +458,15 @@
     <div class="pal-section" id="pal-noelle">
       <div class="pal-label">Noelle</div>
       <button onclick="Noelle.draft()" style="width:100%"
-              title="Noelle analyses AADT + accident data and proposes stations on the arterial grid. Stations only — you add circles.">&#128300; Draft…</button>
+              title="Show Noelle's proposed stations as a layer (toggle on/off). Does not modify your network.">&#128300; Draft</button>
+      <button onclick="Noelle.apply()" style="width:100%"
+              title="Place Noelle's draft stations into the network as real structures">&#10003; Apply Draft</button>
       <button onclick="Noelle.refine()" style="width:100%"
               title="Noelle prunes stations with no data signal and adds where signal exists. Circles untouched.">&#9986; Refine</button>
       <button onclick="Noelle.report()" style="width:100%"
               title="Open printable analysis report in new tab">&#128196; Report</button>
+      <button onclick="NoelleQA.toggle()" style="width:100%"
+              title="Answer Noelle's questions about local knowledge — bike trails, venues, barriers">&#9998; Local Knowledge</button>
     </div>
 
     <!-- SIMULATE -->
@@ -669,6 +673,71 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
           Route-Time designs and simulates JPods networks on a real map.
           Place stations and traffic circles, connect them, then run a simulation
           to get door-to-door travel times for every station pair.
+          Noelle, the network design agent, uses government traffic and crash data
+          to propose station placement and evaluate your design.
+        </p>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Three Ways to Start</div>
+        <ol style="margin:4px 0 0 16px;padding:0;color:#9dc">
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb"><strong style="color:#ddd">Noelle Draft</strong> —
+            click <strong>Draft</strong> in the Noelle panel. Noelle analyses crash and traffic
+            data and places stations on the arterial grid. You add circles where corridors intersect.</span>
+          </li>
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb"><strong style="color:#ddd">Grid Estimate</strong> —
+            click <strong>Grid</strong> to lay out a uniform grid network. Then click
+            <strong>Refine</strong> and Noelle prunes stations with no data signal and fills gaps.</span>
+          </li>
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb"><strong style="color:#ddd">Manual</strong> —
+            place stations and circles by hand using the placement tools (keys 1-6).</span>
+          </li>
+        </ol>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Noelle — Network Design Agent</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Draft</td>
+            <td style="color:#bbb">Noelle proposes stations from crash + traffic data. Stations only — you add circles.</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Refine</td>
+            <td style="color:#bbb">Prunes stations with no data signal. Adds stations where signal exists but no structure is placed. Circles never touched.</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Report</td>
+            <td style="color:#bbb">Printable analysis: crash rates by road type, highway boundaries, station scores.</td>
+          </tr>
+        </table>
+        <p style="margin:4px 0 0;color:#888;font-size:11px">
+          Noelle's key insight: local arterials are 9x more dangerous per unit of traffic than interstates.
+          Highways are boundaries, not corridors — stations belong on the walkable grid between them.
+        </p>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Data Overlays</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Traffic (AADT)</td>
+            <td style="color:#bbb">Annual Average Daily Traffic — circles sized by volume</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Fatal Crashes</td>
+            <td style="color:#bbb">NHTSA fatal crash locations — blue circles</td>
+          </tr>
+          <tr>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">All Crashes</td>
+            <td style="color:#bbb">All-severity crash density — blue heat map. Shopping areas and dangerous intersections light up.</td>
+          </tr>
+        </table>
+        <p style="margin:4px 0 0;color:#888;font-size:11px">
+          Overlay data is embedded in your .jpd file. Open a saved network and the correct city data loads automatically.
         </p>
       </div>
 
@@ -676,26 +745,42 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
         <div class="dialog-section-label">Build a Network — Step by Step</div>
         <ol style="margin:4px 0 0 16px;padding:0;color:#9dc">
           <li style="margin-bottom:4px">
-            <span style="color:#bbb">Choose a <strong style="color:#ddd">station orientation</strong>
-            (N–S, E–W, NE–SW, NW–SE) in the Stations panel, then click the map to place it.
-            The platform side loads passengers; the far side reverses direction.</span>
+            <span style="color:#bbb">Turn on <strong style="color:#ddd">All Crashes</strong> and
+            <strong style="color:#ddd">Traffic</strong> overlays to see where the data is.</span>
+          </li>
+          <li style="margin-bottom:4px">
+            <span style="color:#bbb">Place <strong style="color:#ddd">stations</strong>
+            along crash corridors (keys 1-4 for orientation), or let Noelle Draft.</span>
           </li>
           <li style="margin-bottom:4px">
             <span style="color:#bbb">Place <strong style="color:#ddd">traffic circles</strong>
-            at intersections (⬡ Circle or ⬡ /45°).
-            Circles connect up to four guideway arms.</span>
+            where corridors intersect (keys 5-6). Circles are the connective tissue — aim for ~1:1 with stations.</span>
           </li>
           <li style="margin-bottom:4px">
-            <span style="color:#bbb"><strong style="color:#ddd">Connect</strong> structures:
-            click a <span style="color:#4af">blue outbound</span> CP dot, then click the
-            <span style="color:#f44">red inbound</span> CP dot on the adjacent structure.
-            Or click <strong style="color:#ddd">⚡ Auto-Connect</strong> to wire everything automatically.</span>
+            <span style="color:#bbb"><strong style="color:#ddd">Connect</strong>:
+            click a <span style="color:#4af">blue outbound</span> CP, then a
+            <span style="color:#f44">red inbound</span> CP.
+            Or click <strong style="color:#ddd">Auto-Connect</strong>.</span>
           </li>
           <li style="margin-bottom:4px">
-            <span style="color:#bbb">Click <strong style="color:#ddd">▶ Run</strong> to simulate.
-            Results appear in the sidebar; the animation starts automatically.</span>
+            <span style="color:#bbb">Click <strong style="color:#ddd">Run</strong> to simulate.
+            Green circles = dead ends. Yellow circles = orphans.</span>
           </li>
         </ol>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Keyboard Shortcuts</div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <tr><td style="padding:2px 8px 2px 0;color:#ddd">1</td><td style="color:#bbb">Station N-S</td>
+              <td style="padding:2px 8px 2px 0;color:#ddd">2</td><td style="color:#bbb">Station E-W</td></tr>
+          <tr><td style="padding:2px 8px 2px 0;color:#ddd">3</td><td style="color:#bbb">Station NW-SE</td>
+              <td style="padding:2px 8px 2px 0;color:#ddd">4</td><td style="color:#bbb">Station NE-SW</td></tr>
+          <tr><td style="padding:2px 8px 2px 0;color:#ddd">5</td><td style="color:#bbb">Circle 0°</td>
+              <td style="padding:2px 8px 2px 0;color:#ddd">6</td><td style="color:#bbb">Circle 45°</td></tr>
+          <tr><td style="padding:2px 8px 2px 0;color:#ddd">Esc</td><td style="color:#bbb">Cancel placement</td>
+              <td style="padding:2px 8px 2px 0;color:#ddd">Alt+drag</td><td style="color:#bbb">Move structure</td></tr>
+        </table>
       </div>
 
       <div class="dialog-section">
@@ -715,31 +800,8 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
           </tr>
         </table>
         <p style="margin:4px 0 0;color:#888;font-size:11px">
-          Always connect blue → red. Each connection creates one directed guideway segment.
-          Two segments (one each direction) form a complete two-way corridor.
+          Always connect blue → red. Each connection creates a directed guideway pair (both directions).
         </p>
-      </div>
-
-      <div class="dialog-section">
-        <div class="dialog-section-label">Station Layout</div>
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
-          <tr>
-            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Near side</td>
-            <td style="color:#bbb">Platform — passengers board and alight here</td>
-          </tr>
-          <tr>
-            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Far side</td>
-            <td style="color:#bbb">No platform — internal U-turn reverses direction</td>
-          </tr>
-          <tr>
-            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">CP_near_far</td>
-            <td style="color:#bbb">Exit toward near-guideway direction</td>
-          </tr>
-          <tr>
-            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">CP_far_near</td>
-            <td style="color:#bbb">Exit toward far-guideway direction (via internal U-turn)</td>
-          </tr>
-        </table>
       </div>
 
       <div class="dialog-section">
@@ -747,34 +809,30 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <tr>
             <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#fff;vertical-align:middle"></span></td>
-            <td style="color:#bbb">White — parked at platform (loading or unloading)</td>
+            <td style="color:#bbb">White — parked at platform</td>
           </tr>
           <tr>
             <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#e67e22;vertical-align:middle"></span></td>
-            <td style="color:#bbb">Orange — in station siding (entering or leaving platform)</td>
+            <td style="color:#bbb">Orange — in station siding</td>
           </tr>
           <tr>
             <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#f1c40f;vertical-align:middle"></span></td>
-            <td style="color:#bbb">Yellow — approaching destination station</td>
+            <td style="color:#bbb">Yellow — approaching destination</td>
           </tr>
           <tr>
-            <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:hsl(60,100%,50%);vertical-align:middle"></span></td>
-            <td style="color:#bbb">Red→Green — in transit (red = slow ends, green = cruise speed)</td>
+            <td style="padding:2px 8px 2px 0"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:hsl(120,80%,45%);vertical-align:middle"></span></td>
+            <td style="color:#bbb">Green — cruising at speed</td>
           </tr>
         </table>
-        <p style="margin:4px 0 0;color:#888;font-size:11px">
-          Use 5×–20× playback speed to follow individual pods.
-          360×+ shows network-level flow. All station pairs are simulated simultaneously.
-        </p>
       </div>
 
       <div class="dialog-section">
-        <div class="dialog-section-label">Simulation Results</div>
+        <div class="dialog-section-label">Simulation</div>
         <ul style="margin:4px 0 0 16px;padding:0;color:#bbb">
-          <li style="margin-bottom:3px">The sweep dispatches one pod from every station to every other station.</li>
-          <li style="margin-bottom:3px">Travel times include station overhead (ticketing, boarding, alighting) — default 150 sec total.</li>
-          <li style="margin-bottom:3px">The travel time matrix shows median door-to-door minutes for each pair.</li>
-          <li style="margin-bottom:3px"><strong style="color:#ddd">⊙ Isochrone</strong> — click any map point to see walk-ride-walk coverage zones (5/10/20/30 min).</li>
+          <li style="margin-bottom:3px">Dispatches one pod from every station to every other station.</li>
+          <li style="margin-bottom:3px">Travel times include station overhead (150 sec default).</li>
+          <li style="margin-bottom:3px"><strong style="color:#ddd">Isochrone</strong> — click any point for walk-ride-walk coverage zones.</li>
+          <li style="margin-bottom:3px">Green circles on Run = dead ends. Yellow = orphans (not connected).</li>
         </ul>
       </div>
 
@@ -783,20 +841,31 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <tr>
             <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">.jpd</td>
-            <td style="color:#bbb">Network file — save and open with the File buttons</td>
+            <td style="color:#bbb">Network file — contains network + overlay data + Noelle's draft. One file, everything inside.</td>
           </tr>
           <tr>
-            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">📋 Clipboard</td>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Clipboard</td>
             <td style="color:#bbb">Copy or paste a network as text — useful for sharing</td>
           </tr>
           <tr>
-            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">📷 Capture</td>
+            <td style="padding:2px 8px 2px 0;color:#ddd;white-space:nowrap">Capture</td>
             <td style="color:#bbb">Save the current map view as a PNG image</td>
           </tr>
         </table>
         <p style="margin:4px 0 0;color:#888;font-size:11px">
           Networks are not auto-saved. Save before closing the browser.
         </p>
+      </div>
+
+      <div class="dialog-section">
+        <div class="dialog-section-label">Design Principles</div>
+        <ul style="margin:4px 0 0 16px;padding:0;color:#bbb">
+          <li style="margin-bottom:3px"><strong style="color:#ddd">Highways are boundaries, not corridors.</strong> Nobody walks to an interstate. Stations go on the arterial grid.</li>
+          <li style="margin-bottom:3px"><strong style="color:#ddd">Stations only from data.</strong> Circles require local knowledge — only the designer knows where corridors cross.</li>
+          <li style="margin-bottom:3px"><strong style="color:#ddd">1×2 mile grid</strong> is the default for US grid cities (1 mile JPods per 14 miles of road).</li>
+          <li style="margin-bottom:3px"><strong style="color:#ddd">Mesh over capacity.</strong> Multiple parallel paths between stations. Never a single point of failure.</li>
+          <li style="margin-bottom:3px"><strong style="color:#ddd">JPods is Middle-Mile.</strong> Station-to-station. Walking and biking handle the last mile.</li>
+        </ul>
       </div>
 
     </div><!-- /dialog-body -->
@@ -817,6 +886,143 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
 <script src="overlays.js"></script>
 <script src="ai.js"></script>
 <script src="noelle.js"></script>
+<script>
+const NoelleQA = (() => {
+  let _el = null;
+  let _visible = false;
+
+  async function toggle() {
+    if (_visible) { hide(); return; }
+    show();
+  }
+
+  async function show() {
+    if (_el) _el.remove();
+
+    const r = await fetch("/api/noelle/qa");
+    const data = r.ok ? await r.json() : { questions: [] };
+    const questions = data.questions || [];
+
+    const el = document.createElement("div");
+    el.id = "qa-panel";
+    el.style.cssText =
+      "position:fixed; top:0; right:0; width:360px; height:100vh; " +
+      "background:#1a1a2e; color:#e0e0e0; border-left:1px solid #444; " +
+      "padding:16px; overflow-y:auto; z-index:9999; font-size:13px; " +
+      "box-shadow:-4px 0 20px rgba(0,0,0,0.4);";
+
+    let html = '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px">';
+    html += '<strong style="font-size:15px">Local Knowledge</strong>';
+    html += '<button onclick="NoelleQA.hide()" style="background:none; border:none; color:#aaa; cursor:pointer; font-size:18px">&times;</button>';
+    html += '</div>';
+    html += '<p style="color:#888; font-size:11px; margin:0 0 16px">Help Noelle design a better network. These answers are saved in your .jpd file.</p>';
+
+    for (const q of questions) {
+      html += '<div style="margin-bottom:14px">';
+      html += '<label style="display:block; color:#9dc; font-size:12px; margin-bottom:4px; font-weight:600">' +
+              q.q + '</label>';
+      html += '<textarea id="qa-' + q.id + '" rows="2" style="width:100%; background:#232340; ' +
+              'color:#e0e0e0; border:1px solid #444; border-radius:4px; padding:6px; ' +
+              'font-size:12px; resize:vertical; font-family:inherit">' +
+              (q.a || '') + '</textarea>';
+      html += '</div>';
+    }
+
+    // User-added questions
+    html += '<div id="qa-custom-list">';
+    const custom = data.custom || [];
+    _customCount = custom.length;
+    for (let i = 0; i < custom.length; i++) {
+      html += _customQAhtml(i, custom[i].q, custom[i].a);
+    }
+    html += '</div>';
+
+    html += '<div style="margin-top:10px">';
+    html += '<button onclick="NoelleQA.addCustom()" style="width:100%; padding:6px; background:#333; ' +
+            'color:#9dc; border:1px dashed #555; border-radius:4px; cursor:pointer; font-size:12px">+ Add Question</button>';
+    html += '</div>';
+
+    html += '<div style="margin-top:16px; display:flex; gap:8px">';
+    html += '<button onclick="NoelleQA.save()" style="flex:1; padding:8px; background:#2563eb; ' +
+            'color:#fff; border:none; border-radius:4px; cursor:pointer; font-size:13px">Save Answers</button>';
+    html += '<button onclick="NoelleQA.hide()" style="flex:1; padding:8px; background:#444; ' +
+            'color:#ddd; border:none; border-radius:4px; cursor:pointer; font-size:13px">Close</button>';
+    html += '</div>';
+
+    el.innerHTML = html;
+    document.body.appendChild(el);
+    _el = el;
+    _visible = true;
+  }
+
+  function hide() {
+    if (_el) { _el.remove(); _el = null; }
+    _visible = false;
+  }
+
+  let _customCount = 0;
+
+  function _customQAhtml(idx, q, a) {
+    return '<div style="margin-bottom:14px; border-top:1px solid #333; padding-top:10px" id="qa-custom-' + idx + '-wrap">' +
+      '<div style="display:flex; gap:4px; margin-bottom:4px">' +
+      '<input id="qa-custom-' + idx + '-q" placeholder="Your question..." value="' + (q||'').replace(/"/g,'&quot;') + '" ' +
+        'style="flex:1; background:#232340; color:#9dc; border:1px solid #444; border-radius:4px; padding:4px 6px; font-size:12px; font-family:inherit">' +
+      '<button onclick="NoelleQA.removeCustom(' + idx + ')" style="background:none; border:none; color:#666; cursor:pointer; font-size:14px" title="Remove">&times;</button>' +
+      '</div>' +
+      '<textarea id="qa-custom-' + idx + '-a" rows="2" placeholder="Answer..." style="width:100%; background:#232340; ' +
+        'color:#e0e0e0; border:1px solid #444; border-radius:4px; padding:6px; font-size:12px; resize:vertical; font-family:inherit">' +
+        (a||'') + '</textarea>' +
+      '</div>';
+  }
+
+  function addCustom() {
+    const list = document.getElementById("qa-custom-list");
+    if (!list) return;
+    const idx = _customCount++;
+    list.insertAdjacentHTML("beforeend", _customQAhtml(idx, "", ""));
+    document.getElementById("qa-custom-" + idx + "-q").focus();
+  }
+
+  function removeCustom(idx) {
+    const wrap = document.getElementById("qa-custom-" + idx + "-wrap");
+    if (wrap) wrap.remove();
+  }
+
+  async function save() {
+    const r = await fetch("/api/noelle/qa");
+    const data = r.ok ? await r.json() : { questions: [] };
+    const questions = data.questions || [];
+
+    for (const q of questions) {
+      const ta = document.getElementById("qa-" + q.id);
+      if (ta) q.a = ta.value;
+    }
+
+    // Collect custom questions
+    const custom = [];
+    document.querySelectorAll('[id^="qa-custom-"][id$="-q"]').forEach(el => {
+      const idx = el.id.replace("qa-custom-", "").replace("-q", "");
+      const aEl = document.getElementById("qa-custom-" + idx + "-a");
+      const q = el.value.trim();
+      const a = aEl ? aEl.value.trim() : "";
+      if (q || a) custom.push({ q, a });
+    });
+
+    const sr = await fetch("/api/noelle/qa", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ questions, custom }),
+    });
+
+    if (sr.ok) {
+      if (typeof App !== "undefined" && App.flash) App.flash("Local knowledge saved", 2000);
+      if (typeof flashSuccess !== "undefined") flashSuccess("Local knowledge saved");
+    }
+  }
+
+  return { toggle, show, hide, save, addCustom, removeCustom };
+})();
+</script>
 
 <script>
 const Guide = (() => {

@@ -624,7 +624,12 @@ def download_network():
         content_bytes = serialise_jpd(net, _state["structures"], _state["cps"],
                                       _state["settings"],
                                       _state.get("overlays"))
-        # Inject noelle_draft if present
+        # Inject qa and noelle_draft if present
+        qa = _state.get("qa")
+        if qa:
+            d = json.loads(content_bytes)
+            d["qa"] = qa
+            content_bytes = json.dumps(d, indent=2, ensure_ascii=False).encode("utf-8")
         noelle_draft = _state.get("noelle_draft")
         if noelle_draft:
             d = json.loads(content_bytes)
@@ -2041,10 +2046,10 @@ def load_network_text():
         tmp.write(content)
         tmp_path = tmp.name
 
-    structs_data, cps_data, file_settings, file_overlays = [], [], {}, None
+    structs_data, cps_data, file_settings, file_overlays, file_qa = [], [], {}, None, None
     try:
         if suffix == ".jpd":
-            net, structs_data, cps_data, file_settings, file_overlays = load_jpd(tmp_path)
+            net, structs_data, cps_data, file_settings, file_overlays, file_qa = load_jpd(tmp_path)
         else:
             with open(tmp_path) as f:
                 raw = json.load(f)
@@ -2070,7 +2075,9 @@ def load_network_text():
         _state["cps"].update(c)
     if file_settings:
         _state["settings"].update(file_settings)
-    # Overlay data is restored by the reader (writes to active overlay files)
+    # Restore QA and overlays from loaded file
+    if file_qa:
+        _state["qa"] = file_qa
     if file_overlays:
         _state["overlays"] = file_overlays
     _sync_counters()
@@ -2215,6 +2222,34 @@ def switch_overlay_city(city):
 
     _state["overlays"] = {"city": city, "files": switched}
     return jsonify({"city": city, "switched": switched})
+
+
+@api.get("/noelle/qa")
+def get_qa():
+    """Return Noelle's questions and any designer answers."""
+    return jsonify(_state.get("qa") or _default_qa())
+
+
+@api.post("/noelle/qa")
+def save_qa():
+    """Save designer's answers to Noelle's questions."""
+    _state["qa"] = request.json or {}
+    return jsonify({"ok": True})
+
+
+def _default_qa():
+    return {
+        "questions": [
+            {"id": "bike_trails", "q": "Where are the major bike/walking trails?", "a": ""},
+            {"id": "event_venues", "q": "Any large event venues (stadiums, fairgrounds, convention centers)?", "a": ""},
+            {"id": "campuses", "q": "University campuses or hospital complexes?", "a": ""},
+            {"id": "transit_hubs", "q": "Transit hubs (bus stations, commuter rail, airports)?", "a": ""},
+            {"id": "one_sided", "q": "Riverfronts, lakefronts, or other one-sided amenities worth connecting?", "a": ""},
+            {"id": "commercial", "q": "Major shopping centers or commercial districts not on main roads?", "a": ""},
+            {"id": "barriers", "q": "Linear barriers besides highways (rail lines, rivers, canals)?", "a": ""},
+            {"id": "growth", "q": "Areas of new development or planned growth?", "a": ""},
+        ],
+    }
 
 
 @api.get("/overlays/crash_density")
