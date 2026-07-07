@@ -25,6 +25,9 @@ const Overlays = (() => {
     accident:       null,
     crash_density:  null,
     mobility:       null,
+    pop_density:    null,
+    property_values:null,
+    jobs:           null,
   };
 
   const _active = {
@@ -33,6 +36,9 @@ const Overlays = (() => {
     accident:       false,
     crash_density:  false,
     mobility:       false,
+    pop_density:    false,
+    property_values:false,
+    jobs:           false,
   };
 
   let _aadtData = null;  // cached GeoJSON
@@ -228,6 +234,75 @@ const Overlays = (() => {
     return `hsl(${h},100%,50%)`;
   }
 
+  // ── Census heatmaps (population, property values, jobs) ──────────────────────
+
+  function _buildHeatLayer(geojson, colorFn, tooltipFn) {
+    if (!geojson || !geojson.features || geojson.features.length === 0) return null;
+
+    // Find max intensity for normalization
+    let maxInt = 1;
+    for (const f of geojson.features) {
+      const v = f.properties.intensity || f.properties.value || 0;
+      if (v > maxInt) maxInt = v;
+    }
+
+    return L.geoJSON(geojson, {
+      pointToLayer: (f, latlng) => {
+        const val = f.properties.intensity || f.properties.value || 0;
+        const ratio = Math.min(val / maxInt, 1);
+        return L.circleMarker(latlng, {
+          radius: 12 + ratio * 25,
+          color: "transparent",
+          fillColor: colorFn(ratio),
+          fillOpacity: 0.4 + ratio * 0.2,
+          weight: 0,
+        });
+      },
+      onEachFeature: (f, layer) => {
+        layer.bindTooltip(tooltipFn(f.properties), { sticky: true });
+      },
+    });
+  }
+
+  async function _loadPopDensity() {
+    const r = await fetch("/api/overlays/population_density");
+    if (!r.ok) { _showOverlayNote("pop_density", "No population data. Run: python3 scripts/census_overlays.py --all"); return null; }
+    return _buildHeatLayer(await r.json(),
+      (ratio) => {
+        // Blue (low) → Purple (mid) → Red (high)
+        const h = Math.round(240 - ratio * 240);
+        return `hsl(${h}, 80%, ${55 - ratio * 15}%)`;
+      },
+      (p) => `<b>${p.name || "Tract"}</b><br>Pop density: ${(p.density || p.value || 0).toLocaleString()}/mi²`
+    );
+  }
+
+  async function _loadPropertyValues() {
+    const r = await fetch("/api/overlays/property_values");
+    if (!r.ok) { _showOverlayNote("property_values", "No property value data. Run: python3 scripts/census_overlays.py --all"); return null; }
+    return _buildHeatLayer(await r.json(),
+      (ratio) => {
+        // Green (low value) → Gold (mid) → Red (high value)
+        const h = Math.round(120 - ratio * 120);
+        return `hsl(${h}, 85%, ${50 - ratio * 10}%)`;
+      },
+      (p) => `<b>${p.name || "Tract"}</b><br>Median home value: $${(p.value || 0).toLocaleString()}`
+    );
+  }
+
+  async function _loadJobs() {
+    const r = await fetch("/api/overlays/jobs");
+    if (!r.ok) { _showOverlayNote("jobs", "No jobs data. Run: python3 scripts/census_overlays.py --all"); return null; }
+    return _buildHeatLayer(await r.json(),
+      (ratio) => {
+        // Cyan (low) → Blue (mid) → Dark blue (high)
+        const h = Math.round(200 - ratio * 40);
+        return `hsl(${h}, 90%, ${60 - ratio * 25}%)`;
+      },
+      (p) => `<b>${p.name || "Tract"}</b><br>Employed: ${(p.value || 0).toLocaleString()}`
+    );
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   function _showOverlayNote(key, msg) {
@@ -285,7 +360,10 @@ const Overlays = (() => {
     },
     toggleAccident() { _toggle("accident", _loadAccidents); },
     toggleCrashDensity() { _toggle("crash_density", _loadCrashDensity); },
-    toggleMobility() { _toggle("mobility", _loadMobility);  },
+    toggleMobility() { _toggle("mobility", _loadMobility); },
+    togglePopDensity() { _toggle("pop_density", _loadPopDensity); },
+    togglePropertyValues() { _toggle("property_values", _loadPropertyValues); },
+    toggleJobs() { _toggle("jobs", _loadJobs); },
 
     /** Return which overlays are currently active (for saving with .jpd). */
     getActive() {

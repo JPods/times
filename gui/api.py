@@ -2213,7 +2213,7 @@ def switch_overlay_city(city):
         return jsonify({"error": f"No overlay data for city '{city}'"}), 404
 
     switched = []
-    for prefix in ("aadt", "accidents", "crash_density"):
+    for prefix in ("aadt", "accidents", "crash_density", "population_density", "property_values", "jobs"):
         src = os.path.join(overlay_dir, f"{prefix}_{city}.geojson")
         dst = os.path.join(overlay_dir, f"{prefix}.geojson")
         if os.path.exists(src):
@@ -2273,6 +2273,36 @@ def overlay_mobility():
         with open(local_path) as f:
             return jsonify(json.load(f))
     return jsonify({"error": "Mobility data not configured"}), 404
+
+
+@api.get("/overlays/population_density")
+def overlay_population_density():
+    """Census ACS population density by tract — heatmap overlay."""
+    local_path = os.path.join(_rt_dir, "overlays", "population_density.geojson")
+    if os.path.exists(local_path):
+        with open(local_path) as f:
+            return jsonify(json.load(f))
+    return jsonify({"error": "Population density data not configured. Run: python3 scripts/census_overlays.py --all"}), 404
+
+
+@api.get("/overlays/property_values")
+def overlay_property_values():
+    """Census ACS median home value by tract — heatmap overlay."""
+    local_path = os.path.join(_rt_dir, "overlays", "property_values.geojson")
+    if os.path.exists(local_path):
+        with open(local_path) as f:
+            return jsonify(json.load(f))
+    return jsonify({"error": "Property value data not configured. Run: python3 scripts/census_overlays.py --all"}), 404
+
+
+@api.get("/overlays/jobs")
+def overlay_jobs():
+    """Census ACS employed civilians by tract — heatmap overlay."""
+    local_path = os.path.join(_rt_dir, "overlays", "jobs.geojson")
+    if os.path.exists(local_path):
+        with open(local_path) as f:
+            return jsonify(json.load(f))
+    return jsonify({"error": "Jobs data not configured. Run: python3 scripts/census_overlays.py --all"}), 404
 
 
 # ---------------------------------------------------------------------------
