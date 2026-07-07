@@ -205,7 +205,7 @@ def _detect_city_from_network(net, raw):
     if best_city and best_dist < 1.0:
         import shutil
         switched = []
-        for prefix in ("aadt", "accidents", "crash_density"):
+        for prefix in ("aadt", "accidents", "crash_density", "population_density", "property_values", "jobs"):
             src = os.path.join(overlay_dir, f"{prefix}_{best_city}.geojson")
             dst = os.path.join(overlay_dir, f"{prefix}.geojson")
             if os.path.exists(src):

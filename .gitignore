@@ -31,3 +31,11 @@ credentials*
 .pytest_cache/
 htmlcov/
 .coverage
+
+# Overlay data — durable store is /Volumes/Allie/data/overlays/
+# Commit the scripts that generate them, not the data files
+overlays/*.geojson
+
+# Runtime
+route_time.log
+sweep_trips.json

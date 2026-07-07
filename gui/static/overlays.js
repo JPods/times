@@ -265,8 +265,10 @@ const Overlays = (() => {
   }
 
   async function _loadPopDensity() {
+    console.log("[Overlay] Fetching /api/overlays/population_density...");
     const r = await fetch("/api/overlays/population_density");
-    if (!r.ok) { _showOverlayNote("pop_density", "No population data. Run: python3 scripts/census_overlays.py --all"); return null; }
+    console.log("[Overlay] Response:", r.status, r.statusText);
+    if (!r.ok) { console.error("[Overlay] Failed:", r.status); _showOverlayNote("pop_density", "No population data. Run: python3 scripts/census_overlays.py --all"); return null; }
     return _buildHeatLayer(await r.json(),
       (ratio) => {
         // Blue (low) → Purple (mid) → Red (high)
@@ -421,5 +423,4 @@ const Overlays = (() => {
 
 })();
 
-// Populate city list on load
-Overlays.loadCityList();
+// City list removed — using Fetch Data button instead

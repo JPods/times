@@ -34,10 +34,67 @@ const TILES = {
 const _savedView = (() => {
   try { return JSON.parse(localStorage.getItem("rt_map_view")); } catch { return null; }
 })();
-const map = L.map("map", { zoomControl: true }).setView(
+const map = L.map("map", { zoomControl: true, keyboard: false }).setView(
   _savedView ? [_savedView.lat, _savedView.lng] : [37.31, -121.87],
   _savedView ? _savedView.zoom : 13
 );
+// Walk radius circle — 0.75 mi (15-min walk) follows cursor. Toggle with key 9.
+const WalkCircle = (() => {
+  let _active = false;
+  let _circle = null;
+  const _radiusM = 0.75 * 1609.34;  // 0.75 miles in meters
+
+  function _onMove(e) {
+    if (_circle) _circle.setLatLng(e.latlng);
+  }
+
+  function toggle() {
+    _active = !_active;
+    if (_active) {
+      _circle = L.circle(map.getCenter(), {
+        radius: _radiusM,
+        color: "#f90",
+        weight: 2,
+        fillColor: "#f90",
+        fillOpacity: 0.08,
+        dashArray: "6 4",
+        interactive: false,
+      }).addTo(map);
+      map.on("mousemove", _onMove);
+      setStatus("Walk radius ON (¾ mi · 15 min) — press 9 to toggle");
+    } else {
+      map.off("mousemove", _onMove);
+      if (_circle) { map.removeLayer(_circle); _circle = null; }
+      setStatus("Walk radius OFF");
+    }
+  }
+
+  return { toggle };
+})();
+
+// Fixed scale bars: 0.75 mi (15-min walk) and 5 mi
+const FixedScale = L.Control.extend({
+  options: { position: "bottomleft" },
+  onAdd(map) {
+    const el = L.DomUtil.create("div", "fixed-scale-bar");
+    el.innerHTML =
+      '<div class="scale-line scale-walk" id="scale-walk"><span>¾ mi · 15 min walk</span></div>' +
+      '<div class="scale-line scale-mi" id="scale-mi"><span>5 mi</span></div>';
+    const update = () => {
+      const center = map.getCenter();
+      const mPerPx = 40075016.686 * Math.cos(center.lat * Math.PI / 180) /
+                     Math.pow(2, map.getZoom() + 8);
+      const walk15px = Math.round((0.75 * 1609.34) / mPerPx);
+      const mi5px = Math.round((5 * 1609.34) / mPerPx);
+      el.querySelector("#scale-walk").style.width = Math.max(walk15px, 10) + "px";
+      el.querySelector("#scale-mi").style.width = Math.max(mi5px, 10) + "px";
+    };
+    map.on("zoomend moveend", update);
+    setTimeout(update, 100);
+    return el;
+  },
+});
+new FixedScale().addTo(map);
 
 // Persist view whenever the user pans or zooms
 map.on("moveend zoomend", () => {
@@ -124,6 +181,9 @@ const CitySearch = (() => {
 
           const label = r.display_name.split(",").slice(0, 3).join(",").trim();
           setStatus(`Centered on: ${label}`);
+          // Show city name in overlay panel
+          const cityLabel = document.getElementById("overlay-city-label");
+          if (cityLabel) cityLabel.textContent = label;
         })
         .catch(() => {
           errEl.textContent = "Geocode request failed — check network connection";
@@ -1853,13 +1913,17 @@ document.addEventListener("keydown", (e) => {
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
   // Placement shortcuts — digits select tool, then click map to place
+  // Zoom shortcuts — 7 zoom in, 8 zoom out
   switch (e.key) {
-    case "1": Editor.startPlace("station",   0); e.preventDefault(); return;  // N–S
-    case "2": Editor.startPlace("station",  90); e.preventDefault(); return;  // E–W
-    case "3": Editor.startPlace("station", 135); e.preventDefault(); return;  // NW–SE
-    case "4": Editor.startPlace("station",  45); e.preventDefault(); return;  // NE–SW
-    case "5": Editor.startPlace("circle",    0); e.preventDefault(); return;  // Circle
-    case "6": Editor.startPlace("circle",   45); e.preventDefault(); return;  // Circle 45°
+    case "1": Editor.startPlace("station",   0); e.preventDefault(); e.stopPropagation(); return;  // N–S
+    case "2": Editor.startPlace("station",  90); e.preventDefault(); e.stopPropagation(); return;  // E–W
+    case "3": Editor.startPlace("station", 135); e.preventDefault(); e.stopPropagation(); return;  // NW–SE
+    case "4": Editor.startPlace("station",  45); e.preventDefault(); e.stopPropagation(); return;  // NE–SW
+    case "5": Editor.startPlace("circle",    0); e.preventDefault(); e.stopPropagation(); return;  // Circle
+    case "6": Editor.startPlace("circle",   45); e.preventDefault(); e.stopPropagation(); return;  // Circle 45°
+    case "7": App.getMap().zoomIn();              e.preventDefault(); e.stopPropagation(); return;  // Zoom in
+    case "9": WalkCircle.toggle();               e.preventDefault(); e.stopPropagation(); return;  // Walk radius
+    case "8": App.getMap().zoomOut();             e.preventDefault(); e.stopPropagation(); return;  // Zoom out
   }
 
   if (e.key === "`" && e.ctrlKey) {

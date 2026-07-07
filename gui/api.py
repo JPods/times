@@ -39,6 +39,33 @@ import sys
 _gui_dir = os.path.dirname(os.path.abspath(__file__))
 _rt_dir  = os.path.dirname(_gui_dir)
 _parent  = os.path.dirname(_rt_dir)
+
+# Overlay data: 5TB is the durable store, local overlays/ is the working cache
+_OVERLAY_5TB   = "/Volumes/Allie/data/overlays"
+_OVERLAY_LOCAL = os.path.join(_rt_dir, "overlays")
+
+
+def _overlay_path(filename):
+    """Return the best path for an overlay file: 5TB if mounted, else local cache."""
+    p5 = os.path.join(_OVERLAY_5TB, filename)
+    pl = os.path.join(_OVERLAY_LOCAL, filename)
+    # Prefer 5TB if file exists there
+    if os.path.exists(p5) and os.path.getsize(p5) > 10:
+        return p5
+    # Fall back to local
+    if os.path.exists(pl) and os.path.getsize(pl) > 10:
+        return pl
+    return None
+
+
+def _overlay_save(filename, data):
+    """Save overlay data to both 5TB (durable) and local (cache)."""
+    for d in (_OVERLAY_5TB, _OVERLAY_LOCAL):
+        os.makedirs(d, exist_ok=True)
+        path = os.path.join(d, filename)
+        with open(path, "w") as f:
+            json.dump(data, f)
+    log.info(f"Overlay saved: {filename} (5TB + local)")
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
@@ -565,7 +592,13 @@ def load_network():
     structs_data, cps_data, file_settings = [], [], {}
     try:
         if ext == ".jpd":
-            net, structs_data, cps_data, file_settings = load_jpd(path)
+            result = load_jpd(path)
+            net = result[0]
+            structs_data = result[1]
+            cps_data = result[2]
+            file_settings = result[3]
+            file_overlays = result[4] if len(result) > 4 else None
+            file_qa = result[5] if len(result) > 5 else None
         else:
             with open(path) as f:
                 raw = json.load(f)
@@ -573,6 +606,8 @@ def load_network():
                 net = load_podpresenter(path)
             else:
                 net = load_sketchup_map(path)
+            file_overlays = None
+            file_qa = None
     except Exception as e:
         _write_fault(f"Network load failed: {e}", f"path={path}")
         return jsonify({"error": str(e)}), 500
@@ -590,6 +625,12 @@ def load_network():
         _state["cps"].update(c)
     if file_settings:
         _state["settings"].update(file_settings)
+    if file_overlays:
+        _state["overlays"] = file_overlays
+    if file_qa:
+        _state["qa"] = file_qa
+
+    # Overlays auto-populate on save, not load — keeps load fast
     _sync_counters()
     return jsonify({**_network_to_geojson(net), "settings": _state["settings"]})
 
@@ -605,6 +646,10 @@ def save_network():
         return jsonify({"error": "No save path provided"}), 400
     if not path.endswith(".jpd"):
         path = path + ".jpd"
+
+    # Auto-populate census overlays before saving so they embed in the .jpd
+    _ensure_overlays(net)
+
     try:
         save_jpd(net, path, _state["structures"], _state["cps"],
                  _state["settings"], _state.get("overlays"))
@@ -2080,6 +2125,8 @@ def load_network_text():
         _state["qa"] = file_qa
     if file_overlays:
         _state["overlays"] = file_overlays
+
+    # Overlays auto-populate on save, not load
     _sync_counters()
     return jsonify({**_network_to_geojson(net), "settings": _state["settings"],
                     "overlays": _state.get("overlays")})
@@ -2142,24 +2189,21 @@ def overlay_aadt():
     Requires FHWA_API_KEY env var, or falls back to a local GeoJSON file.
     See route_time/overlays/README.md for setup.
     """
-    local_path = os.path.join(_rt_dir, "overlays", "aadt.geojson")
-    if os.path.exists(local_path):
-        with open(local_path) as f:
+    p = _overlay_path("aadt.geojson")
+    if p:
+        with open(p) as f:
             return jsonify(json.load(f))
-    return jsonify({"error": "AADT data not configured"}), 404
+    return jsonify({"error": "AADT data not configured — click Fetch Data"}), 404
 
 
 @api.get("/overlays/accidents")
 def overlay_accidents():
-    """
-    Proxy NHTSA / state crash data.
-    Falls back to local GeoJSON file: route_time/overlays/accidents.geojson
-    """
-    local_path = os.path.join(_rt_dir, "overlays", "accidents.geojson")
-    if os.path.exists(local_path):
-        with open(local_path) as f:
+    """NHTSA FARS fatal crash data — checks 5TB then local cache."""
+    p = _overlay_path("accidents.geojson")
+    if p:
+        with open(p) as f:
             return jsonify(json.load(f))
-    return jsonify({"error": "Accident data not configured"}), 404
+    return jsonify({"error": "Crash data not configured — click Fetch Data"}), 404
 
 
 @api.post("/overlays/active")
@@ -2175,6 +2219,311 @@ def set_active_overlays():
 def get_active_overlays():
     """Return current overlay config (from loaded .jpd or set by browser)."""
     return jsonify(_state.get("overlays") or {})
+
+
+@api.post("/overlays/fetch")
+def overlay_fetch_all():
+    """Fetch all available overlay data for the current network location.
+
+    Census (population, property values, jobs) — works for any US location.
+    FARS fatal crashes — works for any US state.
+    AADT and all-crash density — only available for pre-harvested cities.
+    """
+    data = request.json or {}
+    center_lat = None
+    center_lon = None
+
+    # Try network centroid first
+    net = _state.get("network")
+    if net:
+        lats = [n.lat for n in net.nodes.values() if n.lat]
+        lons = [n.lon for n in net.nodes.values() if n.lon]
+        if lats:
+            center_lat = sum(lats) / len(lats)
+            center_lon = sum(lons) / len(lons)
+
+    # Fall back to map center sent by browser
+    if center_lat is None and "lat" in data and "lon" in data:
+        center_lat = float(data["lat"])
+        center_lon = float(data["lon"])
+
+    if center_lat is None:
+        return jsonify({"error": "No location — place a station or search for a city first"}), 400
+    fetched = []
+    errors = []
+
+    # Census data (any US location)
+    try:
+        from route_time.scripts.census_overlays import process_location, get_api_key
+        api_key = get_api_key()
+        city_key = process_location(center_lat, center_lon, api_key)
+        if city_key:
+            fetched.extend(["population_density", "property_values", "jobs"])
+            overlays = _state.get("overlays") or {}
+            overlays["city"] = city_key
+            if "files" not in overlays:
+                overlays["files"] = []
+            for layer in ("population_density", "property_values", "jobs"):
+                if layer not in overlays["files"]:
+                    overlays["files"].append(layer)
+            _state["overlays"] = overlays
+        else:
+            errors.append("Census: could not determine US location")
+    except Exception as e:
+        errors.append(f"Census: {e}")
+
+    # Determine state FIPS for FARS + AADT
+    state_fips = None
+    state_abbr = None
+    try:
+        from route_time.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+        state_fips, county_fips = fips_from_latlon(center_lat, center_lon)
+        if state_fips:
+            state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
+    except Exception as e:
+        errors.append(f"Location lookup: {e}")
+
+    # AADT traffic (any US state via FHWA HPMS)
+    if state_abbr:
+        try:
+            aadt_ok = _fetch_aadt(state_abbr, center_lat, center_lon)
+            if aadt_ok:
+                fetched.append("aadt")
+        except Exception as e:
+            errors.append(f"AADT: {e}")
+
+    # FARS fatal crashes + crash density (any US state via NHTSA bulk CSV)
+    if state_fips:
+        try:
+            fars_ok = _fetch_fars(state_fips, state_abbr, center_lat, center_lon)
+            if fars_ok:
+                fetched.extend(["accidents", "crash_density"])
+        except Exception as e:
+            errors.append(f"FARS: {e}")
+
+    return jsonify({
+        "fetched": fetched,
+        "location": {"lat": center_lat, "lon": center_lon},
+        "errors": errors,
+    })
+
+
+def _fetch_aadt(state_abbr, center_lat, center_lon):
+    """Fetch AADT data from FHWA HPMS for a state, filtered near the network centroid.
+
+    Source: https://geo.dot.gov/server/rest/services/Hosted/HPMS_FULL_{ST}_{YEAR}/FeatureServer/0
+    Fields: aadt (int), route_id, routename, f_system
+    Geometry: polylines — we extract midpoints
+    """
+    import urllib.request, gzip
+    overlay_dir = os.path.join(_rt_dir, "overlays")
+    st = state_abbr.upper()
+
+    # Bounding box ~30 miles around centroid
+    delta = 0.4
+    bbox = f"{center_lon-delta},{center_lat-delta},{center_lon+delta},{center_lat+delta}"
+
+    features = []
+    for year in (2024, 2023, 2022, 2020):
+        base = (
+            f"https://geo.dot.gov/server/rest/services/Hosted/"
+            f"HPMS_FULL_{st}_{year}/FeatureServer/0/query"
+        )
+        params = (
+            f"?where=aadt%3E%3D5000"
+            f"&geometry={bbox}"
+            f"&geometryType=esriGeometryEnvelope"
+            f"&spatialRel=esriSpatialRelIntersects"
+            f"&outFields=aadt,route_id,routename,f_system"
+            f"&returnGeometry=true"
+            f"&outSR=4326"
+            f"&f=json"
+            f"&resultRecordCount=4000"
+        )
+        url = base + params
+        log.info(f"AADT: trying HPMS {st} {year}...")
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "JPods/RouteTime",
+                "Accept-Encoding": "gzip, identity",
+            })
+            with urllib.request.urlopen(req, timeout=90) as resp:
+                raw = resp.read()
+                if raw[:2] == b'\x1f\x8b':
+                    raw = gzip.decompress(raw)
+                data = json.loads(raw.decode())
+        except Exception as e:
+            log.warning(f"AADT {year}: {e}")
+            continue
+
+        if data and "features" in data and len(data["features"]) > 0:
+            features = data["features"]
+            log.info(f"AADT: got {len(features)} records from HPMS {st} {year}")
+            break
+        elif data and "error" in data:
+            log.warning(f"AADT {year}: {data['error'].get('message', '')}")
+
+    if not features:
+        log.info(f"AADT: no data for {st}")
+        return False
+
+    # Convert polylines to point features (midpoint)
+    geojson_features = []
+    seen = set()
+    for feat in features:
+        attrs = feat.get("attributes", {})
+        geom = feat.get("geometry", {})
+        aadt = attrs.get("aadt", 0)
+        if not aadt or aadt < 5000:
+            continue
+
+        route = attrs.get("routename") or attrs.get("route_id") or ""
+        tier = "core" if aadt >= 10000 else "secondary"
+
+        lat, lon = None, None
+        paths = geom.get("paths", [])
+        if paths and paths[0]:
+            path = paths[0]
+            mid = path[len(path) // 2]
+            lon, lat = mid[0], mid[1]
+        elif "x" in geom and "y" in geom:
+            lon, lat = geom["x"], geom["y"]
+
+        if lat is None or lon is None:
+            continue
+
+        # Deduplicate: snap to ~500m grid
+        gkey = (round(lat * 200) / 200, round(lon * 200) / 200)
+        if gkey in seen:
+            continue
+        seen.add(gkey)
+
+        geojson_features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {"aadt": aadt, "route_name": route, "tier": tier},
+        })
+
+    if not geojson_features:
+        return False
+
+    geojson = {"type": "FeatureCollection", "features": geojson_features}
+    _overlay_save("aadt.geojson", geojson)
+    return True
+
+
+def _fetch_fars(state_fips, state_abbr, center_lat, center_lon):
+    """Fetch FARS fatal crash data from NHTSA bulk CSV downloads.
+
+    Source: https://static.nhtsa.gov/nhtsa/downloads/FARS/{YEAR}/National/FARS{YEAR}NationalCSV.zip
+    Contains ACCIDENT.CSV with LATITUDE, LONGITUD, FATALS, STATE, etc.
+    Downloads national ZIP, filters to state, then filters to ~30mi around centroid.
+    """
+    import urllib.request, csv, io, zipfile
+    from collections import defaultdict
+    overlay_dir = os.path.join(_rt_dir, "overlays")
+    state_num = int(state_fips)
+    delta = 0.4  # ~30 miles
+    all_crashes = []
+
+    for year in (2022, 2021, 2020, 2019):
+        url = f"https://static.nhtsa.gov/nhtsa/downloads/FARS/{year}/National/FARS{year}NationalCSV.zip"
+        log.info(f"FARS: downloading {year} ZIP...")
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "JPods/RouteTime"})
+            with urllib.request.urlopen(req, timeout=180) as resp:
+                raw = resp.read()
+        except Exception as e:
+            log.warning(f"FARS {year} download: {e}")
+            continue
+
+        try:
+            zf = zipfile.ZipFile(io.BytesIO(raw))
+            acc_name = None
+            for name in zf.namelist():
+                basename = name.split("/")[-1].upper()
+                if basename.startswith("ACCIDENT") and basename.endswith(".CSV"):
+                    acc_name = name
+                    break
+            if not acc_name:
+                continue
+
+            with zf.open(acc_name) as csvf:
+                reader = csv.DictReader(io.TextIOWrapper(csvf, encoding="utf-8-sig", errors="replace"))
+                for row in reader:
+                    try:
+                        st = int(row.get("STATE", row.get("state", row.get("\ufeffSTATE", 0))))
+                    except (ValueError, TypeError):
+                        continue
+                    if st != state_num:
+                        continue
+
+                    try:
+                        lat = float(row.get("LATITUDE", row.get("latitude", 0)))
+                        lon = float(row.get("LONGITUD", row.get("longitud", 0)))
+                        fatals = int(row.get("FATALS", row.get("fatals", 1)))
+                    except (ValueError, TypeError):
+                        continue
+
+                    if lat == 0 or lon == 0 or abs(lat) > 90 or abs(lon) > 180:
+                        continue
+                    if lon > 0:
+                        lon = -lon
+
+                    # Filter to area near centroid
+                    if abs(lat - center_lat) > delta or abs(lon - center_lon) > delta:
+                        continue
+
+                    all_crashes.append({
+                        "lat": lat, "lon": lon, "fatals": fatals, "year": year,
+                        "county": row.get("COUNTYNAME", row.get("countyname", "")),
+                        "road": row.get("TWAY_ID", row.get("tway_id", "")),
+                        "weather": row.get("WEATHERNAME", row.get("weathername", "")),
+                        "light": row.get("LGT_CONDNAME", row.get("lgt_condname", "")),
+                        "manner": row.get("MAN_COLLNAME", row.get("man_collname", "")),
+                        "month": row.get("MONTHNAME", row.get("monthname", "")),
+                        "hour": row.get("HOUR", row.get("hour", "")),
+                    })
+
+            log.info(f"FARS {year}: {sum(1 for c in all_crashes if c['year']==year)} crashes near centroid")
+        except Exception as e:
+            log.warning(f"FARS {year} processing: {e}")
+            continue
+
+    if not all_crashes:
+        log.info("FARS: no crash data found near centroid")
+        return False
+
+    # Save fatal crashes
+    features = [{
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [c["lon"], c["lat"]]},
+        "properties": {k: v for k, v in c.items() if k not in ("lat", "lon")},
+    } for c in all_crashes]
+
+    geojson = {"type": "FeatureCollection", "features": features}
+    _overlay_save("accidents.geojson", geojson)
+
+    # Build crash density grid (200m cells)
+    cell_deg = 200 / 111000
+    grid = defaultdict(lambda: {"crashes": 0, "injury": 0, "fatal": 0, "pedestrian": 0})
+    for feat in features:
+        lon, lat = feat["geometry"]["coordinates"]
+        gx = round(lon / cell_deg) * cell_deg
+        gy = round(lat / cell_deg) * cell_deg
+        key = (round(gx, 6), round(gy, 6))
+        grid[key]["crashes"] += 1
+        grid[key]["fatal"] += feat["properties"].get("fatals", 1)
+        grid[key]["injury"] += 1
+
+    density_features = [{
+        "type": "Feature",
+        "geometry": {"type": "Point", "coordinates": [lon, lat]},
+        "properties": {**counts, "density": round(counts["crashes"] / 4, 1)},
+    } for (lon, lat), counts in grid.items()]
+
+    _overlay_save("crash_density.geojson", {"type": "FeatureCollection", "features": density_features})
+    return True
 
 
 @api.get("/overlays/cities")
@@ -2255,54 +2604,152 @@ def _default_qa():
 @api.get("/overlays/crash_density")
 def overlay_crash_density():
     """All-severity crash density grid — pre-aggregated from full crash data."""
-    local_path = os.path.join(_rt_dir, "overlays", "crash_density.geojson")
-    if os.path.exists(local_path):
-        with open(local_path) as f:
+    p = _overlay_path("crash_density.geojson")
+    if p:
+        with open(p) as f:
             return jsonify(json.load(f))
-    return jsonify({"error": "Crash density data not configured"}), 404
+    return jsonify({"error": "Crash density data not configured — click Fetch Data"}), 404
 
 
 @api.get("/overlays/mobility")
 def overlay_mobility():
-    """
-    Cell mobility travel pattern data.
-    Falls back to local GeoJSON file: route_time/overlays/mobility.geojson
-    """
-    local_path = os.path.join(_rt_dir, "overlays", "mobility.geojson")
-    if os.path.exists(local_path):
-        with open(local_path) as f:
+    """Cell mobility travel pattern data — checks 5TB then local cache."""
+    p = _overlay_path("mobility.geojson")
+    if p:
+        with open(p) as f:
             return jsonify(json.load(f))
     return jsonify({"error": "Mobility data not configured"}), 404
 
 
-@api.get("/overlays/population_density")
-def overlay_population_density():
-    """Census ACS population density by tract — heatmap overlay."""
-    local_path = os.path.join(_rt_dir, "overlays", "population_density.geojson")
-    if os.path.exists(local_path):
+def _ensure_overlays(net):
+    """On .jpd save, check if overlay files exist for this network's location.
+
+    If any are missing or empty, auto-fetch from government APIs:
+      - Census (population density, property values, jobs) — any US location
+      - AADT (traffic counts) — any US state via FHWA HPMS
+      - FARS (fatal crashes + crash density) — any US state via NHTSA bulk CSV
+    """
+    all_layers = ("population_density", "property_values", "jobs", "aadt", "accidents", "crash_density")
+
+    # Check which are missing (from both 5TB and local)
+    missing = [layer for layer in all_layers if not _overlay_path(f"{layer}.geojson")]
+
+    if not missing:
+        return
+
+    # Compute centroid from network
+    lats = [n.lat for n in net.nodes.values() if n.lat]
+    lons = [n.lon for n in net.nodes.values() if n.lon]
+    if not lats:
+        log.warning("Overlay auto-fetch: no positioned nodes in network")
+        return
+
+    center_lat = sum(lats) / len(lats)
+    center_lon = sum(lons) / len(lons)
+    log.info(f"Overlay auto-fetch: missing {missing} for ({center_lat:.4f}, {center_lon:.4f})")
+
+    # Census overlays
+    census_missing = [l for l in missing if l in ("population_density", "property_values", "jobs")]
+    if census_missing:
+        try:
+            from route_time.scripts.census_overlays import process_location, get_api_key
+            api_key = get_api_key()
+            city_key = process_location(center_lat, center_lon, api_key)
+            if city_key:
+                overlays = _state.get("overlays") or {}
+                overlays["city"] = city_key
+                if "files" not in overlays:
+                    overlays["files"] = []
+                for layer in ("population_density", "property_values", "jobs"):
+                    if layer not in overlays["files"]:
+                        overlays["files"].append(layer)
+                _state["overlays"] = overlays
+                log.info(f"Census overlays populated for {city_key}")
+        except Exception as e:
+            log.error(f"Census auto-fetch failed: {e}")
+
+    # Determine state for AADT + FARS
+    state_fips, state_abbr = None, None
+    if any(l in missing for l in ("aadt", "accidents", "crash_density")):
+        try:
+            from route_time.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+            state_fips, _ = fips_from_latlon(center_lat, center_lon)
+            if state_fips:
+                state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
+        except Exception as e:
+            log.error(f"FIPS lookup failed: {e}")
+
+    # AADT
+    if "aadt" in missing and state_abbr:
+        try:
+            _fetch_aadt(state_abbr, center_lat, center_lon)
+        except Exception as e:
+            log.error(f"AADT auto-fetch failed: {e}")
+
+    # FARS + crash density
+    if ("accidents" in missing or "crash_density" in missing) and state_fips and state_abbr:
+        try:
+            _fetch_fars(state_fips, state_abbr, center_lat, center_lon)
+        except Exception as e:
+            log.error(f"FARS auto-fetch failed: {e}")
+
+
+def _census_overlay_or_fetch(layer_name):
+    """Serve a census overlay — checks 5TB then local, auto-fetches if missing."""
+    p = _overlay_path(f"{layer_name}.geojson")
+    if p:
+        with open(p) as f:
+            return jsonify(json.load(f))
+
+    # Auto-fetch: detect location from current network centroid
+    net = _state.get("network")
+    if not net:
+        return jsonify({"error": f"No network loaded — load a .jpd first"}), 404
+
+    lats = [n.lat for n in net.nodes.values() if n.lat]
+    lons = [n.lon for n in net.nodes.values() if n.lon]
+    if not lats:
+        return jsonify({"error": "Network has no positioned nodes"}), 404
+
+    center_lat = sum(lats) / len(lats)
+    center_lon = sum(lons) / len(lons)
+
+    try:
+        from route_time.scripts.census_overlays import process_location, get_api_key
+        log.info(f"Auto-fetching census data for ({center_lat:.4f}, {center_lon:.4f})...")
+        api_key = get_api_key()
+        city_key = process_location(center_lat, center_lon, api_key)
+    except Exception as e:
+        log.error(f"Census auto-fetch failed: {e}")
+        return jsonify({"error": f"Census data fetch failed: {e}"}), 500
+
+    if not city_key:
+        return jsonify({"error": "Could not determine location — is this in the US?"}), 404
+
+    # Serve the now-populated file
+    if os.path.exists(local_path) and os.path.getsize(local_path) > 10:
         with open(local_path) as f:
             return jsonify(json.load(f))
-    return jsonify({"error": "Population density data not configured. Run: python3 scripts/census_overlays.py --all"}), 404
+
+    return jsonify({"error": f"Census data fetched but {layer_name} not generated for this county"}), 404
+
+
+@api.get("/overlays/population_density")
+def overlay_population_density():
+    """Census ACS population density by tract — auto-fetches if missing."""
+    return _census_overlay_or_fetch("population_density")
 
 
 @api.get("/overlays/property_values")
 def overlay_property_values():
-    """Census ACS median home value by tract — heatmap overlay."""
-    local_path = os.path.join(_rt_dir, "overlays", "property_values.geojson")
-    if os.path.exists(local_path):
-        with open(local_path) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "Property value data not configured. Run: python3 scripts/census_overlays.py --all"}), 404
+    """Census ACS median home value by tract — auto-fetches if missing."""
+    return _census_overlay_or_fetch("property_values")
 
 
 @api.get("/overlays/jobs")
 def overlay_jobs():
-    """Census ACS employed civilians by tract — heatmap overlay."""
-    local_path = os.path.join(_rt_dir, "overlays", "jobs.geojson")
-    if os.path.exists(local_path):
-        with open(local_path) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "Jobs data not configured. Run: python3 scripts/census_overlays.py --all"}), 404
+    """Census ACS employed civilians by tract — auto-fetches if missing."""
+    return _census_overlay_or_fetch("jobs")
 
 
 # ---------------------------------------------------------------------------
@@ -3324,7 +3771,7 @@ def noelle_draft_jpd():
     overlay_dir = os.path.join(_rt_dir, "overlays")
     if overlays and overlays.get("city"):
         city = overlays["city"]
-        for prefix in ("aadt", "accidents", "crash_density"):
+        for prefix in ("aadt", "accidents", "crash_density", "population_density", "property_values", "jobs"):
             fpath = os.path.join(overlay_dir, f"{prefix}_{city}.geojson")
             if os.path.exists(fpath):
                 with open(fpath) as f:

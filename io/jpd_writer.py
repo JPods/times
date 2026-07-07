@@ -83,7 +83,7 @@ def _build_dict(net: Network,
         overlay_dir = os.path.join(rt_dir, "overlays")
         city = overlays["city"]
         overlay_data = {}
-        for prefix in ("aadt", "accidents", "crash_density"):
+        for prefix in ("aadt", "accidents", "crash_density", "population_density", "property_values", "jobs"):
             fpath = os.path.join(overlay_dir, f"{prefix}_{city}.geojson")
             if os.path.exists(fpath):
                 with open(fpath) as f:
