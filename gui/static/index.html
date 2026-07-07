@@ -397,7 +397,7 @@
     <div class="pal-section">
       <div class="pal-label">File</div>
       <button onclick="App.newNetwork()">New</button>
-      <button onclick="App.openFile()">Open</button>
+      <button onclick="App.openFile(event)" title="Open .jpd file. Shift-click = open + download Noelle's draft for comparison">Open</button>
       <button onclick="App.saveFile()">Save</button>
       <button onclick="App.refresh()" title="Re-fetch network from server and redraw all lines">&#8635; Refresh</button>
       <button onclick="NetClipboard.open()" title="Copy network to clipboard or load from pasted text">&#128203; Clipboard…</button>
@@ -459,6 +459,8 @@
       <div class="pal-label">Noelle</div>
       <button onclick="Noelle.draft()" style="width:100%"
               title="Noelle analyses AADT + accident data and proposes stations on the arterial grid. Stations only — you add circles.">&#128300; Draft…</button>
+      <button onclick="Noelle.refine()" style="width:100%"
+              title="Noelle prunes stations with no data signal and adds where signal exists. Circles untouched.">&#9986; Refine</button>
       <button onclick="Noelle.report()" style="width:100%"
               title="Open printable analysis report in new tab">&#128196; Report</button>
     </div>
@@ -494,7 +496,8 @@
     <div class="pal-section">
       <div class="pal-label">Overlays</div>
       <button onclick="Overlays.toggleAADT('all')"         title="Annual Average Daily Traffic — all 5,000+">Traffic (AADT)</button>
-      <button onclick="Overlays.toggleAccident()"         title="Fatal crash locations">Accidents</button>
+      <button onclick="Overlays.toggleAccident()"         title="Fatal crash locations (FARS)">Fatal Crashes</button>
+      <button onclick="Overlays.toggleCrashDensity()"    title="All-severity crash density — shopping areas light up">All Crashes</button>
       <button onclick="Overlays.toggleMobility()"         title="Pedestrian density (pending data)">Pedestrian (pend)</button>
     </div>
 

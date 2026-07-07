@@ -23,6 +23,7 @@ const Overlays = (() => {
     aadt_core:      null,
     aadt_secondary: null,
     accident:       null,
+    crash_density:  null,
     mobility:       null,
   };
 
@@ -30,6 +31,7 @@ const Overlays = (() => {
     aadt_core:      false,
     aadt_secondary: false,
     accident:       false,
+    crash_density:  false,
     mobility:       false,
   };
 
@@ -41,7 +43,7 @@ const Overlays = (() => {
     if (_aadtData) return _aadtData;
     const r = await fetch("/api/overlays/aadt");
     if (!r.ok) {
-      _showOverlayNote("aadt", "AADT data not configured. See overlays/README.md.");
+      _showOverlayNote("aadt", "No traffic data for this area yet. Save the network first, then data will be pulled for this location.");
       return null;
     }
     _aadtData = await r.json();
@@ -103,7 +105,7 @@ const Overlays = (() => {
   async function _loadAccidents() {
     const r = await fetch("/api/overlays/accidents");
     if (!r.ok) {
-      _showOverlayNote("accident", "Accident data not configured. See overlays/README.md.");
+      _showOverlayNote("accident", "No fatal crash data for this area yet. Data will be available after Noelle processes this location.");
       return null;
     }
     const geojson = await r.json();
@@ -142,12 +144,57 @@ const Overlays = (() => {
     return colors[Math.min(Math.round(s) - 1, 2)] || "#aaa";
   }
 
+  // ── Crash density (all severities) ──────────────────────────────────────────
+
+  async function _loadCrashDensity() {
+    const r = await fetch("/api/overlays/crash_density");
+    if (!r.ok) {
+      _showOverlayNote("crash_density", "No crash density data for this area yet. Data will be available after Noelle processes this location.");
+      return null;
+    }
+    const geojson = await r.json();
+    let maxCrashes = 1;
+    for (const f of geojson.features) {
+      if (f.properties.crashes > maxCrashes) maxCrashes = f.properties.crashes;
+    }
+    return L.geoJSON(geojson, {
+      pointToLayer: (f, latlng) => {
+        const crashes = f.properties.crashes || 1;
+        const ratio = Math.min(crashes / maxCrashes, 1);
+        return L.circleMarker(latlng, {
+          radius: 8 + ratio * 40,
+          color: "transparent",
+          fillColor: _densityColor(ratio),
+          fillOpacity: 0.45,
+          weight: 0,
+        });
+      },
+      onEachFeature: (f, layer) => {
+        const p = f.properties;
+        layer.bindTooltip(
+          `<b>${p.crashes} crashes</b> (${p.density}/yr)<br>` +
+          `${p.injury} injury, ${p.fatal} fatal<br>` +
+          `${p.pedestrian} pedestrian`,
+          { sticky: true }
+        );
+      },
+    });
+  }
+
+  function _densityColor(ratio) {
+    // Low (light blue) → high (dark blue)
+    const r = Math.round(100 * (1 - ratio));
+    const g = Math.round(160 * (1 - ratio) + 40);
+    const b = Math.round(180 + 75 * ratio);
+    return `rgb(${r},${g},${b})`;
+  }
+
   // ── Cell mobility ─────────────────────────────────────────────────────────────
 
   async function _loadMobility() {
     const r = await fetch("/api/overlays/mobility");
     if (!r.ok) {
-      _showOverlayNote("mobility", "Mobility data not configured. See overlays/README.md.");
+      _showOverlayNote("mobility", "No pedestrian density data for this area yet.");
       return null;
     }
     const geojson = await r.json();
@@ -184,6 +231,11 @@ const Overlays = (() => {
   // ── Helpers ──────────────────────────────────────────────────────────────────
 
   function _showOverlayNote(key, msg) {
+    if (typeof App !== "undefined" && App.flash) {
+      App.flash(msg, 5000);
+    } else {
+      alert(msg);
+    }
     setStatus(msg);
     console.warn(`[Overlay:${key}]`, msg);
   }
@@ -232,7 +284,64 @@ const Overlays = (() => {
       })();
     },
     toggleAccident() { _toggle("accident", _loadAccidents); },
+    toggleCrashDensity() { _toggle("crash_density", _loadCrashDensity); },
     toggleMobility() { _toggle("mobility", _loadMobility);  },
+
+    /** Return which overlays are currently active (for saving with .jpd). */
+    getActive() {
+      const result = {};
+      for (const [k, v] of Object.entries(_active)) {
+        if (v) result[k] = true;
+      }
+      return result;
+    },
+
+    /** Switch all overlays to a different city dataset. */
+    async switchCity(city) {
+      if (!city) return;
+      // Turn off all active overlays first
+      const m = App.getMap();
+      for (const [k, active] of Object.entries(_active)) {
+        if (active && _layers[k]) {
+          m.removeLayer(_layers[k]);
+          _layers[k] = null;
+          _active[k] = false;
+        }
+      }
+      _aadtData = null;  // clear cached AADT
+
+      const r = await fetch(`/api/overlays/city/${city}`, { method: "POST" });
+      if (!r.ok) {
+        alert("No overlay data for city: " + city);
+        return;
+      }
+      const result = await r.json();
+      setStatus(`Overlays → ${city} (${result.switched.join(", ")})`);
+    },
+
+    /** Populate city dropdown from available datasets. */
+    async loadCityList() {
+      const r = await fetch("/api/overlays/cities");
+      if (!r.ok) return;
+      const cities = await r.json();
+      const sel = document.getElementById("overlay-city");
+      if (!sel) return;
+      // Clear existing options after the default
+      while (sel.options.length > 1) sel.remove(1);
+      const labels = {
+        ma: "Weymouth MA", mn: "Bloomington MN", ok: "Tulsa OK",
+        nj: "Secaucus NJ", sc: "Greenville SC",
+      };
+      for (const city of Object.keys(cities)) {
+        const opt = document.createElement("option");
+        opt.value = city;
+        opt.textContent = labels[city] || city.toUpperCase();
+        sel.appendChild(opt);
+      }
+    },
   };
 
 })();
+
+// Populate city list on load
+Overlays.loadCityList();

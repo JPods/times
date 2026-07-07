@@ -113,8 +113,15 @@ const Noelle = (() => {
     try {
       const r = await fetch("/api/noelle/draft?place=true", { method: "POST" });
       if (!r.ok) {
-        const err = await r.json();
-        alert("Noelle error: " + (err.error || r.statusText));
+        const err = await r.json().catch(() => ({}));
+        const msg = err.error || r.statusText;
+        if (msg.includes("No AADT") || msg.includes("No accident")) {
+          alert("No traffic or crash data available for this area yet.\n\n" +
+                "Noelle needs AADT and accident overlay data to propose stations. " +
+                "Data must be pulled for this location first.");
+        } else {
+          alert("Noelle error: " + msg);
+        }
         return;
       }
       const result = await r.json();
@@ -140,5 +147,83 @@ const Noelle = (() => {
     if (_panel) { _panel.remove(); _panel = null; }
   }
 
-  return { draft, report, closePanel };
+  async function review() {
+    // Generate Noelle's draft, embed in state, then download as .jpd
+    try {
+      setStatus("Noelle generating draft...");
+      const r = await fetch("/api/noelle/review", { method: "POST" });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        if (err.error && err.error.includes("No overlay")) {
+          if (typeof App !== "undefined" && App.flash) {
+            App.flash("No overlay data for this area — Noelle cannot review yet.", 4000);
+          }
+          return;
+        }
+        setStatus("Noelle review: " + (err.error || r.statusText));
+        return;
+      }
+      const result = await r.json();
+
+      // Download Noelle's draft as a separate .jpd
+      const dr = await fetch("/api/noelle/draft_jpd");
+      if (dr.ok) {
+        const blob = await dr.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "noelle_draft.jpd";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      const msg = `Noelle draft saved (${result.noelle_stations} stations). ` +
+                  `Open noelle_draft.jpd in a second tab to compare.`;
+      setStatus(msg);
+      if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
+    } catch (e) {
+      console.warn("Noelle review failed:", e.message);
+    }
+  }
+
+  async function refine() {
+    const ok = confirm(
+      "Noelle will refine the current network:\n\n" +
+      "• Prune stations with no crash or traffic signal\n" +
+      "• Add stations where data shows signal but no structure exists\n" +
+      "• Circles are never touched — those are yours\n\n" +
+      "Continue?"
+    );
+    if (!ok) return;
+
+    if (typeof App !== "undefined" && App.flash) {
+      App.flash("Noelle refining...", 3000);
+    }
+
+    try {
+      const r = await fetch("/api/noelle/refine", { method: "POST" });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        alert("Noelle refine: " + (err.error || r.statusText));
+        return;
+      }
+      const result = await r.json();
+
+      // Show result
+      const msg = result.summary || "Done";
+      if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
+      setStatus(msg);
+
+      // Reload display
+      if (typeof App !== "undefined" && App.reload) {
+        App.reload();
+      } else {
+        location.reload();
+      }
+    } catch (e) {
+      alert("Noelle refine failed: " + e.message);
+    }
+  }
+
+  return { draft, refine, report, review, closePanel };
 })();

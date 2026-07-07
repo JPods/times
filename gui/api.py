@@ -170,6 +170,7 @@ _state: Dict = {
     "line_roles":   {},   # line_id → role string, e.g. "siding"
     "_next_s":      1,    # counter for s1, s2, s3 ... station IDs
     "_next_c":      1,    # counter for c1, c2, c3 ... circle IDs
+    "overlays":     None, # overlay file references saved with .jpd
 }
 
 
@@ -605,7 +606,8 @@ def save_network():
     if not path.endswith(".jpd"):
         path = path + ".jpd"
     try:
-        save_jpd(net, path, _state["structures"], _state["cps"], _state["settings"])
+        save_jpd(net, path, _state["structures"], _state["cps"],
+                 _state["settings"], _state.get("overlays"))
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     _state["network_path"] = path
@@ -619,13 +621,21 @@ def download_network():
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
     try:
-        content = serialise_jpd(net, _state["structures"], _state["cps"],
-                                _state["settings"])
+        content_bytes = serialise_jpd(net, _state["structures"], _state["cps"],
+                                      _state["settings"],
+                                      _state.get("overlays"))
+        # Inject noelle_draft if present
+        noelle_draft = _state.get("noelle_draft")
+        if noelle_draft:
+            d = json.loads(content_bytes)
+            d["noelle_draft"] = noelle_draft
+            content_bytes = json.dumps(d, indent=2,
+                                       ensure_ascii=False).encode("utf-8")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     filename = f"{net.network_id}.jpd"
     return Response(
-        content,
+        content_bytes,
         mimetype="application/json",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
@@ -2031,10 +2041,10 @@ def load_network_text():
         tmp.write(content)
         tmp_path = tmp.name
 
-    structs_data, cps_data, file_settings = [], [], {}
+    structs_data, cps_data, file_settings, file_overlays = [], [], {}, None
     try:
         if suffix == ".jpd":
-            net, structs_data, cps_data, file_settings = load_jpd(tmp_path)
+            net, structs_data, cps_data, file_settings, file_overlays = load_jpd(tmp_path)
         else:
             with open(tmp_path) as f:
                 raw = json.load(f)
@@ -2060,8 +2070,12 @@ def load_network_text():
         _state["cps"].update(c)
     if file_settings:
         _state["settings"].update(file_settings)
+    # Overlay data is restored by the reader (writes to active overlay files)
+    if file_overlays:
+        _state["overlays"] = file_overlays
     _sync_counters()
-    return jsonify({**_network_to_geojson(net), "settings": _state["settings"]})
+    return jsonify({**_network_to_geojson(net), "settings": _state["settings"],
+                    "overlays": _state.get("overlays")})
 
 
 @api.post("/network/load_suggestion")
@@ -2139,6 +2153,78 @@ def overlay_accidents():
         with open(local_path) as f:
             return jsonify(json.load(f))
     return jsonify({"error": "Accident data not configured"}), 404
+
+
+@api.post("/overlays/active")
+def set_active_overlays():
+    """Browser tells server which overlay files are loaded.
+    Saved into the .jpd so opening the file restores the right city data."""
+    data = request.json or {}
+    _state["overlays"] = data
+    return jsonify({"ok": True})
+
+
+@api.get("/overlays/active")
+def get_active_overlays():
+    """Return current overlay config (from loaded .jpd or set by browser)."""
+    return jsonify(_state.get("overlays") or {})
+
+
+@api.get("/overlays/cities")
+def overlay_cities():
+    """List available overlay city datasets."""
+    overlay_dir = os.path.join(_rt_dir, "overlays")
+    cities = set()
+    for fname in os.listdir(overlay_dir):
+        if fname.startswith("aadt_") and fname.endswith(".geojson"):
+            city = fname[5:-8]  # strip "aadt_" and ".geojson"
+            cities.add(city)
+    result = {}
+    for city in sorted(cities):
+        result[city] = {
+            "aadt": os.path.exists(
+                os.path.join(overlay_dir, f"aadt_{city}.geojson")),
+            "accidents": os.path.exists(
+                os.path.join(overlay_dir, f"accidents_{city}.geojson")),
+            "crash_density": os.path.exists(
+                os.path.join(overlay_dir, f"crash_density_{city}.geojson")),
+        }
+    return jsonify(result)
+
+
+@api.post("/overlays/city/<city>")
+def switch_overlay_city(city):
+    """Switch all overlays to a specific city dataset.
+
+    Copies aadt_{city}.geojson → aadt.geojson, etc.
+    Records the city in _state["overlays"] so it saves with the .jpd.
+    """
+    import shutil
+    overlay_dir = os.path.join(_rt_dir, "overlays")
+    aadt_src = os.path.join(overlay_dir, f"aadt_{city}.geojson")
+    if not os.path.exists(aadt_src):
+        return jsonify({"error": f"No overlay data for city '{city}'"}), 404
+
+    switched = []
+    for prefix in ("aadt", "accidents", "crash_density"):
+        src = os.path.join(overlay_dir, f"{prefix}_{city}.geojson")
+        dst = os.path.join(overlay_dir, f"{prefix}.geojson")
+        if os.path.exists(src):
+            shutil.copy2(src, dst)
+            switched.append(prefix)
+
+    _state["overlays"] = {"city": city, "files": switched}
+    return jsonify({"city": city, "switched": switched})
+
+
+@api.get("/overlays/crash_density")
+def overlay_crash_density():
+    """All-severity crash density grid — pre-aggregated from full crash data."""
+    local_path = os.path.join(_rt_dir, "overlays", "crash_density.geojson")
+    if os.path.exists(local_path):
+        with open(local_path) as f:
+            return jsonify(json.load(f))
+    return jsonify({"error": "Crash density data not configured"}), 404
 
 
 @api.get("/overlays/mobility")
@@ -2451,6 +2537,26 @@ def _haversine_m(lat1, lon1, lat2, lon2):
     return R * 2 * math.asin(math.sqrt(a))
 
 
+import re as _re_road
+
+
+def _classify_road(name):
+    """Classify road type from naming conventions across US DOTs."""
+    n = name.strip().upper()
+    if _re_road.match(r"^I[\s\-]?\d", n):
+        return "Interstate"
+    if _re_road.match(r"^US[\s\-]?\d", n):
+        return "Highway"
+    if _re_road.match(
+        r"^(SH|SR|MN|CA|TX|FL|OH|OK|SC|NY|IL|PA|GA|NC|VA|WA|OR|CO|AZ|NV|NJ|MA|MD|CT|WI|IN|MO|TN|KY|AL|LA|MS|AR|KS|NE|IA|UT|NM|WV|ID|HI|ME|NH|RI|DE|MT|ND|SD|WY|VT|AK|DC|IH|FM|TL)[\s\-]?\d", n):
+        return "Highway"
+    if n == "LOCAL ROAD":
+        return "Local/Arterial"
+    if _re_road.match(r"^(CSAH|MSAS|CR|CO\s*RD|COUNTY)", n):
+        return "Local/Arterial"
+    return "Local/Arterial"
+
+
 def _noelle_analyze(aadt_path, acc_path):
     """Analyse AADT + accident overlays and return a structured proposal.
 
@@ -2477,30 +2583,8 @@ def _noelle_analyze(aadt_path, acc_path):
         ped = feat["properties"].get("pedestrian", False)
         acc_pts.append({"lat": lat, "lon": lon, "pedestrian": ped})
 
-    # ── Classify road type from name patterns (works for any state) ──
-    import re
+    # ── Classify road type ──
     from collections import defaultdict
-
-    def _classify_road(name):
-        """Classify road type from naming conventions across US DOTs."""
-        n = name.strip().upper()
-        # Interstates: I-44, I 494, I-35W, etc.
-        if re.match(r"^I[\s\-]?\d", n):
-            return "Interstate"
-        # US highways: US-169, US 75, etc.
-        if re.match(r"^US[\s\-]?\d", n):
-            return "Highway"
-        # State highways: SH-51, MN 77, SR-77, CA 1, etc.
-        if re.match(r"^(SH|SR|MN|CA|TX|FL|OH|OK|SC|NY|IL|PA|GA|NC|VA|WA|OR|CO|AZ|NV|NJ|MA|MD|CT|WI|IN|MO|TN|KY|AL|LA|MS|AR|KS|NE|IA|UT|NM|WV|ID|HI|ME|NH|RI|DE|MT|ND|SD|WY|VT|AK|DC)[\s\-]?\d", n):
-            return "Highway"
-        # Explicit "Local Road" label (ODOT convention)
-        if n == "LOCAL ROAD":
-            return "Local/Arterial"
-        # County/municipal roads: CSAH, MSAS, CR, CO RD, etc.
-        if re.match(r"^(CSAH|MSAS|CR|CO\s*RD|COUNTY)", n):
-            return "Local/Arterial"
-        # Everything else (named streets, numbered routes) = local
-        return "Local/Arterial"
 
     roads_by_name = defaultdict(list)
     for pt in all_pts:
@@ -2933,3 +3017,260 @@ def noelle_report():
     html.append("</body></html>")
 
     return "\n".join(html), 200, {"Content-Type": "text/html"}
+
+
+# ---------------------------------------------------------------------------
+# Noelle Review — compare designer network to Noelle's draft (training signal)
+# ---------------------------------------------------------------------------
+
+@api.post("/noelle/refine")
+def noelle_refine():
+    """Noelle prunes and adds stations on the existing network.
+
+    Prune: remove stations with no crash or AADT signal within 600m.
+    Add: place stations where data shows signal but no structure exists.
+    Circles are never touched — they are the designer's work.
+
+    Returns what was pruned and added so the designer can review.
+    """
+    net = _net()
+    if net is None:
+        return jsonify({"error": "No network loaded"}), 400
+
+    aadt_path = os.path.join(_rt_dir, "overlays", "aadt.geojson")
+    acc_path = os.path.join(_rt_dir, "overlays", "accidents.geojson")
+    if not os.path.exists(aadt_path) or not os.path.exists(acc_path):
+        return jsonify({"error": "No overlay data — load AADT + accident "
+                        "overlays first"}), 404
+
+    # Also load crash density if available
+    density_path = os.path.join(_rt_dir, "overlays", "crash_density.geojson")
+    density_pts = []
+    if os.path.exists(density_path):
+        with open(density_path) as f:
+            dg = json.load(f)
+        for feat in dg.get("features", []):
+            lon, lat = feat["geometry"]["coordinates"]
+            density_pts.append({"lat": lat, "lon": lon,
+                                "crashes": feat["properties"].get("crashes", 0)})
+
+    # Load AADT local arterial points
+    with open(aadt_path) as f:
+        aadt_geo = json.load(f)
+    local_pts = []
+    for feat in aadt_geo.get("features", []):
+        p = feat["properties"]
+        road = p.get("road", "Unknown")
+        if _classify_road(road) == "Local/Arterial" and p.get("aadt", 0) >= 5000:
+            lon, lat = feat["geometry"]["coordinates"]
+            local_pts.append({"lat": lat, "lon": lon, "aadt": p["aadt"]})
+
+    # Load accident points
+    with open(acc_path) as f:
+        acc_geo = json.load(f)
+    acc_pts = []
+    for feat in acc_geo.get("features", []):
+        lon, lat = feat["geometry"]["coordinates"]
+        acc_pts.append({"lat": lat, "lon": lon})
+
+    def has_signal(lat, lon, radius=600):
+        """Check if a location has crash or AADT signal."""
+        for a in acc_pts:
+            if _haversine_m(lat, lon, a["lat"], a["lon"]) < radius:
+                return True
+        for p in local_pts:
+            if _haversine_m(lat, lon, p["lat"], p["lon"]) < radius:
+                return True
+        for d in density_pts:
+            if (d["crashes"] >= 20
+                    and _haversine_m(lat, lon, d["lat"], d["lon"]) < radius):
+                return True
+        return False
+
+    # === PRUNE: remove stations with no signal ===
+    pruned = []
+    structs_to_remove = []
+    for sid, s in list(_state["structures"].items()):
+        d = s.to_dict() if hasattr(s, "to_dict") else s
+        stype = d.get("structure_type", "unknown")
+        # Never prune circles — designer's work
+        if stype != "station":
+            continue
+        lat = d.get("center_lat")
+        lon = d.get("center_lon")
+        if lat is None or lon is None:
+            continue
+        if not has_signal(lat, lon):
+            structs_to_remove.append(sid)
+            pruned.append({"id": sid, "lat": lat, "lon": lon})
+
+    # Delete pruned structures
+    for sid in structs_to_remove:
+        struct = _state["structures"].get(sid)
+        if not struct:
+            continue
+        # Clear partner CPs
+        for cp_id in struct.cp_ids:
+            cp = _state["cps"].get(cp_id)
+            if cp and cp.connected_to:
+                partner = _state["cps"].get(cp.connected_to)
+                if partner:
+                    partner.connected_to = None
+        # Remove lines
+        struct_nodes = set(struct.node_ids)
+        dead_lines = [lid for lid, line in net.lines.items()
+                      if line.start_node.node_id in struct_nodes
+                      or line.end_node.node_id in struct_nodes]
+        for lid in dead_lines:
+            net.lines.pop(lid, None)
+            _state["line_pairs"].pop(lid, None)
+            _state["line_roles"].pop(lid, None)
+            _state["waypoints"].pop(lid, None)
+        for nid in struct.node_ids:
+            net.nodes.pop(nid, None)
+            net.stations.pop(nid, None)
+        for cp_id in struct.cp_ids:
+            _state["cps"].pop(cp_id, None)
+        del _state["structures"][sid]
+
+    # === ADD: place stations where signal exists but no structure ===
+    # Get Noelle's proposal
+    proposal = _noelle_analyze(aadt_path, acc_path)
+    noelle_stations = proposal.get("stations", []) if "error" not in proposal else []
+
+    # Filter to proposals not near any existing structure
+    existing_pts = []
+    for sid, s in _state["structures"].items():
+        d = s.to_dict() if hasattr(s, "to_dict") else s
+        lat = d.get("center_lat")
+        lon = d.get("center_lon")
+        if lat and lon:
+            existing_pts.append({"lat": lat, "lon": lon})
+
+    added = []
+    for ns in noelle_stations:
+        near_existing = any(
+            _haversine_m(ns["lat"], ns["lon"], ep["lat"], ep["lon"]) < 400
+            for ep in existing_pts)
+        if near_existing:
+            continue
+        try:
+            struct, cps = build_station(
+                net, ns["lat"], ns["lon"],
+                heading_deg=0, structure_id=_next_sid("s"))
+            _state["structures"][struct.structure_id] = struct
+            _state["cps"].update(cps)
+            existing_pts.append({"lat": ns["lat"], "lon": ns["lon"]})
+            added.append({"id": struct.structure_id,
+                          "lat": ns["lat"], "lon": ns["lon"],
+                          "crashes": ns.get("crashes", 0),
+                          "aadt": ns.get("aadt", 0)})
+        except Exception:
+            pass
+
+    if structs_to_remove:
+        net.build()
+
+    return jsonify({
+        "pruned": len(pruned),
+        "pruned_list": pruned,
+        "added": len(added),
+        "added_list": added[:20],
+        "summary": f"Pruned {len(pruned)} stations (no data signal). "
+                   f"Added {len(added)} stations (data signal, no structure).",
+    })
+
+
+@api.post("/noelle/review")
+def noelle_review():
+    """Generate Noelle's draft and embed it in the current network state.
+
+    Triggered by shift-click Open. Noelle's draft is stored in the .jpd
+    as `noelle_draft` — a list of proposed stations. The browser can
+    extract it and load in a second tab for visual comparison.
+    """
+    aadt_path = os.path.join(_rt_dir, "overlays", "aadt.geojson")
+    acc_path = os.path.join(_rt_dir, "overlays", "accidents.geojson")
+    if not os.path.exists(aadt_path) or not os.path.exists(acc_path):
+        return jsonify({"error": "No overlay data — cannot review"}), 404
+
+    proposal = _noelle_analyze(aadt_path, acc_path)
+    if "error" in proposal:
+        return jsonify(proposal), 400
+
+    noelle_stations = proposal.get("stations", [])
+
+    # Build Noelle's draft as a minimal .jpd dict (structures only, no lines)
+    noelle_net = Network(network_id="noelle_draft")
+    noelle_structs_list = []
+    noelle_cps_list = []
+    n_counter = 1
+    for s in noelle_stations:
+        sid = f"s{n_counter}"
+        n_counter += 1
+        try:
+            struct, cps = build_station(
+                noelle_net, s["lat"], s["lon"],
+                heading_deg=0, structure_id=sid)
+            noelle_structs_list.append(struct.to_dict())
+            noelle_cps_list.extend(cp.to_dict() for cp in cps.values())
+        except Exception:
+            pass
+
+    # Store in _state so it saves with the .jpd
+    _state["noelle_draft"] = {
+        "stations": noelle_stations,
+        "structures": noelle_structs_list,
+        "cps": noelle_cps_list,
+        "summary": proposal.get("summary", ""),
+        "crash_rate_summary": proposal.get("crash_rate_summary", []),
+    }
+
+    return jsonify({
+        "noelle_stations": len(noelle_structs_list),
+        "summary": proposal.get("summary", ""),
+    })
+
+
+@api.get("/noelle/draft_jpd")
+def noelle_draft_jpd():
+    """Return the embedded Noelle draft as a loadable .jpd for the second tab."""
+    draft = _state.get("noelle_draft")
+    if not draft:
+        return jsonify({"error": "No Noelle draft — shift-click Open first"}), 404
+
+    d = {
+        "format": "jpd",
+        "version": 2,
+        "network_id": "noelle_draft",
+        "saved_at": int(time.time() * 1000),
+        "settings": _state.get("settings", {}),
+        "switches": [],
+        "stations": [],
+        "lines": [],
+        "structures": draft.get("structures", []),
+        "cps": draft.get("cps", []),
+    }
+    # Include overlay data so the second tab has the same overlays
+    overlays = _state.get("overlays")
+    if overlays:
+        d["overlays"] = overlays
+    overlay_data = {}
+    overlay_dir = os.path.join(_rt_dir, "overlays")
+    if overlays and overlays.get("city"):
+        city = overlays["city"]
+        for prefix in ("aadt", "accidents", "crash_density"):
+            fpath = os.path.join(overlay_dir, f"{prefix}_{city}.geojson")
+            if os.path.exists(fpath):
+                with open(fpath) as f:
+                    overlay_data[prefix] = json.load(f)
+    if overlay_data:
+        d["overlay_data"] = overlay_data
+
+    content = json.dumps(d, indent=2, ensure_ascii=False).encode("utf-8")
+    return Response(
+        content,
+        mimetype="application/json",
+        headers={"Content-Disposition":
+                 'attachment; filename="noelle_draft.jpd"'},
+    )

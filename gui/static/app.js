@@ -973,7 +973,8 @@ const App = {
     setStatus("New network");
   },
 
-  async openFile() {
+  async openFile(evt) {
+    const compareNoelle = evt && evt.shiftKey;
     if (!App._checkUnsaved()) return;
     // Use File System Access API to get a reusable handle for Save
     if (window.showOpenFilePicker) {
@@ -996,12 +997,14 @@ const App = {
         Settings.apply(r.settings);
         App.setReadOnly(false);
         setStatus(`Loaded: ${file.name}`);
+        if (compareNoelle) Noelle.review();
         return;
       } catch (e) {
         if (e.name === "AbortError") return;
         // Fall through to file input
       }
     }
+    if (compareNoelle) App._pendingNoelleReview = true;
     document.getElementById("file-input").click();
   },
 
@@ -1021,6 +1024,10 @@ const App = {
     Settings.apply(r.settings);
     App.setReadOnly(false);
     setStatus(`Loaded: ${file.name}`);
+    if (App._pendingNoelleReview) {
+      App._pendingNoelleReview = false;
+      Noelle.review();
+    }
     input.value = "";
   },
 

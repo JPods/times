@@ -115,8 +115,103 @@ def _load_json(path: str, network_id: str
     structures_data = raw.get("structures", [])
     cps_data        = raw.get("cps", [])
     settings        = raw.get("settings", {})
+    overlays        = raw.get("overlays")
 
-    return net, structures_data, cps_data, settings
+    # Restore embedded overlay data to active files
+    overlay_data = raw.get("overlay_data")
+    if overlay_data:
+        import os
+        rt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        overlay_dir = os.path.join(rt_dir, "overlays")
+        for prefix, geojson in overlay_data.items():
+            dst = os.path.join(overlay_dir, f"{prefix}.geojson")
+            with open(dst, "w") as f:
+                json.dump(geojson, f)
+    elif not overlays:
+        # Legacy .jpd with no overlay data — try to match by centroid
+        overlays = _detect_city_from_network(net, raw)
+
+    return net, structures_data, cps_data, settings, overlays
+
+
+def _detect_city_from_network(net, raw):
+    """Detect which city overlay files to use from network coordinates.
+
+    Reads station positions, computes centroid, matches against available
+    overlay files by checking which city's AADT data contains points
+    nearest the centroid. Returns overlays dict or None.
+    """
+    import os
+
+    # Get centroid from structures or nodes
+    lats, lons = [], []
+    for s in raw.get("structures", []):
+        lat = s.get("center_lat")
+        lon = s.get("center_lon")
+        if lat and lon:
+            lats.append(lat)
+            lons.append(lon)
+    if not lats:
+        for n in list(raw.get("stations", [])) + list(raw.get("switches", [])):
+            if "lat" in n and "lon" in n:
+                lats.append(n["lat"])
+                lons.append(n["lon"])
+    if not lats:
+        return None
+
+    center_lat = sum(lats) / len(lats)
+    center_lon = sum(lons) / len(lons)
+
+    # Check available city overlay files
+    rt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    overlay_dir = os.path.join(rt_dir, "overlays")
+    if not os.path.isdir(overlay_dir):
+        return None
+
+    # Find city keys from aadt_*.geojson files
+    cities = set()
+    for fname in os.listdir(overlay_dir):
+        if fname.startswith("aadt_") and fname.endswith(".geojson"):
+            cities.add(fname[5:-8])
+
+    # For each city, load AADT and compute centroid distance
+    import math
+    best_city = None
+    best_dist = float("inf")
+    for city in cities:
+        aadt_path = os.path.join(overlay_dir, f"aadt_{city}.geojson")
+        try:
+            with open(aadt_path) as f:
+                geo = json.load(f)
+            clats = [feat["geometry"]["coordinates"][1]
+                     for feat in geo.get("features", [])[:50]]
+            clons = [feat["geometry"]["coordinates"][0]
+                     for feat in geo.get("features", [])[:50]]
+            if not clats:
+                continue
+            clat = sum(clats) / len(clats)
+            clon = sum(clons) / len(clons)
+            dist = math.sqrt((center_lat - clat)**2 + (center_lon - clon)**2)
+            if dist < best_dist:
+                best_dist = dist
+                best_city = city
+        except Exception:
+            continue
+
+    # Match if within ~1 degree (~100km)
+    if best_city and best_dist < 1.0:
+        import shutil
+        switched = []
+        for prefix in ("aadt", "accidents", "crash_density"):
+            src = os.path.join(overlay_dir, f"{prefix}_{best_city}.geojson")
+            dst = os.path.join(overlay_dir, f"{prefix}.geojson")
+            if os.path.exists(src):
+                shutil.copy2(src, dst)
+                switched.append(prefix)
+        return {"city": best_city, "files": switched,
+                "auto_detected": True}
+
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -182,7 +277,7 @@ def _load_xml(path: str, network_id: str
         except Exception:
             pass
 
-    return net, structures_data, cps_data, {}   # legacy: no settings
+    return net, structures_data, cps_data, {}, None   # legacy: no settings/overlays
 
 
 # ---------------------------------------------------------------------------

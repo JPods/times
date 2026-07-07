@@ -1,0 +1,7842 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 135,
+        "injury": 135,
+        "fatal": 0,
+        "pedestrian": 7,
+        "density": 19.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 58,
+        "injury": 58,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 8.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 55,
+        "injury": 53,
+        "fatal": 2,
+        "pedestrian": 1,
+        "density": 7.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.973,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 54,
+        "injury": 54,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 7.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.779,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 49,
+        "injury": 45,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 7.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.095
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 48,
+        "injury": 41,
+        "fatal": 7,
+        "pedestrian": 0,
+        "density": 6.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 47,
+        "injury": 47,
+        "fatal": 0,
+        "pedestrian": 4,
+        "density": 6.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 47,
+        "injury": 47,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 6.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 47,
+        "injury": 45,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 6.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.921,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 45,
+        "injury": 45,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 6.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 44,
+        "injury": 44,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 6.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 44,
+        "injury": 42,
+        "fatal": 2,
+        "pedestrian": 2,
+        "density": 6.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 43,
+        "injury": 40,
+        "fatal": 3,
+        "pedestrian": 2,
+        "density": 6.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 42,
+        "injury": 42,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 6.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 42,
+        "injury": 41,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 6.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 41,
+        "injury": 41,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 5.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 41,
+        "injury": 41,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 5.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 40,
+        "injury": 38,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 5.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.725,
+          36.025
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 39,
+        "injury": 37,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 5.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 37,
+        "injury": 36,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 5.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.977,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 37,
+        "injury": 35,
+        "fatal": 2,
+        "pedestrian": 1,
+        "density": 5.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 37,
+        "injury": 37,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 5.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 35,
+        "injury": 35,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 5.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 35,
+        "injury": 35,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 5.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.779,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 35,
+        "injury": 35,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 5.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 34,
+        "injury": 34,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 34,
+        "injury": 32,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 4.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 33,
+        "injury": 33,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.003,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 33,
+        "injury": 31,
+        "fatal": 2,
+        "pedestrian": 2,
+        "density": 4.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.897,
+          36.113
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 33,
+        "injury": 33,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 33,
+        "injury": 30,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 4.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 33,
+        "injury": 32,
+        "fatal": 1,
+        "pedestrian": 2,
+        "density": 4.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 33,
+        "injury": 33,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.955,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 33,
+        "injury": 30,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 4.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 32,
+        "injury": 32,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 32,
+        "injury": 32,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 32,
+        "injury": 32,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.855,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 32,
+        "injury": 30,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 4.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 32,
+        "injury": 32,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.733,
+          36.163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 31,
+        "injury": 30,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 4.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.771,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 31,
+        "injury": 31,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 31,
+        "injury": 31,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 4.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.003,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 31,
+        "injury": 28,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 4.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.861,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 30,
+        "injury": 27,
+        "fatal": 3,
+        "pedestrian": 2,
+        "density": 4.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.781,
+          36.065
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 30,
+        "injury": 29,
+        "fatal": 1,
+        "pedestrian": 1,
+        "density": 4.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 30,
+        "injury": 29,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 4.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 30,
+        "injury": 29,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 4.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.889,
+          36.109
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 29,
+        "injury": 29,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 4.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.003
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 29,
+        "injury": 29,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 4.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 29,
+        "injury": 29,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.765,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 29,
+        "injury": 29,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 29,
+        "injury": 29,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 4.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 29,
+        "injury": 29,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 29,
+        "injury": 29,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 28,
+        "injury": 28,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.925,
+          36.121
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 28,
+        "injury": 28,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 4.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.861,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 28,
+        "injury": 27,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 4.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 27,
+        "injury": 27,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 27,
+        "injury": 22,
+        "fatal": 5,
+        "pedestrian": 2,
+        "density": 3.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 27,
+        "injury": 26,
+        "fatal": 1,
+        "pedestrian": 2,
+        "density": 3.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.969,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 27,
+        "injury": 27,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.205
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 27,
+        "injury": 27,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.141
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 27,
+        "injury": 27,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.893,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 23,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.059,
+          36.071
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 22,
+        "fatal": 4,
+        "pedestrian": 1,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.965,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 26,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 26,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.817,
+          36.081
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 25,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 23,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.131
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 26,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 26,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 26,
+        "injury": 24,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 3.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 25,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.999,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 25,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.119,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 25,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          35.909
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 25,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.005,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 25,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.965,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 25,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.863,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 25,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.813,
+          36.323
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 25,
+        "injury": 24,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 3.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.221
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 24,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.759,
+          36.233
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 24,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.091
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 22,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.919,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 23,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 24,
+        "fatal": 0,
+        "pedestrian": 4,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.873,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 24,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.669,
+          36.249
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 22,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 24,
+        "injury": 24,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 22,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.909,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.847,
+          36.263
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.799,
+          36.071
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.895,
+          36.113
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 3,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.943,
+          36.127
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.103
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 23,
+        "injury": 23,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.079,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 22,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.901,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 22,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 22,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.137
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 17,
+        "fatal": 5,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 22,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 22,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 21,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.007,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 21,
+        "fatal": 1,
+        "pedestrian": 1,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.951,
+          36.025
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 22,
+        "injury": 18,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 3.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.119,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.947,
+          36.019
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.115,
+          35.999
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.113,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 19,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.865,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.907,
+          36.115
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.083
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 5,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 21,
+        "injury": 21,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 3.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.091
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 17,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.855,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.883,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.077
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 17,
+        "fatal": 3,
+        "pedestrian": 2,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.779,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.141
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.949,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 17,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.865,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.937,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.949,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.117
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.091
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 20,
+        "injury": 20,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 17,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.681,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.047,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 16,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.015,
+          35.901
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 15,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.671,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.055
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 17,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.149
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 17,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.045
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.909,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.093
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 18,
+        "fatal": 1,
+        "pedestrian": 3,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.895,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 15,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.997,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 18,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.863,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.007,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 18,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.169
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 19,
+        "injury": 19,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.911,
+          36.103
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.751,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.033
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.067
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.053
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 17,
+        "fatal": 1,
+        "pedestrian": 4,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 17,
+        "fatal": 1,
+        "pedestrian": 1,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.069
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 16,
+        "fatal": 2,
+        "pedestrian": 1,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.025
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 18,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.003
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 18,
+        "injury": 16,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.751,
+          36.171
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.991,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.091
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 16,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.099,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.011,
+          35.959
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.691,
+          36.233
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.855,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.993,
+          36.149
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.087
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 15,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.977,
+          36.191
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 15,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.939,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.007,
+          36.129
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 15,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.099
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.011,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.115
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 17,
+        "injury": 17,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.671,
+          36.247
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 14,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.337
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 11,
+        "fatal": 5,
+        "pedestrian": 1,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.041,
+          36.087
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 13,
+        "fatal": 3,
+        "pedestrian": 3,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.863,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.983,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.115,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.003
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.727,
+          36.025
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.885,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.151
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.881,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.967,
+          36.157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.993,
+          36.145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 15,
+        "fatal": 1,
+        "pedestrian": 2,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.855,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 3,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.143
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.191
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 14,
+        "fatal": 2,
+        "pedestrian": 2,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.185
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 14,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.101
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 4,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.125
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.095
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 13,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.079
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 16,
+        "injury": 16,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.3
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.007,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.013,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 14,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.029,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.981,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 13,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.119,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.091
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.799,
+          35.993
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.023
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.779,
+          36.063
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.753,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.891,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.901,
+          36.163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.861,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 11,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.921,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 14,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.877,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.911,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 9,
+        "fatal": 6,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.913,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 13,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.001,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.897,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.977,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 14,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.139
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 12,
+        "fatal": 3,
+        "pedestrian": 1,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.167
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.081
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 4,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.117
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.007,
+          36.059
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.989,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 15,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.779,
+          36.067
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 15,
+        "injury": 10,
+        "fatal": 5,
+        "pedestrian": 0,
+        "density": 2.1
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.015,
+          35.871
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.049,
+          36.079
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.235
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 8,
+        "fatal": 6,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.013,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.999,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.861,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.083
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.011
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.003
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          35.989
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.845,
+          36.279
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.101
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.995,
+          36.153
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.857,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 12,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.059
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.019
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.985,
+          36.151
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.143
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.093
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.055
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.861,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 12,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.985,
+          36.221
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 14,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.065
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 13,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.985,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 14,
+        "injury": 12,
+        "fatal": 2,
+        "pedestrian": 2,
+        "density": 2.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.853,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.003,
+          36.149
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.903,
+          36.109
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.995,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.987,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.797,
+          36.053
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.811,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.709,
+          36.019
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.779,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          35.967
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 12,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.733,
+          36.191
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 12,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.071
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.191
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.131
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.901,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.205
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.831,
+          36.293
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.967,
+          36.145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.907,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 11,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.987,
+          36.149
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.949,
+          36.141
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.125
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 11,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.983,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.971,
+          36.143
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 13,
+        "injury": 13,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.899,
+          36.163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          35.945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.003
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.757,
+          36.053
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.779,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.141
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.889,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.031
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.921,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.181
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 8,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.221
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 9,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.123
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.847,
+          36.279
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.967,
+          36.153
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 1,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.097
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.151
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.169
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.093
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.143
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.983,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.921,
+          36.025
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.065
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.095
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.995,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.989,
+          36.145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 10,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.927,
+          35.945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 11,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.681,
+          36.003
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          35.975
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.115,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 12,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.759,
+          36.191
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 12,
+        "injury": 10,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.7
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.117,
+          36.107
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.985,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.863,
+          36.137
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.031,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 9,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.009,
+          36.117
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 10,
+        "fatal": 1,
+        "pedestrian": 1,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.967,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.009,
+          36.127
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.889,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.791,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.745,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.885,
+          35.917
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          35.945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          35.987
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 9,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          35.945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.961,
+          36.143
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.853,
+          36.119
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 9,
+        "fatal": 2,
+        "pedestrian": 1,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.079
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.849,
+          36.323
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 10,
+        "fatal": 1,
+        "pedestrian": 1,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.063
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.931,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 9,
+        "fatal": 2,
+        "pedestrian": 3,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.097
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.815,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 10,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.067
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.913,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.997,
+          36.157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.029
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.127
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.987,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.041
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.989,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 10,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.883,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.085
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.197
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 8,
+        "fatal": 3,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.679,
+          36.249
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.963,
+          36.143
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.967,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 9,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.963,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.993,
+          36.143
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.831,
+          36.279
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.099
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.179
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.155
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.999,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.653,
+          36.265
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.007,
+          36.057
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.001,
+          36.157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.993,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 3,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.849,
+          36.293
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.653,
+          35.961
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.761,
+          36.167
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.719,
+          36.039
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 11,
+        "injury": 11,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 1.6
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.249,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.993,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.871,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.865,
+          36.165
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 9,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.011,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.979,
+          36.145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.891,
+          36.117
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.051,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 6,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.001,
+          36.153
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.809,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.773,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.709,
+          36.047
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.817,
+          35.993
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 5,
+        "fatal": 5,
+        "pedestrian": 1,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.705,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.741,
+          36.035
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.819,
+          36.081
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.869,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.843,
+          36.279
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.763,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.021
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.181
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.087
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.207
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.861,
+          36.157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.075
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.959,
+          36.227
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.949,
+          36.027
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.847,
+          36.265
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.949,
+          36.017
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.131
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.989,
+          36.157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 6,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.003,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.873,
+          36.163
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.101
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.833,
+          36.159
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.957,
+          36.085
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.107
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 2,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.993,
+          36.221
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.993,
+          36.177
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.049
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 5,
+        "fatal": 5,
+        "pedestrian": 1,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.857,
+          36.147
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.905,
+          36.121
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.851,
+          36.145
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 9,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.889,
+          36.133
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.975,
+          36.157
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 9,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.861,
+          36.161
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.835,
+          36.089
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 8,
+        "fatal": 2,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.011,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.887,
+          36.077
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.859,
+          36.077
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.951,
+          36.135
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.127
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.941,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.923,
+          36.111
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 1,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.009,
+          36.121
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.119,
+          36.061
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 9,
+        "fatal": 1,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.117,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.119,
+          36.105
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 10,
+        "fatal": 0,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -96.117,
+          36.131
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "crashes": 10,
+        "injury": 6,
+        "fatal": 4,
+        "pedestrian": 0,
+        "density": 1.4
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -95.953,
+          36.091
+        ]
+      }
+    }
+  ]
+}

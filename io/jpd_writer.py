@@ -32,7 +32,8 @@ from ..engine.network import Network
 def _build_dict(net: Network,
                 structures: Optional[Dict] = None,
                 cps: Optional[Dict] = None,
-                settings: Optional[Dict] = None) -> dict:
+                settings: Optional[Dict] = None,
+                overlays: Optional[Dict] = None) -> dict:
     """Build the serialisable dict shared by serialise_jpd and save_jpd."""
     switches = [
         {"id": n.node_id, "lat": n.lat, "lon": n.lon}
@@ -46,18 +47,22 @@ def _build_dict(net: Network,
     ]
     lines = []
     for lid, line in net.lines.items():
-        coords = line.coordinates or [
-            [line.start_node.lat, line.start_node.lon],
-            [line.end_node.lat,   line.end_node.lon],
-        ]
+        # Always derive endpoints from live node positions; only keep interior waypoints
+        start = [line.start_node.lat, line.start_node.lon]
+        end   = [line.end_node.lat,   line.end_node.lon]
+        stored = line.coordinates
+        if stored and len(stored) > 2:
+            coords = [start] + list(stored[1:-1]) + [end]
+        else:
+            coords = [start, end]
         lines.append({
             "id":          lid,
             "start":       line.start_node.node_id,
             "end":         line.end_node.node_id,
-            "coordinates": [[lat, lon] for lat, lon in coords],
+            "coordinates": coords,
         })
 
-    return {
+    d = {
         "format":     "jpd",
         "version":    2,
         "network_id": net.network_id,
@@ -69,22 +74,45 @@ def _build_dict(net: Network,
         "structures": [s.to_dict() for s in (structures or {}).values()],
         "cps":        [c.to_dict() for c in (cps or {}).values()],
     }
+    if overlays:
+        d["overlays"] = overlays
+    # Embed overlay data if city is set
+    if overlays and overlays.get("city"):
+        import os
+        rt_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        overlay_dir = os.path.join(rt_dir, "overlays")
+        city = overlays["city"]
+        overlay_data = {}
+        for prefix in ("aadt", "accidents", "crash_density"):
+            fpath = os.path.join(overlay_dir, f"{prefix}_{city}.geojson")
+            if os.path.exists(fpath):
+                with open(fpath) as f:
+                    overlay_data[prefix] = json.load(f)
+        if overlay_data:
+            d["overlay_data"] = overlay_data
+    return d
+
+
+# Global hook: api.py sets this to include noelle_draft in saves
+_noelle_draft_hook = None
 
 
 def serialise_jpd(net: Network,
                   structures: Optional[Dict] = None,
                   cps: Optional[Dict] = None,
-                  settings: Optional[Dict] = None) -> bytes:
+                  settings: Optional[Dict] = None,
+                  overlays: Optional[Dict] = None) -> bytes:
     """Return the .jpd JSON content as UTF-8 bytes (no file I/O)."""
-    d = _build_dict(net, structures, cps, settings)
+    d = _build_dict(net, structures, cps, settings, overlays)
     return json.dumps(d, indent=2, ensure_ascii=False).encode("utf-8")
 
 
 def save_jpd(net: Network, path: str,
              structures: Optional[Dict] = None,
              cps: Optional[Dict] = None,
-             settings: Optional[Dict] = None):
+             settings: Optional[Dict] = None,
+             overlays: Optional[Dict] = None):
     """Write network to a .jpd JSON file."""
-    d = _build_dict(net, structures, cps, settings)
+    d = _build_dict(net, structures, cps, settings, overlays)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(d, f, indent=2, ensure_ascii=False)
