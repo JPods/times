@@ -3731,23 +3731,130 @@ Solar-powered · 13x more efficient than cars · 50x vs buses · $0.03/passenger
     html += f"""
 </table>
 
-<h2>Economics</h2>
+<h2>Bill of Materials (BOM)</h2>
+<table>
+<tr><th>Item</th><th>Quantity</th><th>Unit Cost</th><th>Total</th></tr>
+<tr><td>Guideway (dual beam, solar panels, columns)</td><td>{total_miles} mi</td><td>$20M/mi</td><td>${build_cost:,.0f}M</td></tr>
+<tr><td>Stations (2-slot standard)</td><td>{len(stations)}</td><td>~$2M ea</td><td>~${len(stations)*2:,}M</td></tr>
+<tr><td>Traffic circles (junction structures)</td><td>{len(circles)}</td><td>~$0.5M ea</td><td>~${round(len(circles)*0.5):,}M</td></tr>
+<tr><td>Vehicles (pods, 4 per station initial fleet)</td><td>{len(stations)*4}</td><td>~$50K ea</td><td>~${round(len(stations)*4*0.05):,}M</td></tr>
+<tr style="font-weight:600;border-top:2px solid #333">
+  <td>Total estimated</td><td></td><td></td>
+  <td>${build_cost + len(stations)*2 + round(len(circles)*0.5) + round(len(stations)*4*0.05):,.0f}M</td></tr>
+</table>
+<p style="font-size:11px;color:#666">Note: Costs are rough planning estimates. Guideway dominates.
+Actual costs vary by terrain, permitting, and local labor markets.</p>
+
+<h2>Guideway Capacity</h2>
+<p>Capacity is determined by <strong>speed × headway</strong> on the guideway, but the real constraint
+is <strong>station slots</strong> — how many pods can load/unload simultaneously.
+Stations are parallel processors: more slots = more throughput, without changing the guideway.</p>
+
+<table>
+<tr><th>Speed</th><th colspan="2">0.25 sec headway</th><th colspan="2">0.50 sec headway</th></tr>
+<tr><th>(mph)</th><th>Pods/hr/dir</th><th>Pax/hr/dir</th><th>Pods/hr/dir</th><th>Pax/hr/dir</th></tr>
+<tr><td>25 mph</td><td>14,400</td><td>14,400</td><td>7,200</td><td>7,200</td></tr>
+<tr><td>35 mph</td><td>14,400</td><td>14,400</td><td>7,200</td><td>7,200</td></tr>
+<tr><td>45 mph</td><td>14,400</td><td>14,400</td><td>7,200</td><td>7,200</td></tr>
+<tr><td>60 mph</td><td>14,400</td><td>14,400</td><td>7,200</td><td>7,200</td></tr>
+</table>
+<p style="font-size:11px;color:#666">Pods/hr = 3600 ÷ headway. At 0.25s: 14,400 pods/hr per direction.
+Each pod carries 1-4 passengers. Speed affects trip time, not throughput.</p>
+
+<h2>Station Throughput (the real constraint)</h2>
+<p>With 30-second load/unload cycles, each slot processes 120 pods/hour.
+Capacity scales by adding slots — the station is a parallel processor.</p>
+
+<table>
+<tr><th>Station Type</th><th>Slots</th><th>Pods/hr</th><th>Pax/hr (1.5 avg)</th><th>Use Case</th></tr>
+<tr><td>Neighborhood</td><td>2</td><td>240</td><td>360</td><td>Residential area</td></tr>
+<tr><td>Standard</td><td>4</td><td>480</td><td>720</td><td>Commercial district</td></tr>
+<tr><td>High capacity</td><td>8</td><td>960</td><td>1,440</td><td>Office park, mall</td></tr>
+<tr><td>Transit hub</td><td>18</td><td>2,160</td><td>3,240</td><td>Train station, airport</td></tr>
+<tr><td>Major terminal</td><td>36</td><td>4,320</td><td>6,480</td><td>Stadium, convention center</td></tr>
+</table>
+<p style="font-size:11px;color:#666">Add stations where demand concentrates.
+Two 18-slot stations 200m apart = 6,480 pax/hr without changing the guideway.
+<a href="https://library.jpods.com/capacity/">Detailed capacity analysis →</a></p>
+
+<h2>Network Summary — This Design</h2>
 <table>
 <tr><th>Metric</th><th>Value</th></tr>
 <tr><td>Guideway miles</td><td>{total_miles} mi</td></tr>
-<tr><td>Build cost ($20M/mi)</td><td>${build_cost:,.0f}M</td></tr>
-<tr><td>JPods efficiency</td><td>13x more efficient than cars</td></tr>
+<tr><td>Stations × 4 slots (default)</td><td>{len(stations)} × 480 pods/hr = {len(stations)*480:,} pods/hr network capacity</td></tr>
+<tr><td>Build cost</td><td>${build_cost + len(stations)*2 + round(len(circles)*0.5):,.0f}M</td></tr>
+<tr><td>JPods efficiency</td><td>13× more efficient than cars · 50× vs buses</td></tr>
 <tr><td>Operating cost</td><td>$0.03/passenger-mile</td></tr>
-<tr><td>Energy</td><td>Solar-powered — no fuel convoys, no oil dependency</td></tr>
+<tr><td>Energy</td><td>Solar-powered — no fuel dependency</td></tr>
 </table>
 
 <p>Run the <a href="/citytool">City Assessment Tool</a> for full savings analysis including
 vehicle ownership reduction, fuel savings, road maintenance, CO₂ reduction, and fiscal impact.</p>
 
+<h2>The Cost of Free Parking</h2>
+<p>The US has an estimated 800 million parking spaces for 280 million cars — roughly 3 spaces
+per car. In many cities, the total cost of providing free parking (land, construction,
+maintenance, and foregone tax revenue on tax-exempt land) rivals spending on public education.</p>
+<p>JPods networks eliminate parked-car demand, converting low-tax parking lots to high-tax
+productive land — walkable commercial, residential, and recreational space.</p>
+<p style="font-size:11px;color:#666">Source: Donald Shoup,
+<a href="https://www.routledge.com/The-High-Cost-of-Free-Parking/Shoup/p/book/9781032408552"><i>The High Cost of Free Parking</i></a>
+(Routledge, updated edition 2011). Shoup documents that off-street parking requirements
+in US zoning codes have made parking the single largest land use in most cities.</p>
+
+<h2>Proven Model — Privately Funded Transit</h2>
+<p>In 1916, every US city over 10,000 people had one or more
+<a href="https://en.wikipedia.org/wiki/List_of_streetcar_systems_in_the_United_States">privately funded streetcar networks</a>
+— Mobility As A Service before the term existed. The Federal-Aid Highway Act of 1916
+initiated a mercantile monopoly that destroyed them. JPods restores that proven model:</p>
+<table>
+<tr><th></th><th>1916 Streetcars</th><th>JPods</th></tr>
+<tr><td>Funding</td><td>Private</td><td>Private</td></tr>
+<tr><td>Service</td><td>Fixed route, scheduled</td><td>On-demand, point-to-point</td></tr>
+<tr><td>Grade</td><td>Street-level (traffic conflicts)</td><td>Grade-separated (no conflicts)</td></tr>
+<tr><td>Batch size</td><td>40-passenger vehicle</td><td>1-4 passenger pod</td></tr>
+<tr><td>Energy</td><td>Grid electric</td><td>Solar-powered</td></tr>
+<tr><td>Coverage</td><td>Every US city &gt;10,000</td><td>Any community, any country</td></tr>
+</table>
+<p style="font-size:11px;color:#666">The streetcar model wasn't replaced by a better technology.
+It was destroyed by federal policy — government coercion extended into transportation commerce.
+JPods restores what worked, improved by a century of engineering.</p>
+
+<h2>Regulatory — 5x5 Standard</h2>
+<p>JPods networks operate under the <a href="https://www.5x5FreeMarket.com">5×5 Standard</a>:
+5 times more efficient than cars, powered by sunlight within 5 years.
+This performance standard replaces prescriptive regulations that have blocked
+transportation innovation for over five decades.</p>
+
+<h2>Studies &amp; Evidence</h2>
+
+<div style="background:#fff8f0;padding:12px 16px;border-radius:4px;border-left:3px solid #e67e22;margin:12px 0;font-style:italic;font-size:12px;line-height:1.6">
+"Government institutional failures blocked urban transportation innovation for
+four to six decades… In retrospect, the new systems efforts have served not to
+stimulate interest in new technology but to discourage already reluctant local
+transit operators from considering it."
+<div style="font-style:normal;font-weight:600;margin-top:6px;color:#666">
+— U.S. Congressional Study, 1975</div>
+</div>
+
+<table>
+<tr><th>Study</th><th>Key Finding</th></tr>
+<tr><td><a href="https://library.jpods.com/congressionalstudy/">U.S. Congressional Study (1975)</a></td>
+    <td>PRT provides higher service than mass transit. Government institutional failures blocked innovation for decades. Lists all JPods benefits: less congestion, less parking, reduced petroleum, mobility for disadvantaged.</td></tr>
+<tr><td><a href="https://library.jpods.com/nj2007/">NJ Legislature Study (2007)</a></td>
+    <td>State-level assessment of PRT feasibility and benefits for New Jersey communities.</td></tr>
+<tr><td><a href="https://library.jpods.com/JPods/004Studies/LeanManufacturingTransit.pdf">Lean Manufacturing &amp; Transit (Boeing)</a></td>
+    <td>Maps lean production theory to PRT. Mass transit = mass production waste. PRT = lean: continuous flow, pull-based, batch size of 1. Lean techniques show 991% productivity gains.</td></tr>
+<tr><td><a href="https://library.jpods.com/capacity/">Capacity Analysis</a></td>
+    <td>Station throughput scales by adding parallel load/unload slots. 18-slot station: 2,160 pax/hr. Guideway: 14,400 pods/hr at 0.25s headway.</td></tr>
+</table>
+
 <div class="footer">
   Generated by Route-Time · JPods Network Planner<br>
   <a href="https://vimeo.com/1207891831?fl=tl&fe=ec">Video Demo</a> ·
   <a href="/citytool">City Assessment Tool</a> ·
+  <a href="https://www.5x5FreeMarket.com">5×5 Standard</a> ·
+  <a href="https://library.jpods.com/capacity/">Capacity</a> ·
   Open source at jpods.com
 </div>
 </body></html>"""
