@@ -16,6 +16,13 @@ const Noelle = (() => {
   let _draftData = null;     // cached draft result from server
   let _draftVisible = false;
 
+  function _updateDraftBtn() {
+    const btn = document.getElementById("btn-noelle-draft");
+    if (btn) {
+      btn.textContent = _draftVisible ? "\u{1F50C} Hide Draft" : "\u{1F50D} Draft";
+    }
+  }
+
   function _esc(s) {
     const d = document.createElement("div");
     d.textContent = s;
@@ -32,6 +39,7 @@ const Noelle = (() => {
       m.removeLayer(_draftLayer);
       _draftLayer = null;
       _draftVisible = false;
+      _updateDraftBtn();
       setStatus("Noelle draft layer off");
       closePanel();
       return;
@@ -80,6 +88,7 @@ const Noelle = (() => {
 
       _draftLayer.addTo(m);
       _draftVisible = true;
+      _updateDraftBtn();
       setStatus(`Noelle draft: ${stations.length} stations (green layer)`);
 
       _showPanel(_draftData);
@@ -117,6 +126,7 @@ const Noelle = (() => {
         App.getMap().removeLayer(_draftLayer);
         _draftLayer = null;
         _draftVisible = false;
+        _updateDraftBtn();
       }
 
       const msg = `Applied: ${result.placed || 0} stations placed`;
@@ -261,5 +271,39 @@ const Noelle = (() => {
     if (_panel) { _panel.remove(); _panel = null; }
   }
 
-  return { draft, apply, refine, report, closePanel };
+  // ── Wild Guess — circles + auto-connect ───────────────────────────────────
+
+  async function wildGuess() {
+    const net = App.getMap();
+    setStatus("Noelle wild guess — adding circles and connecting...");
+    if (typeof App !== "undefined" && App.flash) {
+      App.flash("Wild Guess: adding circles and connecting...", 3000);
+    }
+
+    try {
+      const r = await fetch("/api/noelle/wild_guess", { method: "POST" });
+      if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        alert("Wild Guess: " + (err.error || r.statusText));
+        return;
+      }
+      const result = await r.json();
+      const msg = `Wild Guess: ${result.circles_added} circles added, ` +
+                  `${result.lines_added} guideways connected, ` +
+                  `${result.total_structures} total structures`;
+      setStatus(msg);
+      if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
+
+      // Reload network display
+      if (typeof App !== "undefined" && App.reload) {
+        App.reload();
+      } else {
+        location.reload();
+      }
+    } catch (e) {
+      alert("Wild Guess failed: " + e.message);
+    }
+  }
+
+  return { draft, apply, refine, report, wildGuess, closePanel };
 })();

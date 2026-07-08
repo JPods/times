@@ -82,6 +82,37 @@ from route_time.io.jpd_writer import save_jpd, serialise_jpd
 api = Blueprint("api", __name__, url_prefix="/api")
 
 # ---------------------------------------------------------------------------
+# Noelle session log — every significant action saved to Allie
+# ---------------------------------------------------------------------------
+_NOELLE_LOG_DIR = "/Volumes/Allie/data/noelle_sessions"
+
+
+def _noelle_log(action, details=None):
+    """Log a Route-Time session event to Allie's 5TB. Fire-and-forget."""
+    try:
+        os.makedirs(_NOELLE_LOG_DIR, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        entry = {
+            "timestamp": ts,
+            "action": action,
+            "remote_ip": request.headers.get("CF-Connecting-IP",
+                         request.headers.get("X-Forwarded-For",
+                         request.remote_addr)),
+            "user_agent": request.headers.get("User-Agent", "")[:120],
+        }
+        if details:
+            entry["details"] = details
+
+        # Append to daily log file
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        log_path = os.path.join(_NOELLE_LOG_DIR, f"{date_str}.jsonl")
+        with open(log_path, "a") as f:
+            f.write(json.dumps(entry) + "\n")
+    except Exception:
+        pass  # never break the request
+
+
+# ---------------------------------------------------------------------------
 # Allie capture helpers — fire-and-forget, never raise
 # ---------------------------------------------------------------------------
 import subprocess as _subprocess
@@ -198,7 +229,37 @@ _state: Dict = {
     "_next_s":      1,    # counter for s1, s2, s3 ... station IDs
     "_next_c":      1,    # counter for c1, c2, c3 ... circle IDs
     "overlays":     None, # overlay file references saved with .jpd
+    "_undo_stack":  [],   # list of serialised network snapshots for undo
 }
+
+
+_UNDO_MAX = 20  # max snapshots
+_UNDO_SKIP_PATHS = {"/api/network/undo", "/api/network/load", "/api/network/load_text",
+                     "/api/network/new", "/api/network/save", "/api/network/download",
+                     "/api/simulation/run", "/api/settings", "/api/demand"}
+
+
+@api.before_request
+def _auto_push_undo():
+    """Snapshot before any network mutation for undo support."""
+    if request.method in ("POST", "DELETE", "PUT"):
+        if request.path not in _UNDO_SKIP_PATHS and request.path.startswith("/api/network"):
+            _push_undo()
+
+
+def _push_undo():
+    """Snapshot the current network state for undo. Call before any mutation."""
+    net = _state.get("network")
+    if not net:
+        return
+    try:
+        snapshot = serialise_jpd(net, _state["structures"], _state["cps"],
+                                  _state["settings"], _state.get("overlays"))
+        _state["_undo_stack"].append(snapshot)
+        if len(_state["_undo_stack"]) > _UNDO_MAX:
+            _state["_undo_stack"].pop(0)
+    except Exception:
+        pass
 
 
 def _clear_edit_state():
@@ -537,6 +598,8 @@ def _network_to_geojson(net: Network) -> dict:
             "line_count": len(net.lines),
             "station_count": len(net.stations),
             "total_km": round(net.total_length_m() / 1000, 2),
+            "total_miles": round(net.total_length_m() / 1609.34, 1),
+            "circle_count": sum(1 for s in _state["structures"].values() if s.structure_type == "circle"),
             "center": center,
             "structures": structures_meta,
             "cps": cps_meta,
@@ -616,6 +679,8 @@ def load_network():
     _state["network_path"] = path
     _state["sim_frames"] = []
     _state["sim_result"] = None
+    _noelle_log("network_load", {"path": os.path.basename(path),
+                                  "stations": len(net.stations), "nodes": len(net.nodes)})
     _clear_edit_state()
     if structs_data or cps_data:
         _restore_structures(structs_data, cps_data, net)
@@ -656,6 +721,22 @@ def save_network():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     _state["network_path"] = path
+
+    # Save a copy to Allie for every public session
+    _noelle_log("network_save", {"path": os.path.basename(path),
+                                  "stations": len(net.stations), "nodes": len(net.nodes)})
+    # Archive the .jpd to Allie
+    try:
+        archive_dir = os.path.join(_NOELLE_LOG_DIR, "networks")
+        os.makedirs(archive_dir, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+        archive_name = f"{ts}_{os.path.basename(path)}"
+        save_jpd(net, os.path.join(archive_dir, archive_name),
+                 _state["structures"], _state["cps"],
+                 _state["settings"], _state.get("overlays"))
+    except Exception:
+        pass  # never break the save
+
     return jsonify({"saved": path})
 
 
@@ -1287,11 +1368,61 @@ def move_structure(sid: str):
     elif struct.structure_type == "traffic_circle":
         rotate_traffic_circle(net, struct, _state["cps"], struct.arm_headings)
 
+    # Log designer adjustment for Noelle learning
+    from route_time.engine.network import vincenty_m as _vm
+    move_dist = _vm(new_lat - dlat, new_lon - dlon, new_lat, new_lon)
+    _noelle_log("structure_move", {
+        "id": sid, "type": struct.structure_type,
+        "from": [new_lat - dlat, new_lon - dlon],
+        "to": [new_lat, new_lon],
+        "distance_m": round(move_dist),
+    })
+
     return jsonify({
         "moved": sid,
         "center_lat": struct.center_lat,
         "center_lon": struct.center_lon,
     })
+
+
+@api.post("/network/undo")
+def network_undo():
+    """Restore the previous network state. Ctrl+Z on the browser calls this."""
+    stack = _state.get("_undo_stack", [])
+    if not stack:
+        return jsonify({"error": "Nothing to undo"}), 400
+
+    snapshot = stack.pop()
+
+    # Load the snapshot as if it were a .jpd file
+    import tempfile
+    with tempfile.NamedTemporaryFile(mode="wb", suffix=".jpd", delete=False) as tmp:
+        tmp.write(snapshot)
+        tmp_path = tmp.name
+
+    try:
+        result = load_jpd(tmp_path)
+        net = result[0]
+        structs_data = result[1]
+        cps_data = result[2]
+        file_settings = result[3]
+    except Exception as e:
+        return jsonify({"error": f"Undo failed: {e}"}), 500
+    finally:
+        os.unlink(tmp_path)
+
+    _state["network"] = net
+    _state["sim_frames"] = []
+    _state["sim_result"] = None
+    _clear_edit_state()
+    if structs_data or cps_data:
+        _restore_structures(structs_data, cps_data, net)
+    if file_settings:
+        _state["settings"].update(file_settings)
+    _sync_counters()
+
+    return jsonify({**_network_to_geojson(net), "settings": _state["settings"],
+                    "undos_remaining": len(stack)})
 
 
 @api.post("/network/autoconnect")
@@ -1620,6 +1751,8 @@ def run_simulation():
     demand = LoadArray(station_ids, demand_config=demand_config)
     sim = Simulator(net, settings, demand=demand)
 
+    _noelle_log("simulation_run", {"stations": len(station_ids), "slots": slots,
+                                    "network_id": getattr(net, "network_id", "")})
     _state["sim_active"]   = True
     _state["sim_instance"] = sim
     _state["sim_result"]   = None
@@ -2249,6 +2382,7 @@ def overlay_fetch_all():
 
     if center_lat is None:
         return jsonify({"error": "No location — place a station or search for a city first"}), 400
+    _noelle_log("overlay_fetch", {"lat": center_lat, "lon": center_lon})
     fetched = []
     errors = []
 
@@ -3382,6 +3516,204 @@ def noelle_draft():
         result["placed_ids"] = placed_ids
 
     return jsonify(result)
+
+
+@api.post("/noelle/wild_guess")
+def noelle_wild_guess():
+    """Wild Guess: add traffic circles between draft stations and auto-connect everything.
+
+    Call after Draft + Apply. Places circles at midpoints between nearby station pairs,
+    then runs auto-connect. Produces a complete connected network from Noelle's stations.
+    """
+    _push_undo()
+    net = _net()
+    if net is None:
+        return jsonify({"error": "No network loaded"}), 400
+
+    structures = _state.get("structures", {})
+    cps = _state.get("cps", {})
+
+    # Collect all station positions
+    stations = []
+    for sid, struct in structures.items():
+        if struct.structure_type == "station":
+            stations.append({
+                "id": sid,
+                "lat": struct.center_lat,
+                "lon": struct.center_lon,
+            })
+
+    if len(stations) < 2:
+        return jsonify({"error": "Need at least 2 stations — run Draft + Apply first"}), 400
+
+    # Find station pairs that need circles between them
+    # Use distance threshold: stations within ~2.5 miles get a circle at their midpoint
+    max_dist_m = 2.5 * 1609.34
+    from route_time.engine.network import vincenty_m
+
+    pairs = []
+    for i in range(len(stations)):
+        for j in range(i + 1, len(stations)):
+            d = vincenty_m(stations[i]["lat"], stations[i]["lon"],
+                          stations[j]["lat"], stations[j]["lon"])
+            if d < max_dist_m:
+                pairs.append((i, j, d))
+
+    # Sort by distance — shortest first
+    pairs.sort(key=lambda x: x[2])
+
+    # Place circles at midpoints, skip if too close to an existing structure
+    placed_circles = []
+    min_circle_spacing_m = 400  # don't place circles within 400m of each other
+
+    for i, j, d in pairs:
+        mid_lat = (stations[i]["lat"] + stations[j]["lat"]) / 2
+        mid_lon = (stations[i]["lon"] + stations[j]["lon"]) / 2
+
+        # Check if too close to any existing structure or already-placed circle
+        too_close = False
+        for sid, struct in structures.items():
+            if vincenty_m(mid_lat, mid_lon, struct.center_lat, struct.center_lon) < min_circle_spacing_m:
+                too_close = True
+                break
+        if too_close:
+            continue
+
+        # Determine heading: perpendicular to the line between the two stations
+        dlat = stations[j]["lat"] - stations[i]["lat"]
+        dlon = stations[j]["lon"] - stations[i]["lon"]
+        bearing = math.degrees(math.atan2(dlon, dlat)) % 360
+        # Use 0° or 45° circle depending on bearing
+        circle_heading = 45 if (22.5 < bearing % 90 < 67.5) else 0
+
+        try:
+            cid = _next_sid("c")
+            struct, new_cps = build_traffic_circle(
+                net, mid_lat, mid_lon,
+                heading_deg=circle_heading,
+                structure_id=cid)
+            structures[cid] = struct
+            cps.update(new_cps)
+            placed_circles.append(cid)
+        except Exception:
+            pass
+
+    # Auto-connect everything
+    added_lines = _best_effort_connect(net, cps, _state["line_pairs"])
+    for l in added_lines:
+        _state["line_roles"][l.line_id] = "connector"
+    net.build()
+
+    _noelle_log("wild_guess", {
+        "stations": len(stations),
+        "circles_added": len(placed_circles),
+        "lines_added": len(added_lines),
+    })
+
+    return jsonify({
+        "stations": len(stations),
+        "circles_added": len(placed_circles),
+        "circle_ids": placed_circles,
+        "lines_added": len(added_lines),
+        "total_structures": len(structures),
+    })
+
+
+@api.get("/network/report")
+def network_report():
+    """Printable HTML network summary — stations, miles, economics."""
+    net = _net()
+    if net is None:
+        return "<h1>No network loaded</h1>", 400
+
+    structures = _state.get("structures", {})
+    stations = [(sid, s) for sid, s in structures.items() if s.structure_type == "station"]
+    circles = [(sid, s) for sid, s in structures.items() if s.structure_type == "circle"]
+    total_miles = round(net.total_length_m() / 1609.34, 1)
+    build_cost = round(total_miles * 20, 1)
+    network_id = net.network_id or "Untitled"
+
+    # City name from overlay state
+    city_label = ""
+    overlays = _state.get("overlays", {})
+    city_key = overlays.get("city", "")
+
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>JPods Network Summary — {network_id}</title>
+<style>
+  @media print {{ body {{ font-size: 11pt; }} }}
+  body {{ font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 800px;
+         margin: 40px auto; padding: 0 20px; color: #222; }}
+  h1 {{ color: #1a5276; border-bottom: 2px solid #1a5276; padding-bottom: 8px; }}
+  h2 {{ color: #2e7d32; margin-top: 24px; }}
+  table {{ width: 100%; border-collapse: collapse; margin: 12px 0; }}
+  th, td {{ padding: 6px 12px; text-align: left; border-bottom: 1px solid #ddd; }}
+  th {{ background: #f5f5f5; font-weight: 600; }}
+  .metric {{ font-size: 28px; font-weight: 700; color: #1a5276; }}
+  .metric-label {{ font-size: 12px; color: #888; text-transform: uppercase; }}
+  .metrics {{ display: flex; gap: 32px; margin: 20px 0; }}
+  .metric-box {{ text-align: center; }}
+  .footer {{ margin-top: 40px; font-size: 11px; color: #888;
+             border-top: 1px solid #ddd; padding-top: 12px; }}
+  .oss {{ background: #f0f8f0; padding: 8px 12px; border-radius: 4px;
+          border-left: 3px solid #2e7d32; font-size: 12px; margin: 16px 0; }}
+</style>
+</head><body>
+<h1>JPods Network Summary — {network_id}</h1>
+
+<div class="metrics">
+  <div class="metric-box"><div class="metric">{len(stations)}</div><div class="metric-label">Stations</div></div>
+  <div class="metric-box"><div class="metric">{len(circles)}</div><div class="metric-label">Circles</div></div>
+  <div class="metric-box"><div class="metric">{total_miles}</div><div class="metric-label">Guideway Miles</div></div>
+  <div class="metric-box"><div class="metric">${build_cost:,.0f}M</div><div class="metric-label">Build Cost ($20M/mi)</div></div>
+</div>
+
+<div class="oss">Open Source — all designs created with this tool are open source and publicly shared.
+Solar-powered · 13x more efficient than cars · 50x vs buses · $0.03/passenger-mile</div>
+
+<h2>Stations ({len(stations)})</h2>
+<table>
+<tr><th>ID</th><th>Latitude</th><th>Longitude</th></tr>"""
+
+    for sid, s in sorted(stations, key=lambda x: x[0]):
+        html += f"\n<tr><td>{sid}</td><td>{s.center_lat:.5f}</td><td>{s.center_lon:.5f}</td></tr>"
+
+    html += f"""
+</table>
+
+<h2>Traffic Circles ({len(circles)})</h2>
+<table>
+<tr><th>ID</th><th>Latitude</th><th>Longitude</th></tr>"""
+
+    for cid, c in sorted(circles, key=lambda x: x[0]):
+        html += f"\n<tr><td>{cid}</td><td>{c.center_lat:.5f}</td><td>{c.center_lon:.5f}</td></tr>"
+
+    html += f"""
+</table>
+
+<h2>Economics</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Guideway miles</td><td>{total_miles} mi</td></tr>
+<tr><td>Build cost ($20M/mi)</td><td>${build_cost:,.0f}M</td></tr>
+<tr><td>JPods efficiency</td><td>13x more efficient than cars</td></tr>
+<tr><td>Operating cost</td><td>$0.03/passenger-mile</td></tr>
+<tr><td>Energy</td><td>Solar-powered — no fuel convoys, no oil dependency</td></tr>
+</table>
+
+<p>Run the <a href="/citytool">City Assessment Tool</a> for full savings analysis including
+vehicle ownership reduction, fuel savings, road maintenance, CO₂ reduction, and fiscal impact.</p>
+
+<div class="footer">
+  Generated by Route-Time · JPods Network Planner<br>
+  <a href="https://vimeo.com/1207891831?fl=tl&fe=ec">Video Demo</a> ·
+  <a href="/citytool">City Assessment Tool</a> ·
+  Open source at jpods.com
+</div>
+</body></html>"""
+
+    return html
 
 
 @api.get("/noelle/report")

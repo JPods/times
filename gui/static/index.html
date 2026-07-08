@@ -44,6 +44,7 @@
           <tr><td style="color:#ddd;white-space:nowrap">7</td>                               <td>Zoom in</td></tr>
           <tr><td style="color:#ddd;white-space:nowrap">8</td>                               <td>Zoom out</td></tr>
           <tr><td style="color:#ddd;white-space:nowrap">9</td>                               <td>Walk radius (¾ mi)</td></tr>
+          <tr><td style="color:#ddd;white-space:nowrap">Ctrl+Z</td>                           <td>Undo</td></tr>
           <tr><td style="color:#ddd;white-space:nowrap">Esc</td>                             <td>Cancel active tool</td></tr>
 
           <tr><td colspan="2" style="color:#8bc;font-weight:600;padding-top:6px">Connection points (CPs)</td></tr>
@@ -462,9 +463,19 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Noelle</div>
 
     <div class="ov-row">
-      <button onclick="Noelle.draft()" class="tool-btn">&#128300; Draft</button>
+      <button onclick="Noelle.draft()" class="tool-btn" id="btn-noelle-draft">&#128269; Draft</button>
       <button onclick="Noelle.apply()" class="tool-btn">&#10003; Apply</button>
       <button onclick="ToolsPanel.toggleDetail('noelle')" class="ov-info">?</button>
+    </div>
+    <div class="ov-row">
+      <button onclick="Noelle.wildGuess()" class="tool-btn" style="background:#5a3a1a;border-color:#7a5a3a">&#127922; Wild Guess</button>
+      <button onclick="ToolsPanel.toggleDetail('wildguess')" class="ov-info">?</button>
+    </div>
+    <div class="ov-detail" id="tool-detail-wildguess" style="display:none">
+      After Draft + Apply: Wild Guess adds traffic circles between station pairs
+      and auto-connects everything. Produces a complete ~1x2 mile mesh network.
+      It's a rough starting point — refine by moving structures and adjusting connections.
+      The wild guess gets you from "stations on a map" to "connected network" in one click.
     </div>
     <div class="ov-row">
       <button onclick="Noelle.refine()" class="tool-btn">&#9986; Refine</button>
@@ -612,6 +623,40 @@
     <div id="allie-response"></div>
   </div>
 
+  <!-- ── Examples ── -->
+  <div class="panel" id="panel-examples" style="display:none">
+    <h3 style="display:flex;justify-content:space-between;align-items:center">
+      Examples &amp; Resources
+      <button onclick="ExamplesPanel.toggle()" title="Close"
+              style="background:none;border:none;color:#c44;font-size:16px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
+    </h3>
+
+    <!-- Video -->
+    <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin-bottom:4px">Video</div>
+    <div class="ov-row">
+      <a href="https://vimeo.com/1207891831?fl=tl&fe=ec" target="_blank" class="tool-btn"
+         style="text-decoration:none;text-align:center;background:#1a3a5a;border-color:#2a5a8a">
+        &#9654; JPods Route-Time Demo</a>
+    </div>
+
+    <!-- CityTool -->
+    <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">City Assessment</div>
+    <div class="ov-row">
+      <a href="/citytool" target="_blank" class="tool-btn"
+         style="text-decoration:none;text-align:center;background:#2a4a2a;border-color:#3a6a3a">
+        City Assessment Tool</a>
+      <a href="/examples/Tulsa_CityTool.pdf" target="_blank" class="tool-btn"
+         style="text-decoration:none;text-align:center;background:#5a3a1a;border-color:#7a5a3a;flex:0 0 auto;padding:5px 10px">
+        PDF</a>
+    </div>
+
+    <!-- Example Networks -->
+    <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Example Networks</div>
+    <div style="font-size:10px;color:#888;margin-bottom:6px">Click to download a .jpd file, then use Open to load it.</div>
+    <div id="examples-list" style="max-height:300px;overflow-y:auto">
+    </div>
+  </div>
+
 </div><!-- /sidebar -->
 
 <!-- ===== Status bar ===== -->
@@ -619,6 +664,7 @@
   <span id="status-mode">Ready</span>
   <span id="status-coord"></span>
   <span id="status-net"></span>
+  <span id="status-oss" style="margin-left:auto;font-size:9px;color:#666;white-space:nowrap">Open Source — all designs created with this tool are open source &amp; publicly shared</span>
 </div>
 
 <!-- ===== Floating tool palette ===== -->
@@ -653,7 +699,9 @@
       <button onclick="App.refresh()" title="Re-fetch network from server and redraw all lines">&#8635; Refresh</button>
       <button onclick="NetClipboard.open()" title="Copy network to clipboard or load from pasted text">&#128203; Clipboard…</button>
       <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button>
+      <button onclick="App.printReport()" title="Printable network summary — stations, miles, economics">&#128196; Report</button>
       <button onclick="Guide.open()" title="User guide — how to build and simulate a JPods network">? Guide</button>
+      <button onclick="ExamplesPanel.toggle()" title="Example networks, videos, and resources">&#128218; Examples</button>
     </div>
 
     <!-- LOCK -->
@@ -699,6 +747,8 @@
     <div class="pal-section">
       <button onclick="OverlayPanel.toggle()" style="width:100%"
               title="Toggle data overlay layers — traffic, crashes, census">&#127760; Overlays</button>
+      <button onclick="window.open('/citytool','_blank')" style="width:100%"
+              title="Open City Assessment Tool — economic analysis for capital presentations">&#128200; CityTool</button>
     </div>
 
     <!-- ALLIE AI -->
@@ -1091,6 +1141,44 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
   </div><!-- /dialog -->
 </div><!-- /backdrop -->
 
+<script>
+const ExamplesPanel = (() => {
+  let _loaded = false;
+  function toggle() {
+    const el = document.getElementById("panel-examples");
+    el.style.display = el.style.display === "none" ? "block" : "none";
+    if (el.style.display === "block" && !_loaded) loadList();
+  }
+  async function loadList() {
+    const list = document.getElementById("examples-list");
+    try {
+      const r = await fetch("/examples");
+      const files = await r.json();
+      // Group by region
+      const groups = {};
+      for (const f of files) {
+        if (f.endsWith(".html")) continue; // skip html report files
+        const prefix = f.split("_")[0] || "Other";
+        if (!groups[prefix]) groups[prefix] = [];
+        groups[prefix].push(f);
+      }
+      let html = "";
+      for (const [prefix, flist] of Object.entries(groups).sort()) {
+        for (const f of flist) {
+          const label = f.replace(".jpd", "").replace(".pdf", " (PDF)").replace(/_/g, " ");
+          const icon = f.endsWith(".pdf") ? "&#128196;" : "&#127758;";
+          html += `<div class="ov-row"><a href="/examples/${encodeURIComponent(f)}" class="tool-btn" style="text-decoration:none;text-align:left;font-size:10px" ${f.endsWith('.pdf') ? 'target="_blank"' : 'download'}>${icon} ${label}</a></div>`;
+        }
+      }
+      list.innerHTML = html || "<div style='color:#666;font-size:10px'>No example files found</div>";
+      _loaded = true;
+    } catch (e) {
+      list.innerHTML = "<div style='color:#c44;font-size:10px'>Failed to load examples</div>";
+    }
+  }
+  return { toggle };
+})();
+</script>
 <script>
 const ToolsPanel = (() => {
   function toggle() {

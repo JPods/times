@@ -75,6 +75,57 @@ def index():
     return _serve_static("index.html")
 
 
+@app.route("/examples/<path:filename>")
+def serve_example(filename):
+    """Serve example .jpd and .pdf files from route-time_maps."""
+    maps_dir = os.path.join(os.path.dirname(_rt_dir), "route-time_maps")
+    path = os.path.join(maps_dir, filename)
+    if not os.path.isfile(path):
+        return "Not found", 404
+    real = os.path.realpath(path)
+    if not real.startswith(os.path.realpath(maps_dir)):
+        return "Forbidden", 403
+    ext = os.path.splitext(filename)[1].lower()
+    if ext == ".jpd":
+        data = open(path, "r", encoding="utf-8").read()
+        resp = make_response(data)
+        resp.headers["Content-Type"] = "application/json; charset=utf-8"
+        resp.headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+    elif ext == ".pdf":
+        data = open(path, "rb").read()
+        resp = make_response(data)
+        resp.headers["Content-Type"] = "application/pdf"
+        resp.headers["Content-Disposition"] = f'inline; filename="{filename}"'
+    else:
+        return "Not found", 404
+    return resp
+
+
+@app.route("/examples")
+def list_examples():
+    """List available example files."""
+    maps_dir = os.path.join(os.path.dirname(_rt_dir), "route-time_maps")
+    if not os.path.isdir(maps_dir):
+        return "[]", 200, {"Content-Type": "application/json"}
+    files = sorted([f for f in os.listdir(maps_dir)
+                    if f.endswith(".jpd") or f.endswith(".pdf")])
+    return __import__("json").dumps(files), 200, {"Content-Type": "application/json"}
+
+
+@app.route("/citytool")
+@app.route("/citytool.html")
+def citytool():
+    """Serve CityTool from its original location."""
+    ct_path = "/Users/williamjames/Documents/08_JPods/000_websiteReWork/citytool.html"
+    if not os.path.isfile(ct_path):
+        return "CityTool not found", 404
+    data = open(ct_path, "r", encoding="utf-8").read()
+    resp = make_response(data)
+    resp.headers["Content-Type"] = "text/html; charset=utf-8"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @app.route("/<path:filename>")
 def static_files(filename):
     return _serve_static(filename)

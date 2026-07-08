@@ -1190,6 +1190,10 @@ const App = {
     }
   },
 
+  printReport() {
+    window.open("/api/network/report", "_blank");
+  },
+
   _render(geojson) {
     if (!geojson || !geojson.features) return;
 
@@ -1287,12 +1291,14 @@ const App = {
 
     // Update sidebar
     const m = geojson.metadata || {};
+    const circles = m.circle_count || 0;
+    const stations = m.station_count || 0;
+    const miles = m.total_miles || 0;
     document.getElementById("net-stats").innerHTML =
       `<b>${m.network_id || "—"}</b><br>
-       Nodes: ${m.node_count || 0} &nbsp; Lines: ${m.line_count || 0}<br>
-       Stations: ${m.station_count || 0} &nbsp; Total: ${m.total_km || 0} km`;
+       Stations: ${stations} &nbsp; Circles: ${circles} &nbsp; Total: ${miles} mi`;
     document.getElementById("status-net").textContent =
-      `${m.station_count || 0} stations · ${m.line_count || 0} lines · ${m.total_km || 0} km`;
+      `Stations: ${stations} · Circles: ${circles} · Total: ${miles} mi`;
 
     // Fit map only when explicitly loading a file (not on every edit)
     if (_fitOnNextRender) {
@@ -1912,6 +1918,22 @@ document.addEventListener("keydown", (e) => {
   const tag = e.target.tagName;
   if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
 
+  // Undo — Ctrl+Z
+  if (e.key === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+    e.preventDefault();
+    (async () => {
+      setStatus("Undoing...");
+      try {
+        const r = await fetch("/api/network/undo", { method: "POST" });
+        const data = await r.json();
+        if (!r.ok) { setStatus(data.error || "Nothing to undo"); return; }
+        App._render(data);
+        setStatus(`Undo — ${data.undos_remaining || 0} remaining`);
+      } catch (err) { setStatus("Undo failed"); }
+    })();
+    return;
+  }
+
   // Placement shortcuts — digits select tool, then click map to place
   // Zoom shortcuts — 7 zoom in, 8 zoom out
   switch (e.key) {
@@ -1964,10 +1986,64 @@ async function api(method, path, body) {
   const opts = { method, headers: { "Content-Type": "application/json" } };
   if (body) opts.body = JSON.stringify(body);
   const r = await fetch(path, opts);
-  // Any mutation to the network marks it dirty
-  if (method !== "GET" && path.startsWith("/api/network")) App._dirty = true;
+  // Any mutation to the network marks it dirty + auto-save to localStorage
+  if (method !== "GET" && path.startsWith("/api/network")) {
+    App._dirty = true;
+    _autoSaveDebounced();
+  }
   return r.json();
 }
+
+// Auto-save to localStorage — survives page reload and server restart
+let _autoSaveTimer = null;
+function _autoSaveDebounced() {
+  clearTimeout(_autoSaveTimer);
+  _autoSaveTimer = setTimeout(async () => {
+    try {
+      const r = await fetch("/api/network/download");
+      if (!r.ok) return;
+      const text = await r.text();
+      localStorage.setItem("rt_autosave", text);
+      localStorage.setItem("rt_autosave_ts", new Date().toISOString());
+    } catch (e) { /* silent */ }
+  }, 3000);  // 3 second debounce
+}
+
+// Check for auto-saved network on page load
+(function _checkAutoSave() {
+  const saved = localStorage.getItem("rt_autosave");
+  const ts = localStorage.getItem("rt_autosave_ts");
+  if (!saved || !ts) return;
+
+  const age = (Date.now() - new Date(ts).getTime()) / 1000 / 60;
+  if (age > 1440) {  // older than 24 hours — discard
+    localStorage.removeItem("rt_autosave");
+    localStorage.removeItem("rt_autosave_ts");
+    return;
+  }
+
+  // Check if server already has a network loaded
+  fetch("/api/network").then(r => r.json()).then(data => {
+    const m = data.metadata || {};
+    if (m.node_count > 0) return;  // server has a network — don't override
+
+    const mins = Math.round(age);
+    if (confirm(`Recover auto-saved network from ${mins} minutes ago?`)) {
+      fetch("/api/network/load_text", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: saved, filename: "autosave.jpd" }),
+      }).then(r => r.json()).then(data => {
+        if (data.features) {
+          App._render(data);
+          setStatus("Auto-saved network recovered");
+          if (typeof App !== "undefined" && App.flash) App.flash("Network recovered from auto-save", 3000);
+        }
+      });
+    }
+  });
+})();
+
 
 async function _postRaw(path, body) {
   const r = await fetch(path, {
