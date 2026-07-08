@@ -1541,56 +1541,95 @@ def network_grid():
         grid.append(row)
 
     n_stations = 0
+    _STATION_SPACING_MI = 0.75  # target spacing between stations on long blocks
 
-    # ── 2. N-S blocks: station between (r,c) and (r+1,c) ───────────────────
+    def _stations_for_block(block_mi):
+        """How many stations to place on a block, and their fractional positions.
+        1 mile or less = 1 station at midpoint. Longer = ~0.75mi apart, evenly spaced."""
+        if block_mi <= 1.05:
+            return [0.5]  # single station at midpoint
+        n = max(1, round(block_mi / _STATION_SPACING_MI))
+        return [(i + 1) / (n + 1) for i in range(n)]
+
+    # ── 2. N-S blocks: stations between (r,c) and (r+1,c) ─────────────────
     for r in range(n_rows - 1):
         for c in range(n_cols):
-            lat = start_lat - (r + 0.5) * dlat
-            lon = start_lon + c * dlon
-            st, st_cps = build_station(net, lat, lon, heading_deg=0.0,
-                                       structure_id=_next_sid("s"))
-            _state["structures"][st.structure_id] = st
-            _state["cps"].update(st_cps)
-            n_stations += 1
+            positions = _stations_for_block(spacing_ns)
+            prev_cps = None  # for chaining station-to-station
+            for pi, frac in enumerate(positions):
+                lat = start_lat - (r + frac) * dlat
+                lon = start_lon + c * dlon
+                st, st_cps = build_station(net, lat, lon, heading_deg=0.0,
+                                           structure_id=_next_sid("s"))
+                _state["structures"][st.structure_id] = st
+                _state["cps"].update(st_cps)
+                n_stations += 1
 
-            # North circle south arm ↔ station CP_near_far (heading=0°)
-            _, cp_dict_north = grid[r][c]
-            tc_south = _cp_by_heading(cp_dict_north, 180.0)
-            st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
-            if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
-                connect_cps(net, tc_south, st_north, _state["cps"])
+                if pi == 0:
+                    # First station: connect to north circle south arm
+                    _, cp_dict_north = grid[r][c]
+                    tc_south = _cp_by_heading(cp_dict_north, 180.0)
+                    st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
+                    if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
+                        connect_cps(net, tc_south, st_north, _state["cps"])
+                else:
+                    # Chain: connect to previous station's south CP
+                    st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
+                    if prev_cps and st_north and st_north.connected_to is None:
+                        prev_south = prev_cps.get(f"{prev_sid}.CP_far_near")
+                        if prev_south and prev_south.connected_to is None:
+                            connect_cps(net, prev_south, st_north, _state["cps"])
 
-            # Station CP_far_near (heading=180°) ↔ south circle north arm
-            _, cp_dict_south = grid[r + 1][c]
-            tc_north = _cp_by_heading(cp_dict_south, 0.0)
-            st_south = st_cps.get(f"{st.structure_id}.CP_far_near")
-            if tc_north and st_south and tc_north.connected_to is None and st_south.connected_to is None:
-                connect_cps(net, st_south, tc_north, _state["cps"])
+                if pi == len(positions) - 1:
+                    # Last station: connect to south circle north arm
+                    _, cp_dict_south = grid[r + 1][c]
+                    tc_north = _cp_by_heading(cp_dict_south, 0.0)
+                    st_south = st_cps.get(f"{st.structure_id}.CP_far_near")
+                    if tc_north and st_south and tc_north.connected_to is None and st_south.connected_to is None:
+                        connect_cps(net, st_south, tc_north, _state["cps"])
 
-    # ── 3. E-W blocks: station between (r,c) and (r,c+1) ───────────────────
+                prev_cps = st_cps
+                prev_sid = st.structure_id
+
+    # ── 3. E-W blocks: stations between (r,c) and (r,c+1) ─────────────────
     for r in range(n_rows):
         for c in range(n_cols - 1):
-            lat = start_lat - r * dlat
-            lon = start_lon + (c + 0.5) * dlon
-            st, st_cps = build_station(net, lat, lon, heading_deg=90.0,
-                                       structure_id=_next_sid("s"))
-            _state["structures"][st.structure_id] = st
-            _state["cps"].update(st_cps)
-            n_stations += 1
+            positions = _stations_for_block(spacing_ew)
+            prev_cps = None
+            for pi, frac in enumerate(positions):
+                lat = start_lat - r * dlat
+                lon = start_lon + (c + frac) * dlon
+                st, st_cps = build_station(net, lat, lon, heading_deg=90.0,
+                                           structure_id=_next_sid("s"))
+                _state["structures"][st.structure_id] = st
+                _state["cps"].update(st_cps)
+                n_stations += 1
 
-            # West circle east arm ↔ station CP_far_near (west end, heading=270°)
-            _, cp_dict_west = grid[r][c]
-            tc_east = _cp_by_heading(cp_dict_west, 90.0)
-            st_west = st_cps.get(f"{st.structure_id}.CP_far_near")
-            if tc_east and st_west and tc_east.connected_to is None and st_west.connected_to is None:
-                connect_cps(net, tc_east, st_west, _state["cps"])
+                if pi == 0:
+                    # First station: connect to west circle east arm
+                    _, cp_dict_west = grid[r][c]
+                    tc_east = _cp_by_heading(cp_dict_west, 90.0)
+                    st_west = st_cps.get(f"{st.structure_id}.CP_far_near")
+                    if tc_east and st_west and tc_east.connected_to is None and st_west.connected_to is None:
+                        connect_cps(net, tc_east, st_west, _state["cps"])
+                else:
+                    # Chain: connect to previous station's east CP
+                    st_west = st_cps.get(f"{st.structure_id}.CP_far_near")
+                    if prev_cps and st_west and st_west.connected_to is None:
+                        prev_east = prev_cps.get(f"{prev_sid}.CP_near_far")
+                        if prev_east and prev_east.connected_to is None:
+                            connect_cps(net, prev_east, st_west, _state["cps"])
 
-            # Station CP_near_far (east end, heading=90°) ↔ east circle west arm
-            _, cp_dict_east = grid[r][c + 1]
-            tc_west = _cp_by_heading(cp_dict_east, 270.0)
-            st_east = st_cps.get(f"{st.structure_id}.CP_near_far")
-            if tc_west and st_east and tc_west.connected_to is None and st_east.connected_to is None:
-                connect_cps(net, st_east, tc_west, _state["cps"])
+                if pi == len(positions) - 1:
+                    # Last station: connect to east circle west arm
+                    _, cp_dict_east = grid[r][c + 1]
+                    tc_west = _cp_by_heading(cp_dict_east, 270.0)
+                    st_east = st_cps.get(f"{st.structure_id}.CP_near_far")
+                    if tc_west and st_east and tc_west.connected_to is None and st_east.connected_to is None:
+                        connect_cps(net, st_east, tc_west, _state["cps"])
+
+                prev_cps = st_cps
+                prev_sid = st.structure_id
 
     net.build()
     return jsonify({

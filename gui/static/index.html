@@ -20,6 +20,31 @@
 <!-- ===== Right sidebar ===== -->
 <div id="sidebar">
 
+  <!-- City + filename — persistent at top of right panel -->
+  <div style="padding:8px 10px 6px;border-bottom:1px solid #2a3a2a">
+    <div id="sidebar-city" style="font-size:16px;font-weight:700;color:#9dc;min-height:20px"></div>
+    <div id="sidebar-filename" style="font-size:11px;color:#666;min-height:14px;margin-top:2px"></div>
+  </div>
+
+  <!-- City search — toggled by Find City button -->
+  <div class="panel" id="panel-city-search" style="display:none">
+    <h3 style="display:flex;justify-content:space-between;align-items:center">
+      Find City
+      <button onclick="CitySearchPanel.toggle()" title="Close"
+              style="background:none;border:none;color:#c44;font-size:16px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
+    </h3>
+    <div style="display:flex;gap:4px;align-items:center">
+      <input id="city-search" type="text" placeholder="City, State or Country"
+             style="flex:1;min-width:0;background:#1a1a1a;border:1px solid #3a5a3a;color:#e0e0e0;
+                    border-radius:3px;padding:5px 8px;font-size:16px"
+             autocomplete="off"
+             onkeydown="if(event.key==='Enter') CitySearch.go()">
+      <button onclick="CitySearch.go()" class="tool-btn" style="flex:0;padding:5px 10px">Go</button>
+      <button onclick="CitySearch.clearFence()" class="tool-btn" style="flex:0;padding:5px 6px" title="Remove city boundary">&#10005;</button>
+    </div>
+    <div id="city-error" style="display:none;font-size:10px;color:#c44;margin-top:3px"></div>
+  </div>
+
   <!-- Key commands reference — collapsible -->
   <div class="panel" id="panel-help" style="padding:0">
     <div id="help-header"
@@ -430,11 +455,11 @@
       To remove a guideway pair: Ctrl-click the line.
     </div>
 
-    <!-- Grid -->
-    <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Grid</div>
+    <!-- Mesh -->
+    <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Mesh</div>
 
     <div class="ov-row">
-      <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Grid…</button>
+      <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Mesh…</button>
       <button onclick="ToolsPanel.toggleDetail('grid')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="tool-detail-grid" style="display:none">
@@ -677,22 +702,11 @@
 
   <div id="palette-body">
 
-    <!-- CITY SEARCH -->
-    <div class="pal-section">
-      <div class="pal-row">
-        <input id="city-search" type="text" placeholder="City, State or Country"
-               title="Type a city name and press Enter or click Go"
-               style="flex:1;min-width:0"
-               onkeydown="if(event.key==='Enter') CitySearch.go()">
-        <button onclick="CitySearch.go()" title="Center map on city">Go</button>
-        <button onclick="CitySearch.clearFence()" title="Remove city boundary" style="padding:3px 5px !important">&#10005;</button>
-      </div>
-      <div id="city-error" style="display:none;font-size:10px;color:#c44;margin-top:3px"></div>
-    </div>
 
     <!-- FILE -->
     <div class="pal-section">
       <div class="pal-label">File</div>
+      <button onclick="CitySearchPanel.toggle()" title="Search for a city — centers map and sets location">&#128269; Find City</button>
       <button onclick="App.newNetwork()">New</button>
       <button onclick="App.openFile(event)" title="Open .jpd file. Shift-click = open + download Noelle's draft for comparison">Open</button>
       <button onclick="App.saveFile()">Save</button>
@@ -816,7 +830,7 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
   <div class="dialog" id="grid-dialog">
 
     <div class="dialog-header">
-      <span>&#9783; Grid Network Estimate</span>
+      <span>&#9783; Mesh Network Estimate</span>
       <button class="dialog-close" onclick="Grid.closeDialog()" title="Close">&times;</button>
     </div>
 
@@ -863,7 +877,7 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
 
     <div class="dialog-footer">
       <button class="btn-secondary" onclick="Grid.closeDialog()">Cancel</button>
-      <button class="btn-primary"   onclick="Grid.generate()">&#9783; Generate Grid</button>
+      <button class="btn-primary"   onclick="Grid.generate()">&#9783; Generate Mesh</button>
     </div>
 
   </div><!-- /dialog -->
@@ -933,8 +947,8 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
             data and places stations on the arterial grid. You add circles where corridors intersect.</span>
           </li>
           <li style="margin-bottom:4px">
-            <span style="color:#bbb"><strong style="color:#ddd">Grid Estimate</strong> —
-            click <strong>Grid</strong> to lay out a uniform grid network. Then click
+            <span style="color:#bbb"><strong style="color:#ddd">Mesh Estimate</strong> —
+            click <strong>Mesh</strong> to lay out a uniform mesh network. Then click
             <strong>Refine</strong> and Noelle prunes stations with no data signal and fills gaps.</span>
           </li>
           <li style="margin-bottom:4px">
@@ -1141,6 +1155,18 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
   </div><!-- /dialog -->
 </div><!-- /backdrop -->
 
+<script>
+const CitySearchPanel = (() => {
+  function toggle() {
+    const el = document.getElementById("panel-city-search");
+    el.style.display = el.style.display === "none" ? "block" : "none";
+    if (el.style.display === "block") {
+      document.getElementById("city-search").focus();
+    }
+  }
+  return { toggle };
+})();
+</script>
 <script>
 const ExamplesPanel = (() => {
   let _loaded = false;

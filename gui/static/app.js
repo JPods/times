@@ -181,9 +181,14 @@ const CitySearch = (() => {
 
           const label = r.display_name.split(",").slice(0, 3).join(",").trim();
           setStatus(`Centered on: ${label}`);
-          // Show city name in overlay panel
+          // Show city name in sidebar header and overlay panel
+          const sidebarCity = document.getElementById("sidebar-city");
+          if (sidebarCity) sidebarCity.textContent = label;
           const cityLabel = document.getElementById("overlay-city-label");
           if (cityLabel) cityLabel.textContent = label;
+          // Close the search panel
+          const searchPanel = document.getElementById("panel-city-search");
+          if (searchPanel) searchPanel.style.display = "none";
         })
         .catch(() => {
           errEl.textContent = "Geocode request failed — check network connection";
@@ -1056,6 +1061,7 @@ const App = {
         App._render(r);
         Settings.apply(r.settings);
         App.setReadOnly(false);
+        _updateFilename(file.name);
         setStatus(`Loaded: ${file.name}`);
         if (compareNoelle) Noelle.review();
         return;
@@ -1083,6 +1089,7 @@ const App = {
     App._render(r);
     Settings.apply(r.settings);
     App.setReadOnly(false);
+    _updateFilename(file.name);
     setStatus(`Loaded: ${file.name}`);
     if (App._pendingNoelleReview) {
       App._pendingNoelleReview = false;
@@ -1127,6 +1134,8 @@ const App = {
         await writable.write(blob);
         await writable.close();
         App._dirty = false;
+        _updateFilename(handle.name);
+        _updateDirtyFlag();
         flashSuccess(`Saved: ${handle.name}`);
         return;
       } catch (e) {
@@ -1144,6 +1153,8 @@ const App = {
     a.click();
     URL.revokeObjectURL(url);
     App._dirty = false;
+    _updateFilename(filename);
+    _updateDirtyFlag();
     flashSuccess(`Saved: ${filename}`);
   },
 
@@ -1295,8 +1306,7 @@ const App = {
     const stations = m.station_count || 0;
     const miles = m.total_miles || 0;
     document.getElementById("net-stats").innerHTML =
-      `<b>${m.network_id || "—"}</b><br>
-       Stations: ${stations} &nbsp; Circles: ${circles} &nbsp; Total: ${miles} mi`;
+      `Stations: ${stations} &nbsp; Circles: ${circles} &nbsp; Total: ${miles} mi`;
     document.getElementById("status-net").textContent =
       `Stations: ${stations} · Circles: ${circles} · Total: ${miles} mi`;
 
@@ -1959,6 +1969,24 @@ document.addEventListener("keydown", (e) => {
 
 // ── Status helpers ────────────────────────────────────────────────────────────
 
+function _updateFilename(name) {
+  const el = document.getElementById("sidebar-filename");
+  if (el) {
+    App._currentFilename = name || "";
+    _updateDirtyFlag();
+  }
+}
+
+function _updateDirtyFlag() {
+  const el = document.getElementById("sidebar-filename");
+  if (!el) return;
+  const name = App._currentFilename || "";
+  const dot = App._dirty ? " \u25cf" : "";  // filled circle = modified
+  el.innerHTML = name
+    ? `${name}<span style="color:${App._dirty ? '#f90' : '#4c4'};margin-left:4px">${dot}</span>`
+    : "";
+}
+
 function setStatus(msg) {
   document.getElementById("status-mode").textContent = msg;
 }
@@ -1989,6 +2017,7 @@ async function api(method, path, body) {
   // Any mutation to the network marks it dirty + auto-save to localStorage
   if (method !== "GET" && path.startsWith("/api/network")) {
     App._dirty = true;
+    _updateDirtyFlag();
     _autoSaveDebounced();
   }
   return r.json();
