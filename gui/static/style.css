@@ -718,8 +718,10 @@ body {
 }
 .scale-walk { border-color: #f90; }
 .scale-walk span { color: #f90; }
-.scale-mi { border-color: #4af; }
-.scale-mi span { color: #4af; }
+.scale-bike { border-color: #4af; }
+.scale-bike span { color: #4af; }
+.scale-mi { border-color: #9d9; }
+.scale-mi span { color: #9d9; }
 
 /* Tool buttons in right panel */
 .tool-btn {

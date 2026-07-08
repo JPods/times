@@ -621,6 +621,21 @@
       Source: Census ACS 5-year, table B23025.
     </div>
 
+    <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Coverage</div>
+
+    <div class="ov-row">
+      <button onclick="WalkCircle.toggleCoverage()" class="ov-btn" id="ov-btn-coverage"
+              style="background:#5a3a0a">Station Coverage</button>
+      <button onclick="OverlayPanel.toggleDetail('coverage')" class="ov-info">?</button>
+    </div>
+    <div class="ov-detail" id="ov-detail-coverage" style="display:none">
+      Shows walk and bike catchment around every station.<br>
+      <strong style="color:#f90">Orange</strong> = 0.75 mile / 15-min walk<br>
+      <strong style="color:#4af">Blue</strong> = 1.5 mile / 15-min bike (parent with children, Dutch cycling data ~10 km/h)<br>
+      Gaps between circles = areas not served. Add stations to fill gaps.<br>
+      Key 9 toggles cursor circles for exploring placement.
+    </div>
+
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Other</div>
 
     <div class="ov-row">

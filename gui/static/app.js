@@ -39,20 +39,40 @@ const map = L.map("map", { zoomControl: true, keyboard: false }).setView(
   _savedView ? _savedView.zoom : 13
 );
 // Walk radius circle — 0.75 mi (15-min walk) follows cursor. Toggle with key 9.
+// Walk (0.75 mi) + Bike (1.5 mi) radius circles
+// Key 9 toggles cursor circles on/off
+// Overlay button shows circles around all stations
 const WalkCircle = (() => {
   let _active = false;
-  let _circle = null;
-  const _radiusM = 0.75 * 1609.34;  // 0.75 miles in meters
+  let _walkCircle = null;
+  let _bikeCircle = null;
+  const _walkM = 0.75 * 1609.34;  // 0.75 miles
+  const _bikeM = 1.5 * 1609.34;   // 1.5 miles (mom + kids, Dutch data ~10 km/h)
+
+  // Station coverage overlay
+  let _coverageLayer = null;
+  let _coverageOn = false;
 
   function _onMove(e) {
-    if (_circle) _circle.setLatLng(e.latlng);
+    if (_walkCircle) _walkCircle.setLatLng(e.latlng);
+    if (_bikeCircle) _bikeCircle.setLatLng(e.latlng);
   }
 
   function toggle() {
     _active = !_active;
     if (_active) {
-      _circle = L.circle(map.getCenter(), {
-        radius: _radiusM,
+      const c = map.getCenter();
+      _bikeCircle = L.circle(c, {
+        radius: _bikeM,
+        color: "#4af",
+        weight: 1.5,
+        fillColor: "#4af",
+        fillOpacity: 0.05,
+        dashArray: "8 5",
+        interactive: false,
+      }).addTo(map);
+      _walkCircle = L.circle(c, {
+        radius: _walkM,
         color: "#f90",
         weight: 2,
         fillColor: "#f90",
@@ -61,15 +81,55 @@ const WalkCircle = (() => {
         interactive: false,
       }).addTo(map);
       map.on("mousemove", _onMove);
-      setStatus("Walk radius ON (¾ mi · 15 min) — press 9 to toggle");
+      setStatus("Walk ¾ mi (orange) + Bike 1.5 mi (blue) — press 9 to toggle");
     } else {
       map.off("mousemove", _onMove);
-      if (_circle) { map.removeLayer(_circle); _circle = null; }
-      setStatus("Walk radius OFF");
+      if (_walkCircle) { map.removeLayer(_walkCircle); _walkCircle = null; }
+      if (_bikeCircle) { map.removeLayer(_bikeCircle); _bikeCircle = null; }
+      setStatus("Radius circles OFF");
     }
   }
 
-  return { toggle };
+  function toggleCoverage() {
+    if (_coverageOn) {
+      if (_coverageLayer) { map.removeLayer(_coverageLayer); _coverageLayer = null; }
+      _coverageOn = false;
+      setStatus("Station coverage OFF");
+      return;
+    }
+    // Build circles around all stations from current network metadata
+    _coverageLayer = L.layerGroup();
+    const structs = App._lastMeta && App._lastMeta.structures ? App._lastMeta.structures : {};
+    let count = 0;
+    for (const [sid, s] of Object.entries(structs)) {
+      if (s.structure_type !== "station") continue;
+      const lat = s.center_lat, lon = s.center_lon;
+      _coverageLayer.addLayer(L.circle([lat, lon], {
+        radius: _bikeM,
+        color: "#4af",
+        weight: 1,
+        fillColor: "#4af",
+        fillOpacity: 0.04,
+        dashArray: "8 5",
+        interactive: false,
+      }));
+      _coverageLayer.addLayer(L.circle([lat, lon], {
+        radius: _walkM,
+        color: "#f90",
+        weight: 1.5,
+        fillColor: "#f90",
+        fillOpacity: 0.06,
+        dashArray: "6 4",
+        interactive: false,
+      }));
+      count++;
+    }
+    _coverageLayer.addTo(map);
+    _coverageOn = true;
+    setStatus(`Station coverage ON — ${count} stations (orange=walk, blue=bike)`);
+  }
+
+  return { toggle, toggleCoverage };
 })();
 
 // Fixed scale bars: 0.75 mi (15-min walk) and 5 mi
@@ -79,14 +139,17 @@ const FixedScale = L.Control.extend({
     const el = L.DomUtil.create("div", "fixed-scale-bar");
     el.innerHTML =
       '<div class="scale-line scale-walk" id="scale-walk"><span>¾ mi · 15 min walk</span></div>' +
+      '<div class="scale-line scale-bike" id="scale-bike"><span>1.5 mi · 15 min bike</span></div>' +
       '<div class="scale-line scale-mi" id="scale-mi"><span>5 mi</span></div>';
     const update = () => {
       const center = map.getCenter();
       const mPerPx = 40075016.686 * Math.cos(center.lat * Math.PI / 180) /
                      Math.pow(2, map.getZoom() + 8);
       const walk15px = Math.round((0.75 * 1609.34) / mPerPx);
+      const bike15px = Math.round((1.5 * 1609.34) / mPerPx);
       const mi5px = Math.round((5 * 1609.34) / mPerPx);
       el.querySelector("#scale-walk").style.width = Math.max(walk15px, 10) + "px";
+      el.querySelector("#scale-bike").style.width = Math.max(bike15px, 10) + "px";
       el.querySelector("#scale-mi").style.width = Math.max(mi5px, 10) + "px";
     };
     map.on("zoomend moveend", update);
@@ -1302,6 +1365,7 @@ const App = {
 
     // Update sidebar
     const m = geojson.metadata || {};
+    App._lastMeta = m;  // cache for station coverage overlay
     const circles = m.circle_count || 0;
     const stations = m.station_count || 0;
     const miles = m.total_miles || 0;
