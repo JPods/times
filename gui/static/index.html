@@ -747,7 +747,7 @@
               title="Stations, circles, guideways, grid, Noelle">&#9881; Tools</button>
       <button onclick="OverlayPanel.toggle()" style="width:100%"
               title="Toggle data overlay layers — traffic, crashes, census">&#127760; Overlays</button>
-      <button onclick="window.open('/citytool','_blank')" style="width:100%"
+      <button onclick="(function(){var c=document.getElementById('sidebar-city');var q=c&&c.textContent.trim();var url='/citytool'+(q?'?city='+encodeURIComponent(q):'');window.open(url,'_blank')})()" style="width:100%"
               title="Open City Assessment Tool — economic analysis for capital presentations">&#128200; CityTool</button>
     </div>
 
