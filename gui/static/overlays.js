@@ -317,55 +317,62 @@ const Overlays = (() => {
     console.warn(`[Overlay:${key}]`, msg);
   }
 
-  async function _toggle(key, loader) {
+  async function _toggle(key, loader, forceReload) {
     const m = App.getMap();
-    if (_active[key]) {
+    if (_active[key] && !forceReload) {
       if (_layers[key]) m.removeLayer(_layers[key]);
       _layers[key] = null;
       _active[key] = false;
       setStatus(`${key} overlay off`);
       return;
     }
-    setStatus(`Loading ${key} overlay…`);
+    // Force reload: remove old layer first
+    if (_active[key] && _layers[key]) {
+      m.removeLayer(_layers[key]);
+      _layers[key] = null;
+    }
+    setStatus(forceReload ? `Reloading ${key}…` : `Loading ${key} overlay…`);
     const layer = await loader();
     if (layer) {
       layer.addTo(m);
       _layers[key] = layer;
       _active[key] = true;
-      setStatus(`${key} overlay on`);
+      setStatus(`${key} overlay on${forceReload ? ' (reloaded)' : ''}`);
     }
   }
 
   return {
-    toggleAADT(tier) {
+    toggleAADT(tier, forceReload) {
       tier = tier || "core";
       const key = "aadt_" + tier;
       const m = App.getMap();
-      if (_active[key]) {
+      if (_active[key] && !forceReload) {
         if (_layers[key]) m.removeLayer(_layers[key]);
         _layers[key] = null;
         _active[key] = false;
         setStatus(`Traffic ${tier} overlay off`);
         return;
       }
+      if (_active[key] && _layers[key]) { m.removeLayer(_layers[key]); _layers[key] = null; }
+      if (forceReload) _aadtData = null;  // clear cache to force re-fetch
       (async () => {
-        setStatus(`Loading traffic ${tier}…`);
+        setStatus(forceReload ? `Reloading traffic ${tier}…` : `Loading traffic ${tier}…`);
         await _ensureAADTData();
         const layer = _buildAADTLayer(tier);
         if (layer) {
           layer.addTo(m);
           _layers[key] = layer;
           _active[key] = true;
-          setStatus(`Traffic ${tier} overlay on`);
+          setStatus(`Traffic ${tier} overlay on${forceReload ? ' (reloaded)' : ''}`);
         }
       })();
     },
-    toggleAccident() { _toggle("accident", _loadAccidents); },
-    toggleCrashDensity() { _toggle("crash_density", _loadCrashDensity); },
-    toggleMobility() { _toggle("mobility", _loadMobility); },
-    togglePopDensity() { _toggle("pop_density", _loadPopDensity); },
-    togglePropertyValues() { _toggle("property_values", _loadPropertyValues); },
-    toggleJobs() { _toggle("jobs", _loadJobs); },
+    toggleAccident(f) { _toggle("accident", _loadAccidents, f); },
+    toggleCrashDensity(f) { _toggle("crash_density", _loadCrashDensity, f); },
+    toggleMobility(f) { _toggle("mobility", _loadMobility, f); },
+    togglePopDensity(f) { _toggle("pop_density", _loadPopDensity, f); },
+    togglePropertyValues(f) { _toggle("property_values", _loadPropertyValues, f); },
+    toggleJobs(f) { _toggle("jobs", _loadJobs, f); },
 
     /** Return which overlays are currently active (for saving with .jpd). */
     getActive() {

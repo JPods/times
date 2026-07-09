@@ -549,7 +549,7 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin-bottom:4px">Safety</div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleAADT('all'); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-aadt"
+      <button onclick="Overlays.toggleAADT('all', event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-aadt"
               style="background:#8b0000">Traffic (AADT)</button>
       <button onclick="OverlayPanel.toggleDetail('aadt')" class="ov-info">?</button>
     </div>
@@ -560,7 +560,7 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleAccident(); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-accident"
+      <button onclick="Overlays.toggleAccident(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-accident"
               style="background:#1a5276">Fatal Crashes</button>
       <button onclick="OverlayPanel.toggleDetail('accident')" class="ov-info">?</button>
     </div>
@@ -571,7 +571,7 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleCrashDensity(); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-crash_density"
+      <button onclick="Overlays.toggleCrashDensity(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-crash_density"
               style="background:#0b2f4a">Crash Density</button>
       <button onclick="OverlayPanel.toggleDetail('crash_density')" class="ov-info">?</button>
     </div>
@@ -585,7 +585,7 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Census / Economics</div>
 
     <div class="ov-row">
-      <button onclick="Overlays.togglePopDensity(); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-pop_density"
+      <button onclick="Overlays.togglePopDensity(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-pop_density"
               style="background:#6a1b9a">Population Density</button>
       <button onclick="OverlayPanel.toggleDetail('pop_density')" class="ov-info">?</button>
     </div>
@@ -597,7 +597,7 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.togglePropertyValues(); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-property_values"
+      <button onclick="Overlays.togglePropertyValues(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-property_values"
               style="background:#2e7d32">Property Values</button>
       <button onclick="OverlayPanel.toggleDetail('property_values')" class="ov-info">?</button>
     </div>
@@ -610,7 +610,7 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleJobs(); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-jobs"
+      <button onclick="Overlays.toggleJobs(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-jobs"
               style="background:#1565c0">Jobs</button>
       <button onclick="OverlayPanel.toggleDetail('jobs')" class="ov-info">?</button>
     </div>
@@ -624,8 +624,8 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Coverage</div>
 
     <div class="ov-row">
-      <button onclick="WalkCircle.toggleCoverage()" class="ov-btn" id="ov-btn-coverage"
-              style="background:#5a3a0a">Station Coverage</button>
+      <button onclick="WalkCircle.cycleCoverage()" class="ov-btn" id="ov-btn-coverage"
+              style="background:#5a3a0a">Coverage: Off</button>
       <button onclick="OverlayPanel.toggleDetail('coverage')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-coverage" style="display:none">
@@ -639,7 +639,7 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Other</div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleMobility(); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-mobility"
+      <button onclick="Overlays.toggleMobility(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-mobility"
               style="background:#555">Pedestrian</button>
       <button onclick="OverlayPanel.toggleDetail('mobility')" class="ov-info">?</button>
     </div>

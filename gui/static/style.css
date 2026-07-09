@@ -756,8 +756,10 @@ body {
 }
 .ov-btn:hover { opacity: 0.85; }
 .ov-btn.ov-active {
-  border-color: #4af;
-  box-shadow: 0 0 4px rgba(68,170,255,0.4);
+  border-color: #4f4;
+  box-shadow: 0 0 8px rgba(68,255,68,0.5);
+  outline: 2px solid #4f4;
+  outline-offset: 1px;
 }
 .ov-info {
   width: 22px;

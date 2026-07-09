@@ -90,46 +90,112 @@ const WalkCircle = (() => {
     }
   }
 
-  function toggleCoverage() {
-    if (_coverageOn) {
-      if (_coverageLayer) { map.removeLayer(_coverageLayer); _coverageLayer = null; }
-      _coverageOn = false;
-      setStatus("Station coverage OFF");
-      return;
-    }
-    // Build circles around all stations from current network metadata
-    _coverageLayer = L.layerGroup();
+  // Coverage states: 0=off, 1=circles only, 2=walk+bike
+  let _coverageState = 0;
+
+  function _clearCoverage() {
+    if (_coverageLayer) { map.removeLayer(_coverageLayer); _coverageLayer = null; }
+    _coverageOn = false;
+  }
+
+  function _getStationPoints() {
     const structs = App._lastMeta && App._lastMeta.structures ? App._lastMeta.structures : {};
-    let count = 0;
+    const pts = [];
     for (const [sid, s] of Object.entries(structs)) {
       if (s.structure_type !== "station") continue;
-      const lat = s.center_lat, lon = s.center_lon;
+      pts.push([s.center_lat, s.center_lon]);
+    }
+    return pts;
+  }
+
+  function _buildCircles() {
+    // Mode 1: individual walk + bike circles around each station
+    _coverageLayer = L.layerGroup();
+    const pts = _getStationPoints();
+    for (const [lat, lon] of pts) {
       _coverageLayer.addLayer(L.circle([lat, lon], {
         radius: _bikeM,
-        color: "#4af",
-        weight: 1,
-        fillColor: "#4af",
-        fillOpacity: 0.04,
-        dashArray: "8 5",
-        interactive: false,
+        color: "#4af", weight: 1, fillColor: "#4af",
+        fillOpacity: 0.04, dashArray: "8 5", interactive: false,
       }));
       _coverageLayer.addLayer(L.circle([lat, lon], {
         radius: _walkM,
-        color: "#f90",
-        weight: 1.5,
-        fillColor: "#f90",
-        fillOpacity: 0.06,
-        dashArray: "6 4",
-        interactive: false,
+        color: "#f90", weight: 1.5, fillColor: "#f90",
+        fillOpacity: 0.06, dashArray: "6 4", interactive: false,
       }));
-      count++;
     }
     _coverageLayer.addTo(map);
     _coverageOn = true;
-    setStatus(`Station coverage ON — ${count} stations (orange=walk, blue=bike)`);
+    return pts.length;
   }
 
-  return { toggle, toggleCoverage };
+  function _buildIso() {
+    // Mode 2: merged outer boundary — union of all walk circles, union of all bike circles
+    _coverageLayer = L.layerGroup();
+    const pts = _getStationPoints();
+    if (pts.length === 0) return 0;
+
+    // Build turf circles and union them
+    const walkCircles = pts.map(([lat, lon]) =>
+      turf.circle([lon, lat], _walkM / 1000, { units: "kilometers", steps: 32 }));
+    const bikeCircles = pts.map(([lat, lon]) =>
+      turf.circle([lon, lat], _bikeM / 1000, { units: "kilometers", steps: 32 }));
+
+    let walkUnion = walkCircles[0];
+    for (let i = 1; i < walkCircles.length; i++) {
+      try { walkUnion = turf.union(walkUnion, walkCircles[i]); } catch (e) { /* skip */ }
+    }
+
+    let bikeUnion = bikeCircles[0];
+    for (let i = 1; i < bikeCircles.length; i++) {
+      try { bikeUnion = turf.union(bikeUnion, bikeCircles[i]); } catch (e) { /* skip */ }
+    }
+
+    if (bikeUnion) {
+      _coverageLayer.addLayer(L.geoJSON(bikeUnion, {
+        style: { color: "#4af", weight: 6, fillColor: "#4af", fillOpacity: 0.06,
+                 dashArray: "12 6" },
+        interactive: false,
+      }));
+    }
+    if (walkUnion) {
+      _coverageLayer.addLayer(L.geoJSON(walkUnion, {
+        style: { color: "#f90", weight: 7, fillColor: "#f90", fillOpacity: 0.10 },
+        interactive: false,
+      }));
+    }
+
+    _coverageLayer.addTo(map);
+    _coverageOn = true;
+    return pts.length;
+  }
+
+  function _updateCoverageBtn() {
+    const btn = document.getElementById("ov-btn-coverage");
+    if (!btn) return;
+    const labels = ["Coverage: Off", "Coverage: Circles", "Coverage: Iso Boundary"];
+    btn.textContent = labels[_coverageState];
+    btn.classList.toggle("ov-active", _coverageState > 0);
+  }
+
+  function cycleCoverage() {
+    _clearCoverage();
+    _coverageState = (_coverageState + 1) % 3;
+    if (_coverageState === 0) {
+      setStatus("Station coverage OFF");
+    } else if (_coverageState === 1) {
+      const count = _buildCircles();
+      setStatus(`Station coverage: circles — ${count} stations (orange=walk, blue=bike)`);
+    } else {
+      const count = _buildIso();
+      setStatus(`Station coverage: iso boundary — ${count} stations (merged walk + bike zones)`);
+    }
+    _updateCoverageBtn();
+  }
+
+  function toggleCoverage() { cycleCoverage(); }
+
+  return { toggle, toggleCoverage, cycleCoverage };
 })();
 
 // Fixed scale bars: 0.75 mi (15-min walk) and 5 mi
@@ -249,6 +315,15 @@ const CitySearch = (() => {
           if (sidebarCity) sidebarCity.textContent = label;
           const cityLabel = document.getElementById("overlay-city-label");
           if (cityLabel) cityLabel.textContent = label;
+          // Save city name to server state (persists in .jpd)
+          fetch("/api/overlays/active", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...(App._lastOverlays || {}),
+              city_label: label,
+            }),
+          }).catch(() => {});
           // Close the search panel
           const searchPanel = document.getElementById("panel-city-search");
           if (searchPanel) searchPanel.style.display = "none";
@@ -1366,6 +1441,14 @@ const App = {
     // Update sidebar
     const m = geojson.metadata || {};
     App._lastMeta = m;  // cache for station coverage overlay
+    App._lastOverlays = geojson.overlays || {};
+    // Restore city label
+    if (m.city_label) {
+      const sc = document.getElementById("sidebar-city");
+      if (sc) sc.textContent = m.city_label;
+      const cl = document.getElementById("overlay-city-label");
+      if (cl) cl.textContent = m.city_label;
+    }
     const circles = m.circle_count || 0;
     const stations = m.station_count || 0;
     const miles = m.total_miles || 0;

@@ -46,15 +46,47 @@ _OVERLAY_LOCAL = os.path.join(_rt_dir, "overlays")
 
 
 def _overlay_path(filename):
-    """Return the best path for an overlay file: 5TB if mounted, else local cache."""
-    p5 = os.path.join(_OVERLAY_5TB, filename)
-    pl = os.path.join(_OVERLAY_LOCAL, filename)
-    # Prefer 5TB if file exists there
-    if os.path.exists(p5) and os.path.getsize(p5) > 10:
-        return p5
-    # Fall back to local
-    if os.path.exists(pl) and os.path.getsize(pl) > 10:
-        return pl
+    """Return the best path for an overlay file: 5TB if mounted, else local cache.
+    Validates that the file contains valid JSON with features."""
+    for d in (_OVERLAY_5TB, _OVERLAY_LOCAL):
+        p = os.path.join(d, filename)
+        if os.path.exists(p) and os.path.getsize(p) > 10:
+            try:
+                with open(p) as f:
+                    data = json.load(f)
+                if isinstance(data, dict) and data.get("features"):
+                    return p
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                continue
+    return None
+
+
+def _overlay_path_by_state(prefix):
+    """Find a state-specific overlay file by detecting state from network centroid."""
+    net = _state.get("network")
+    if not net:
+        return None
+    lats = [n.lat for n in net.nodes.values() if n.lat]
+    lons = [n.lon for n in net.nodes.values() if n.lon]
+    if not lats:
+        return None
+    center_lat = sum(lats) / len(lats)
+    center_lon = sum(lons) / len(lons)
+    try:
+        from route_time.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+        state_fips, _ = fips_from_latlon(center_lat, center_lon)
+        if state_fips:
+            abbr = STATE_FIPS_TO_ABBR.get(state_fips)
+            if abbr:
+                p = _overlay_path(f"{prefix}_{abbr}.geojson")
+                if p:
+                    # Also copy to generic so next request is fast
+                    import shutil
+                    dst = os.path.join(_OVERLAY_LOCAL, f"{prefix}.geojson")
+                    shutil.copy2(p, dst)
+                    return p
+    except Exception:
+        pass
     return None
 
 
@@ -600,6 +632,7 @@ def _network_to_geojson(net: Network) -> dict:
             "total_km": round(net.total_length_m() / 1000, 2),
             "total_miles": round(net.total_length_m() / 1609.34, 1),
             "circle_count": sum(1 for s in _state["structures"].values() if s.structure_type == "circle"),
+            "city_label": (_state.get("overlays") or {}).get("city_label", ""),
             "center": center,
             "structures": structures_meta,
             "cps": cps_meta,
@@ -2356,12 +2389,10 @@ def _geojson_to_network(geojson: dict) -> Network:
 
 @api.get("/overlays/aadt")
 def overlay_aadt():
-    """
-    Proxy FHWA HPMS Annual Average Daily Traffic data.
-    Requires FHWA_API_KEY env var, or falls back to a local GeoJSON file.
-    See route_time/overlays/README.md for setup.
-    """
+    """FHWA HPMS traffic data — checks generic, then state file from 5TB."""
     p = _overlay_path("aadt.geojson")
+    if not p:
+        p = _overlay_path_by_state("aadt")
     if p:
         with open(p) as f:
             return jsonify(json.load(f))
@@ -2370,8 +2401,10 @@ def overlay_aadt():
 
 @api.get("/overlays/accidents")
 def overlay_accidents():
-    """NHTSA FARS fatal crash data — checks 5TB then local cache."""
+    """NHTSA FARS fatal crash data — checks generic, then state file from 5TB."""
     p = _overlay_path("accidents.geojson")
+    if not p:
+        p = _overlay_path_by_state("accidents")
     if p:
         with open(p) as f:
             return jsonify(json.load(f))
@@ -2776,8 +2809,10 @@ def _default_qa():
 
 @api.get("/overlays/crash_density")
 def overlay_crash_density():
-    """All-severity crash density grid — pre-aggregated from full crash data."""
+    """Fatal crash density grid — checks generic, then state file from 5TB."""
     p = _overlay_path("crash_density.geojson")
+    if not p:
+        p = _overlay_path_by_state("crash_density")
     if p:
         with open(p) as f:
             return jsonify(json.load(f))
