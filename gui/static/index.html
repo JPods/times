@@ -574,14 +574,14 @@
 
     <div class="ov-row">
       <button onclick="Overlays.toggleCrashDensity(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-crash_density"
-              style="background:#0b2f4a">Crash Density</button>
+              style="background:#0b2f4a">All Crashes</button>
       <button onclick="OverlayPanel.toggleDetail('crash_density')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-crash_density" style="display:none">
-      Fatal crash density aggregated to 200m grid cells from NHTSA FARS data (4 years).
-      Shows where fatal crashes cluster. This is Noelle's primary placement signal —
-      local arterials are 9x more dangerous per unit of traffic than interstates.
-      Note: FARS is fatals only. Full all-severity crash data requires state DOT sources.
+      All-severity crash data when available (state DOT sources), falls back to
+      FARS fatal-only density. Shows where crashes cluster — shopping centers,
+      school zones, dangerous curves. This is Noelle's primary placement signal.
+      Local arterials are 9x more dangerous per unit of traffic than interstates.
     </div>
 
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Census / Economics</div>

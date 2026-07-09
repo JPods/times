@@ -2812,22 +2812,50 @@ def overlay_fetch_all():
     except Exception as e:
         errors.append(f"Location lookup: {e}")
 
-    # AADT + crashes: prefer full state files from 5TB, fall back to on-demand fetch
+    # Load ALL available data from 5TB for this state — always reload, never skip
     if state_abbr:
         import shutil
-        _5tb_used = False
-        for prefix in ("aadt", "accidents", "crash_density"):
+        log.info(f"Fetch Data: checking 5TB for {state_abbr.upper()}...")
+        # All overlay types that might exist on 5TB per state
+        state_prefixes = ["aadt", "accidents", "crash_density", "crashes_all"]
+        for prefix in state_prefixes:
             src = os.path.join(_OVERLAY_5TB, f"{prefix}_{state_abbr}.geojson")
             if os.path.exists(src) and os.path.getsize(src) > 100:
                 dst = os.path.join(_OVERLAY_LOCAL, f"{prefix}.geojson")
                 shutil.copy2(src, dst)
-                if prefix not in fetched:
-                    fetched.append(prefix)
-                _5tb_used = True
-        if _5tb_used:
-            log.info(f"Fetch Data: using full state files from 5TB for {state_abbr.upper()}")
+                try:
+                    with open(src) as _f:
+                        _count = len(json.load(_f).get("features", []))
+                except Exception:
+                    _count = "?"
+                name = prefix.replace("crashes_all", "all_crashes")
+                log.info(f"  ✓ {prefix}_{state_abbr}: {_count} features")
+                if name not in fetched:
+                    fetched.append(name)
+            else:
+                log.info(f"  ✗ {prefix}_{state_abbr}: not on 5TB")
 
-        # On-demand fallback if 5TB didn't have state files
+        # Also check county-specific census files
+        if county_fips:
+            city_key = f"{state_abbr}_{county_fips}"
+            for prefix in ("population_density", "property_values", "jobs"):
+                src = os.path.join(_OVERLAY_5TB, f"{prefix}_{city_key}.geojson")
+                if os.path.exists(src) and os.path.getsize(src) > 100:
+                    dst = os.path.join(_OVERLAY_LOCAL, f"{prefix}.geojson")
+                    shutil.copy2(src, dst)
+                    try:
+                        with open(src) as _f:
+                            _count = len(json.load(_f).get("features", []))
+                    except Exception:
+                        _count = "?"
+                    log.info(f"  ✓ {prefix}_{city_key}: {_count} features")
+                    if prefix not in fetched:
+                        fetched.append(prefix)
+
+        if fetched:
+            log.info(f"Fetch Data: loaded from 5TB for {state_abbr.upper()}: {fetched}")
+
+        # On-demand fallback for AADT if 5TB didn't have it
         if "aadt" not in fetched:
             try:
                 aadt_ok = _fetch_aadt(state_abbr, center_lat, center_lon)
@@ -2836,7 +2864,7 @@ def overlay_fetch_all():
             except Exception as e:
                 errors.append(f"AADT: {e}")
 
-    # FARS on-demand fallback if 5TB didn't have state files
+    # FARS on-demand fallback if 5TB didn't have it
     if state_fips and "accidents" not in fetched:
         try:
             fars_ok = _fetch_fars(state_fips, state_abbr, center_lat, center_lon)
@@ -3147,14 +3175,89 @@ def _default_qa():
 
 @api.get("/overlays/crash_density")
 def overlay_crash_density():
-    """Fatal crash density grid — checks generic, then state file from 5TB."""
-    p = _overlay_path("crash_density.geojson")
+    """All-severity crashes if available, falls back to FARS fatal density.
+    Normalizes different state DOT formats to standard {crashes, injury, fatal, pedestrian, density}."""
+    # Prefer all-severity crash data
+    p = _overlay_path("crashes_all.geojson")
     if not p:
-        p = _overlay_path_by_state("crash_density")
+        p = _overlay_path_by_state("crashes_all")
+
     if p:
         with open(p) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "Crash density data not configured — click Fetch Data"}), 404
+            data = json.load(f)
+        # Check if this needs normalization (state DOT format vs our standard)
+        if data.get("features") and "crashes" not in data["features"][0].get("properties", {}):
+            data = _normalize_crash_data(data)
+        return jsonify(data)
+
+    return jsonify({"error": "All-severity crash data not available for this state. "
+                    "Currently harvested: OK (OKC). More states coming."}), 404
+
+
+def _normalize_crash_data(raw_geojson):
+    """Convert state DOT crash point data to gridded density format.
+    Aggregates individual crash points to 200m grid cells with standard properties."""
+    from collections import defaultdict
+    cell_deg = 200 / 111000  # ~0.0018°
+
+    grid = defaultdict(lambda: {"crashes": 0, "injury": 0, "fatal": 0, "pedestrian": 0})
+
+    for feat in raw_geojson.get("features", []):
+        props = feat.get("properties", {})
+        geom = feat.get("geometry", {})
+
+        # Get coordinates — might be in geometry or properties
+        if geom and geom.get("coordinates"):
+            lon, lat = geom["coordinates"][0], geom["coordinates"][1]
+        elif "LATITUDE" in props and "LONGITUDE" in props:
+            lat = float(props["LATITUDE"])
+            lon = float(props["LONGITUDE"])
+        else:
+            continue
+
+        if lat == 0 or lon == 0:
+            continue
+
+        # Snap to grid
+        gx = round(lon / cell_deg) * cell_deg
+        gy = round(lat / cell_deg) * cell_deg
+        key = (round(gx, 6), round(gy, 6))
+
+        grid[key]["crashes"] += 1
+        # Detect injury — various field names across states
+        fat = props.get("FAT", props.get("fatals", props.get("FATALS", 0)))
+        inj = props.get("INJ", props.get("INJURED", props.get("injuries", 0)))
+        ped = props.get("PEDSTRIANS", props.get("pedestrian", props.get("PEDS", 0)))
+        try:
+            fat = int(fat) if fat and fat != "N" else 0
+        except (ValueError, TypeError):
+            fat = 0
+        try:
+            inj = int(inj) if inj and inj != "N" else 0
+        except (ValueError, TypeError):
+            inj = 0
+        try:
+            ped = int(ped) if ped and ped != "No" else 0
+        except (ValueError, TypeError):
+            ped = 0
+
+        grid[key]["fatal"] += fat
+        grid[key]["injury"] += (1 if inj > 0 or fat > 0 else 0)
+        grid[key]["pedestrian"] += (1 if ped > 0 else 0)
+
+    # Estimate years from data range
+    years = 4  # default
+    features = []
+    for (lon, lat), counts in grid.items():
+        density = round(counts["crashes"] / years, 1)
+        features.append({
+            "type": "Feature",
+            "geometry": {"type": "Point", "coordinates": [lon, lat]},
+            "properties": {**counts, "density": density},
+        })
+
+    log.info(f"Normalized crash data: {len(raw_geojson.get('features',[]))} points → {len(features)} grid cells")
+    return {"type": "FeatureCollection", "features": features}
 
 
 @api.get("/overlays/mobility")

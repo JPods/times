@@ -155,10 +155,15 @@ const Overlays = (() => {
   async function _loadCrashDensity() {
     const r = await fetch("/api/overlays/crash_density");
     if (!r.ok) {
-      _showOverlayNote("crash_density", "No crash density data for this area yet. Data will be available after Noelle processes this location.");
+      const err = await r.json().catch(() => ({}));
+      _showOverlayNote("crash_density", err.error || "All-severity crash data not available for this state. Click Fetch Data first.");
       return null;
     }
     const geojson = await r.json();
+    if (!geojson.features || geojson.features.length === 0) {
+      _showOverlayNote("crash_density", "Crash data file is empty — click Fetch Data to reload.");
+      return null;
+    }
     let maxCrashes = 1;
     for (const f of geojson.features) {
       if (f.properties.crashes > maxCrashes) maxCrashes = f.properties.crashes;
@@ -177,10 +182,12 @@ const Overlays = (() => {
       },
       onEachFeature: (f, layer) => {
         const p = f.properties;
+        const road = p.road ? `<br>${p.road}` : "";
+        const type = p.top_type ? ` · ${p.top_type}` : "";
         layer.bindTooltip(
-          `<b>${p.crashes} crashes</b> (${p.density}/yr)<br>` +
+          `<b>${p.crashes} crashes</b> (${p.density}/yr)${type}<br>` +
           `${p.injury} injury, ${p.fatal} fatal<br>` +
-          `${p.pedestrian} pedestrian`,
+          `${p.pedestrian} ped, ${p.bicycle || 0} bike${road}`,
           { sticky: true }
         );
       },
@@ -320,12 +327,14 @@ const Overlays = (() => {
   const _loading = {};  // guard against double-click re-entry
 
   async function _toggle(key, loader, forceReload) {
-    if (_loading[key]) return;  // already loading — ignore
+    console.log(`[Overlay] toggle ${key}, active=${_active[key]}, loading=${!!_loading[key]}, force=${!!forceReload}`);
+    if (_loading[key]) { console.log(`[Overlay] ${key} already loading — skip`); return; }
     const m = App.getMap();
     if (_active[key] && !forceReload) {
       if (_layers[key]) m.removeLayer(_layers[key]);
       _layers[key] = null;
       _active[key] = false;
+      console.log(`[Overlay] ${key} toggled OFF`);
       setStatus(`${key} overlay off`);
       return;
     }
@@ -335,15 +344,37 @@ const Overlays = (() => {
       _layers[key] = null;
     }
     _loading[key] = true;
-    setStatus(forceReload ? `Reloading ${key}…` : `Loading ${key} overlay…`);
+    // Latch the button immediately — show loading state with text feedback
+    _active[key] = true;
+    const btn = document.getElementById("ov-btn-" + key);
+    const btnOrigText = btn ? btn.textContent : "";
+    if (btn) {
+      btn.classList.add("ov-active");
+      btn.textContent = btnOrigText + " — loading";
+    }
+    setStatus(forceReload ? `Reloading ${key}…` : `Loading ${key}…`);
+    if (typeof App !== "undefined" && App.flash) App.flash("Gathering data…", 2000);
     try {
+      console.log(`[Overlay] ${key} fetching...`);
       const layer = await loader();
+      console.log(`[Overlay] ${key} loader returned: ${layer ? 'layer OK' : 'NULL'}`);
       if (layer) {
         layer.addTo(m);
         _layers[key] = layer;
         _active[key] = true;
-        setStatus(`${key} overlay on${forceReload ? ' (reloaded)' : ''}`);
+        if (btn) btn.textContent = btnOrigText;
+        console.log(`[Overlay] ${key} toggled ON`);
+        setStatus(`${key} overlay on`);
+      } else {
+        console.log(`[Overlay] ${key} loader returned null — data missing`);
+        _active[key] = false;
+        if (btn) { btn.classList.remove("ov-active"); btn.textContent = btnOrigText; }
       }
+    } catch (err) {
+      console.error(`[Overlay] ${key} error:`, err);
+      _active[key] = false;
+      if (btn) { btn.classList.remove("ov-active"); btn.textContent = btnOrigText; }
+      setStatus(`${key} failed: ${err.message}`);
     } finally {
       _loading[key] = false;
     }
