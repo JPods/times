@@ -459,14 +459,16 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Mesh</div>
 
     <div class="ov-row">
-      <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Mesh…</button>
-      <button onclick="ToolsPanel.toggleDetail('grid')" class="ov-info">?</button>
+      <button onclick="CityMesh.generate()" class="tool-btn" style="flex:1;background:#1a4a3a;border-color:#2a6a5a">&#127961; City Mesh</button>
+      <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Custom Mesh</button>
+      <button onclick="ToolsPanel.toggleDetail('mesh')" class="ov-info">?</button>
     </div>
-    <div class="ov-detail" id="tool-detail-grid" style="display:none">
-      Generates a rectangular mesh — circles at intersections, stations mid-block.
-      A wildly rough estimate for quick capacity exploration. Set block spacing and
-      coverage area. After generating, use Noelle Refine to prune stations with no
-      data signal and fill gaps where signal exists.
+    <div class="ov-detail" id="tool-detail-mesh" style="display:none">
+      <strong>City Mesh:</strong> Fills the city boundary with a mesh network. Auto-picks 1x1 or 1x2 mile
+      spacing based on city size. Snaps traffic circles to real road intersections.
+      Requires Find City first (sets the boundary).<br>
+      <strong>Custom:</strong> Manual mesh with adjustable spacing and coverage area.
+      After generating either, use Noelle Refine to prune and fill based on data.
     </div>
 
     <!-- Select & Delete -->
@@ -1170,6 +1172,79 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
   </div><!-- /dialog -->
 </div><!-- /backdrop -->
 
+<script>
+const CityMesh = (() => {
+  async function generate() {
+    // Check prerequisites: need a saved file with overlay data
+    let fence = CitySearch.getFence();
+
+    // Try server state if browser lost the fence
+    if (!fence) {
+      try {
+        const r = await fetch("/api/overlays/active");
+        const ov = await r.json();
+        if (ov && ov.fence) fence = ov.fence;
+      } catch (_) {}
+    }
+
+    if (!fence) {
+      alert(
+        "City Mesh requires these steps first:\n\n" +
+        "1. Find City → Go (sets the city boundary)\n" +
+        "2. Save (establishes the file)\n" +
+        "3. Overlays → Fetch Data (pulls traffic, crash, census data)\n" +
+        "4. Save again (embeds data in the file)\n\n" +
+        "Then City Mesh can build a network in the urban areas."
+      );
+      return;
+    }
+
+    // Auto-fetch overlays if not already loaded
+    setStatus("City Mesh: checking overlay data…");
+    try {
+      const c = App.getMap().getCenter();
+      const fr = await fetch("/api/overlays/fetch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lat: c.lat, lon: c.lng }),
+      });
+      const fd = await fr.json();
+      if (fd.fetched && fd.fetched.length) {
+        setStatus(`Fetched: ${fd.fetched.join(", ")}`);
+      }
+    } catch (_) {}
+
+    setStatus("City Mesh: building network…");
+    if (typeof App !== "undefined" && App.flash) App.flash("Building City Mesh — this may take a moment…", 10000);
+
+    try {
+      // Send fence to server — it handles spacing, intersection snapping, and mesh generation
+      const r = await fetch("/api/network/city_mesh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fence: fence }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        alert("City Mesh: " + (data.error || "failed"));
+        return;
+      }
+
+      const msg = `City Mesh: ${data.stations} stations, ${data.circles} circles, ` +
+                  `${data.spacing} spacing — ${data.total_miles || "?"} mi`;
+      setStatus(msg);
+      if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
+
+      // Reload network display
+      const geojson = await api("GET", "/api/network");
+      App._render(geojson);
+    } catch (e) {
+      alert("City Mesh failed: " + e.message);
+    }
+  }
+  return { generate };
+})();
+</script>
 <script>
 const CitySearchPanel = (() => {
   function toggle() {

@@ -250,9 +250,11 @@ Map.setTiles("osm");
 
 const CitySearch = (() => {
   let _fenceLayer = null;   // current boundary polygon layer
+  let _fenceGeojson = null; // raw GeoJSON of city boundary
 
   function _clearFence() {
     if (_fenceLayer) { map.removeLayer(_fenceLayer); _fenceLayer = null; }
+    _fenceGeojson = null;
   }
 
   function _drawFence(geojson) {
@@ -293,7 +295,18 @@ const CitySearch = (() => {
           // Draw boundary fence if Nominatim returned polygon data
           if (r.geojson &&
               (r.geojson.type === "Polygon" || r.geojson.type === "MultiPolygon")) {
+            _fenceGeojson = r.geojson;
             _drawFence(r.geojson);
+            // Save fence to server so City Mesh works after page reload
+            fetch("/api/overlays/active", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ...(App._lastOverlays || {}),
+                city_label: r.display_name.split(",").slice(0, 3).join(",").trim(),
+                fence: r.geojson,
+              }),
+            }).catch(() => {});
           } else {
             _clearFence();   // point result — no boundary available
           }
@@ -336,6 +349,7 @@ const CitySearch = (() => {
     },
 
     clearFence() { _clearFence(); },
+    getFence() { return _fenceGeojson; },
   };
 })();
 
@@ -1249,10 +1263,26 @@ const App = {
         return;
       }
       blob = await resp.blob();
-      // Derive filename from Content-Disposition header, fallback to "network.jpd"
-      const cd = resp.headers.get("Content-Disposition") || "";
-      const m  = cd.match(/filename="?([^"]+)"?/);
-      filename = m ? m[1] : "network.jpd";
+      // Smart filename: ST_City_YYYY-MM-DD.jpd from city label
+      const cityEl = document.getElementById("sidebar-city");
+      const cityText = cityEl ? cityEl.textContent.trim() : "";
+      if (cityText && !App._saveHandle) {
+        // Parse "Asheville, Buncombe County, North Carolina" → NC_Asheville
+        const parts = cityText.split(",").map(s => s.trim());
+        const city = (parts[0] || "network").replace(/\s+/g, "_");
+        // Try to get state abbreviation from last part
+        const stateMap = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC","United States":"US"};
+        let st = "";
+        for (const p of parts) {
+          if (stateMap[p]) { st = stateMap[p]; break; }
+        }
+        const today = new Date().toISOString().slice(0, 10);
+        filename = st ? `${st}_${city}_${today}.jpd` : `${city}_${today}.jpd`;
+      } else {
+        const cd = resp.headers.get("Content-Disposition") || "";
+        const m  = cd.match(/filename="?([^"]+)"?/);
+        filename = m ? m[1] : "network.jpd";
+      }
     } catch (e) {
       alert("Save failed: " + e.message);
       return;

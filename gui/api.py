@@ -26,6 +26,7 @@ import logging
 import math
 import os
 import threading
+import urllib.parse
 import uuid
 from datetime import datetime, timezone
 
@@ -1515,6 +1516,317 @@ def _cp_by_heading(cp_dict: dict, target_heading: float) -> Optional[ConnectionP
     return best
 
 
+@api.post("/network/city_mesh")
+def network_city_mesh():
+    """Generate a mesh network within a city boundary.
+
+    Auto-detects spacing (1x1 or 1x2 mile) based on city size.
+    Queries Overpass API for major road intersections and snaps circles to them.
+    Fills the boundary polygon, not a rectangle.
+    """
+    import urllib.request
+    data = request.json or {}
+    fence = data.get("fence")
+    if not fence:
+        return jsonify({"error": "No city boundary provided"}), 400
+
+    # Compute bounding box and centroid from fence polygon
+    coords = []
+    if fence.get("type") == "Polygon":
+        coords = fence["coordinates"][0]
+    elif fence.get("type") == "MultiPolygon":
+        for poly in fence["coordinates"]:
+            coords.extend(poly[0])
+    if not coords:
+        return jsonify({"error": "Invalid boundary polygon"}), 400
+
+    lons = [c[0] for c in coords]
+    lats = [c[1] for c in coords]
+    min_lat, max_lat = min(lats), max(lats)
+    min_lon, max_lon = min(lons), max(lons)
+    center_lat = (min_lat + max_lat) / 2
+    center_lon = (min_lon + max_lon) / 2
+
+    # City span in miles
+    from route_time.engine.network import vincenty_m
+    span_ns_mi = vincenty_m(min_lat, center_lon, max_lat, center_lon) / 1609.34
+    span_ew_mi = vincenty_m(center_lat, min_lon, center_lat, max_lon) / 1609.34
+
+    # Auto-pick spacing: Noelle's rule
+    # Small city (<6 mi): 1x1
+    # Medium city: longer axis gets 2 mi spacing, shorter gets 1 mi
+    if max(span_ns_mi, span_ew_mi) < 6:
+        spacing_ns = 1.0
+        spacing_ew = 1.0
+        spacing_label = "1×1 mi"
+    elif span_ns_mi > span_ew_mi:
+        spacing_ns = 2.0
+        spacing_ew = 1.0
+        spacing_label = "2×1 mi (N-S longer)"
+    else:
+        spacing_ns = 1.0
+        spacing_ew = 2.0
+        spacing_label = "1×2 mi (E-W longer)"
+
+    log.info(f"City Mesh: {span_ns_mi:.1f}×{span_ew_mi:.1f} mi → {spacing_label}")
+
+    # Generate grid points within the boundary
+    dlat_per_m = 1.0 / 111_320.0
+    dlon_per_m = 1.0 / (111_320.0 * math.cos(math.radians(center_lat)))
+    ns_m = spacing_ns * _MI_TO_M
+    ew_m = spacing_ew * _MI_TO_M
+    dlat = ns_m * dlat_per_m
+    dlon = ew_m * dlon_per_m
+
+    # Build a shapely-like point-in-polygon test using ray casting
+    def _point_in_polygon(lat, lon, polygon_coords):
+        """Ray casting algorithm for point-in-polygon."""
+        n = len(polygon_coords)
+        inside = False
+        j = n - 1
+        for i in range(n):
+            yi, xi = polygon_coords[i][1], polygon_coords[i][0]
+            yj, xj = polygon_coords[j][1], polygon_coords[j][0]
+            if ((yi > lat) != (yj > lat)) and (lon < (xj - xi) * (lat - yi) / (yj - yi) + xi):
+                inside = not inside
+            j = i
+        return inside
+
+    # Get the polygon ring for containment test
+    if fence.get("type") == "Polygon":
+        poly_ring = fence["coordinates"][0]
+    else:
+        # MultiPolygon — use the largest ring
+        poly_ring = max(fence["coordinates"], key=lambda p: len(p[0]))[0]
+
+    # Try to fetch road intersections from Overpass API
+    intersections = []
+    try:
+        bbox = f"{min_lat},{min_lon},{max_lat},{max_lon}"
+        overpass_query = f"""
+        [out:json][timeout:30];
+        (
+          node["highway"="traffic_signals"]({bbox});
+          node["highway"="crossing"]({bbox});
+        );
+        out body;
+        """
+        overpass_url = "https://overpass-api.de/api/interpreter"
+        req_data = f"data={urllib.parse.quote(overpass_query)}".encode()
+        req = urllib.request.Request(overpass_url, data=req_data,
+                                     headers={"User-Agent": "JPods/MeshMobility"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            osm_data = json.loads(resp.read().decode())
+        for elem in osm_data.get("elements", []):
+            if "lat" in elem and "lon" in elem:
+                intersections.append((elem["lat"], elem["lon"]))
+        log.info(f"City Mesh: {len(intersections)} road intersections from Overpass")
+    except Exception as e:
+        log.warning(f"City Mesh: Overpass query failed ({e}) — using grid points directly")
+
+    # Generate grid intersection points within the boundary
+    n_rows = int((max_lat - min_lat) / dlat) + 2
+    n_cols = int((max_lon - min_lon) / dlon) + 2
+    start_lat = max_lat + dlat * 0.5
+    start_lon = min_lon - dlon * 0.5
+
+    grid_points = []
+    for r in range(n_rows):
+        for c in range(n_cols):
+            lat = start_lat - r * dlat
+            lon = start_lon + c * dlon
+            if _point_in_polygon(lat, lon, poly_ring):
+                grid_points.append((lat, lon, r, c))
+
+    if not grid_points:
+        return jsonify({"error": "No grid points fall within city boundary"}), 400
+
+    # Filter to urban areas — only keep grid points near population, crashes, or traffic
+    urban_pts = []  # (lat, lon) of data signal points
+    for prefix in ("population_density", "crash_density", "aadt", "accidents"):
+        p = _overlay_path(f"{prefix}.geojson")
+        if not p:
+            continue
+        try:
+            with open(p) as f:
+                geo = json.load(f)
+            for feat in geo.get("features", []):
+                coords = feat["geometry"]["coordinates"]
+                urban_pts.append((coords[1], coords[0]))
+        except Exception:
+            continue
+
+    if urban_pts:
+        # Keep grid points within 2 miles of any data signal
+        threshold_deg = 0.035  # ~2.4 miles quick pre-filter
+        filtered = []
+        for glat, glon, r, c in grid_points:
+            for ulat, ulon in urban_pts:
+                if abs(glat - ulat) < threshold_deg and abs(glon - ulon) < threshold_deg:
+                    filtered.append((glat, glon, r, c))
+                    break
+        log.info(f"City Mesh: urban filter {len(grid_points)} → {len(filtered)} grid points "
+                 f"({len(urban_pts)} data signal points)")
+        if filtered:
+            grid_points = filtered
+
+    # Cap at 10×10 grid (100 circles max) — use Custom Mesh for larger
+    if len(grid_points) > 100:
+        log.info(f"City Mesh: capping {len(grid_points)} points to 100")
+        # Keep the densest cluster — sort by proximity to centroid
+        grid_points.sort(key=lambda p: (p[0] - center_lat)**2 + (p[1] - center_lon)**2)
+        grid_points = grid_points[:100]
+
+    # Snap grid points to nearest road intersection (within 800m)
+    snap_threshold_m = 800
+    snapped = []
+    for glat, glon, r, c in grid_points:
+        best_dist = snap_threshold_m
+        best_lat, best_lon = glat, glon
+        for ilat, ilon in intersections:
+            d = vincenty_m(glat, glon, ilat, ilon)
+            if d < best_dist:
+                best_dist = d
+                best_lat = ilat
+                best_lon = ilon
+        snapped.append((best_lat, best_lon, r, c))
+
+    # Build the network — new network
+    net = Network(network_id="city_mesh")
+    _state["network"] = net
+    _clear_edit_state()
+
+    # Place circles at snapped grid points
+    grid_map = {}  # (r, c) → (struct, cp_dict)
+    for lat, lon, r, c in snapped:
+        struct, cp_dict = build_traffic_circle(
+            net, lat, lon,
+            structure_id=_next_sid("c"),
+            arm_headings=[0.0, 90.0, 180.0, 270.0],
+        )
+        _state["structures"][struct.structure_id] = struct
+        _state["cps"].update(cp_dict)
+        grid_map[(r, c)] = (struct, cp_dict)
+
+    # Place stations between adjacent circles and connect
+    _STATION_SPACING_MI = 0.75
+    n_stations = 0
+
+    def _stations_for_block(block_mi):
+        if block_mi <= 1.05:
+            return [0.5]
+        n = max(1, round(block_mi / _STATION_SPACING_MI))
+        return [(i + 1) / (n + 1) for i in range(n)]
+
+    # N-S connections
+    rc_set = set(grid_map.keys())
+    for (r, c) in sorted(rc_set):
+        if (r + 1, c) not in rc_set:
+            continue
+        s_north = grid_map[(r, c)]
+        s_south = grid_map[(r + 1, c)]
+        lat_n, lon_n = s_north[0].center_lat, s_north[0].center_lon
+        lat_s, lon_s = s_south[0].center_lat, s_south[0].center_lon
+        block_mi = vincenty_m(lat_n, lon_n, lat_s, lon_s) / 1609.34
+        positions = _stations_for_block(block_mi)
+        prev_cps = None
+        prev_sid = None
+        for pi, frac in enumerate(positions):
+            slat = lat_n + (lat_s - lat_n) * frac
+            slon = lon_n + (lon_s - lon_n) * frac
+            st, st_cps = build_station(net, slat, slon, heading_deg=0.0,
+                                       structure_id=_next_sid("s"))
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            n_stations += 1
+
+            if pi == 0:
+                _, cp_dict_north = s_north
+                tc_south = _cp_by_heading(cp_dict_north, 180.0)
+                st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
+                if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
+                    connect_cps(net, tc_south, st_north, _state["cps"])
+            elif prev_cps:
+                st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
+                prev_south = prev_cps.get(f"{prev_sid}.CP_far_near")
+                if prev_south and st_north and prev_south.connected_to is None and st_north.connected_to is None:
+                    connect_cps(net, prev_south, st_north, _state["cps"])
+
+            if pi == len(positions) - 1:
+                _, cp_dict_south = s_south
+                tc_north = _cp_by_heading(cp_dict_south, 0.0)
+                st_south_cp = st_cps.get(f"{st.structure_id}.CP_far_near")
+                if tc_north and st_south_cp and tc_north.connected_to is None and st_south_cp.connected_to is None:
+                    connect_cps(net, st_south_cp, tc_north, _state["cps"])
+
+            prev_cps = st_cps
+            prev_sid = st.structure_id
+
+    # E-W connections
+    for (r, c) in sorted(rc_set):
+        if (r, c + 1) not in rc_set:
+            continue
+        s_west = grid_map[(r, c)]
+        s_east = grid_map[(r, c + 1)]
+        lat_w, lon_w = s_west[0].center_lat, s_west[0].center_lon
+        lat_e, lon_e = s_east[0].center_lat, s_east[0].center_lon
+        block_mi = vincenty_m(lat_w, lon_w, lat_e, lon_e) / 1609.34
+        positions = _stations_for_block(block_mi)
+        prev_cps = None
+        prev_sid = None
+        for pi, frac in enumerate(positions):
+            slat = lat_w + (lat_e - lat_w) * frac
+            slon = lon_w + (lon_e - lon_w) * frac
+            st, st_cps = build_station(net, slat, slon, heading_deg=90.0,
+                                       structure_id=_next_sid("s"))
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            n_stations += 1
+
+            if pi == 0:
+                _, cp_dict_west = s_west
+                tc_east = _cp_by_heading(cp_dict_west, 90.0)
+                st_west_cp = st_cps.get(f"{st.structure_id}.CP_far_near")
+                if tc_east and st_west_cp and tc_east.connected_to is None and st_west_cp.connected_to is None:
+                    connect_cps(net, tc_east, st_west_cp, _state["cps"])
+            elif prev_cps:
+                st_west_cp = st_cps.get(f"{st.structure_id}.CP_far_near")
+                prev_east = prev_cps.get(f"{prev_sid}.CP_near_far")
+                if prev_east and st_west_cp and prev_east.connected_to is None and st_west_cp.connected_to is None:
+                    connect_cps(net, prev_east, st_west_cp, _state["cps"])
+
+            if pi == len(positions) - 1:
+                _, cp_dict_east = s_east
+                tc_west = _cp_by_heading(cp_dict_east, 270.0)
+                st_east_cp = st_cps.get(f"{st.structure_id}.CP_near_far")
+                if tc_west and st_east_cp and tc_west.connected_to is None and st_east_cp.connected_to is None:
+                    connect_cps(net, st_east_cp, tc_west, _state["cps"])
+
+            prev_cps = st_cps
+            prev_sid = st.structure_id
+
+    net.build()
+    total_miles = round(net.total_length_m() / 1609.34, 1)
+
+    _noelle_log("city_mesh", {
+        "circles": len(grid_map),
+        "stations": n_stations,
+        "spacing": spacing_label,
+        "intersections_snapped": len(intersections),
+        "total_miles": total_miles,
+    })
+
+    return jsonify({
+        "circles": len(grid_map),
+        "stations": n_stations,
+        "spacing": spacing_label,
+        "intersections_snapped": len(intersections),
+        "total_miles": total_miles,
+        "span_ns_mi": round(span_ns_mi, 1),
+        "span_ew_mi": round(span_ew_mi, 1),
+    })
+
+
 @api.post("/network/grid")
 def network_grid():
     """
@@ -2500,17 +2812,32 @@ def overlay_fetch_all():
     except Exception as e:
         errors.append(f"Location lookup: {e}")
 
-    # AADT traffic (any US state via FHWA HPMS)
+    # AADT + crashes: prefer full state files from 5TB, fall back to on-demand fetch
     if state_abbr:
-        try:
-            aadt_ok = _fetch_aadt(state_abbr, center_lat, center_lon)
-            if aadt_ok:
-                fetched.append("aadt")
-        except Exception as e:
-            errors.append(f"AADT: {e}")
+        import shutil
+        _5tb_used = False
+        for prefix in ("aadt", "accidents", "crash_density"):
+            src = os.path.join(_OVERLAY_5TB, f"{prefix}_{state_abbr}.geojson")
+            if os.path.exists(src) and os.path.getsize(src) > 100:
+                dst = os.path.join(_OVERLAY_LOCAL, f"{prefix}.geojson")
+                shutil.copy2(src, dst)
+                if prefix not in fetched:
+                    fetched.append(prefix)
+                _5tb_used = True
+        if _5tb_used:
+            log.info(f"Fetch Data: using full state files from 5TB for {state_abbr.upper()}")
 
-    # FARS fatal crashes + crash density (any US state via NHTSA bulk CSV)
-    if state_fips:
+        # On-demand fallback if 5TB didn't have state files
+        if "aadt" not in fetched:
+            try:
+                aadt_ok = _fetch_aadt(state_abbr, center_lat, center_lon)
+                if aadt_ok:
+                    fetched.append("aadt")
+            except Exception as e:
+                errors.append(f"AADT: {e}")
+
+    # FARS on-demand fallback if 5TB didn't have state files
+    if state_fips and "accidents" not in fetched:
         try:
             fars_ok = _fetch_fars(state_fips, state_abbr, center_lat, center_lon)
             if fars_ok:
