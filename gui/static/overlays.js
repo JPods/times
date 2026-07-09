@@ -317,7 +317,10 @@ const Overlays = (() => {
     console.warn(`[Overlay:${key}]`, msg);
   }
 
+  const _loading = {};  // guard against double-click re-entry
+
   async function _toggle(key, loader, forceReload) {
+    if (_loading[key]) return;  // already loading — ignore
     const m = App.getMap();
     if (_active[key] && !forceReload) {
       if (_layers[key]) m.removeLayer(_layers[key]);
@@ -326,18 +329,23 @@ const Overlays = (() => {
       setStatus(`${key} overlay off`);
       return;
     }
-    // Force reload: remove old layer first
-    if (_active[key] && _layers[key]) {
+    // Remove old layer first (force reload or fresh load)
+    if (_layers[key]) {
       m.removeLayer(_layers[key]);
       _layers[key] = null;
     }
+    _loading[key] = true;
     setStatus(forceReload ? `Reloading ${key}…` : `Loading ${key} overlay…`);
-    const layer = await loader();
-    if (layer) {
-      layer.addTo(m);
-      _layers[key] = layer;
-      _active[key] = true;
-      setStatus(`${key} overlay on${forceReload ? ' (reloaded)' : ''}`);
+    try {
+      const layer = await loader();
+      if (layer) {
+        layer.addTo(m);
+        _layers[key] = layer;
+        _active[key] = true;
+        setStatus(`${key} overlay on${forceReload ? ' (reloaded)' : ''}`);
+      }
+    } finally {
+      _loading[key] = false;
     }
   }
 
