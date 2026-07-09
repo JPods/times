@@ -809,6 +809,8 @@ document.addEventListener("mousedown", (e) => {
 
   // ── Branch A: structure move ───────────────────────────────────────────
   if (_hoverStructSid) {
+    // Push undo once at drag start (not per-move)
+    fetch("/api/network/undo/push", { method: "POST" }).catch(() => {});
     const sid = _hoverStructSid;
     _moveState.origPos = {};
     Object.entries(_cpPropsMap).forEach(([cpId, p]) => {

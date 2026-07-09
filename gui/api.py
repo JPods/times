@@ -273,9 +273,13 @@ _UNDO_SKIP_PATHS = {"/api/network/undo", "/api/network/load", "/api/network/load
 
 @api.before_request
 def _auto_push_undo():
-    """Snapshot before any network mutation for undo support."""
+    """Snapshot before any network mutation for undo support.
+    Skips moves/rotates — those are high-frequency; browser pushes undo once on mousedown."""
     if request.method in ("POST", "DELETE", "PUT"):
         if request.path not in _UNDO_SKIP_PATHS and request.path.startswith("/api/network"):
+            # Skip structure move/rotate — too frequent for per-call snapshots
+            if "/move" in request.path or "/rotate" in request.path:
+                return
             _push_undo()
 
 
@@ -1416,6 +1420,13 @@ def move_structure(sid: str):
         "center_lat": struct.center_lat,
         "center_lon": struct.center_lon,
     })
+
+
+@api.post("/network/undo/push")
+def network_undo_push():
+    """Manually push an undo snapshot — called by browser on drag start."""
+    _push_undo()
+    return jsonify({"ok": True, "undos": len(_state.get("_undo_stack", []))})
 
 
 @api.post("/network/undo")
