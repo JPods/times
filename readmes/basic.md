@@ -1,8 +1,8 @@
-# Route-Time — Basic Concepts
+# MeshMobility — Basic Concepts
 
-Route-Time simulates the physical world that JPodsSM_RPi operates in.
+MeshMobility simulates the physical world that JPodsSM_RPi operates in.
 JPodsSM_RPi is the real system — Nora, Natalie, and Noelle running on hardware.
-Route-Time is the planning tool — it models that world so networks can be designed,
+MeshMobility is the planning tool — it models that world so networks can be designed,
 transit times estimated, and fleet sizes calculated before anything is built.
 
 ---
@@ -74,18 +74,18 @@ not `network_map.json`.
 
 ---
 
-## How Route-Time Simulates This
+## How MeshMobility Simulates This
 
 ### Network model
 
-Route-Time reads lines, nodes, and CP connections to build the same directed graph
+MeshMobility reads lines, nodes, and CP connections to build the same directed graph
 that Noelle manages at runtime. Structures (stations, traffic circles) are placed
 as objects — their internal geometry is generated from a center point and heading,
 matching what would be physically built.
 
 ### Transit time simulation
 
-Route-Time uses a **discrete tick model** (1 tick = 10 seconds, 360 ticks = 1 hour).
+MeshMobility uses a **discrete tick model** (1 tick = 10 seconds, 360 ticks = 1 hour).
 Passengers arrive at stations at a fixed rate. Pods are dispatched by Dijkstra
 routing weighted by line congestion. Pod physics (acceleration in G, max velocity
 in km/h) are applied to compute travel time per line. The output is fleet-median
@@ -93,20 +93,20 @@ transit time per origin-destination pair.
 
 ### EZ simulation
 
-Route-Time does not yet simulate EZ contention explicitly. Lines that belong to a
+MeshMobility does not yet simulate EZ contention explicitly. Lines that belong to a
 merge node are treated as converging into a single outgoing line; their combined
 demand is checked against capacity. Full EZ lock/release timing is a Nora behavior
 — it affects headway at junctions but not the network-level transit time that
-Route-Time is designed to estimate.
+MeshMobility is designed to estimate.
 
-### What Route-Time does not simulate
+### What MeshMobility does not simulate
 
 - Nora's onboard sensor fusion and experience database
 - MQTT messaging between agents
 - Hardware faults, door timing, boarding dwell variation
 - Per-vehicle EZ negotiation latency
 
-These are JPodsSM_RPi concerns. Route-Time gives Noelle and Natalie the network
+These are JPodsSM_RPi concerns. MeshMobility gives Noelle and Natalie the network
 design they need to make those behaviors possible.
 
 ---
@@ -118,7 +118,7 @@ design they need to make those behaviors possible.
 | `network_map.json` | Noelle | Physical lines, nodes, EZ IDs, adjacency |
 | `trip.json` | Natalie → Nora | Ordered line sequence + platform/speed instructions |
 | `map.json` | Nora (local) | EZ geometry, segment arcs, marker positions |
-| `.jpd` | Route-Time | Network save format — loads into Route-Time for planning |
+| `.jpd` | MeshMobility | Network save format — loads into MeshMobility for planning |
 
-Route-Time can import `map.json` (existing scale model format) and will export
+MeshMobility can import `map.json` (existing scale model format) and will export
 `network_map.json` as the canonical format for the full-scale system.

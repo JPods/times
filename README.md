@@ -1,4 +1,4 @@
-# Route-Time — JPods Network Planner
+# MeshMobility — JPods Network Planner
 
 Python simulation and browser-based planning tool for JPods networks.
 Reads `.jpd` files and `map.json`, simulates fleet-median transit times, and

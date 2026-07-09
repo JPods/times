@@ -1,4 +1,4 @@
-# Route-Time — To-Do
+# MeshMobility — To-Do
 
 ## Save Selection as Template
 
@@ -40,7 +40,7 @@ into the `.tld` XML format used by the legacy RouteTime app.
 
 - Export coordinates **relative to the bounding-box centre** of the selection so
   the template can be placed anywhere (like the legacy app does).
-- Map Route-Time structures to legacy IDs:
+- Map MeshMobility structures to legacy IDs:
   - Station internal nodes → `<Switch>` (platform node → `<Station>`)
   - Traffic-circle nodes → `<Switch>` with `tcId` attribute
   - Station → `<StationGroup>` in `<Groups>`

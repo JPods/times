@@ -1,4 +1,4 @@
-# Route-Time — Settings and Metrics Reference
+# MeshMobility — Settings and Metrics Reference
 
 Settings live in `settings.json` at the project root.  
 Edit via the **⚙ Settings** panel in the palette or directly in the file.  

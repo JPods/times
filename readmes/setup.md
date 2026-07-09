@@ -1,4 +1,4 @@
-# Route-Time — JPods Network Planner
+# MeshMobility — JPods Network Planner
 
 Python simulation and browser-based planning tool for JPods networks.
 Reads `.jpd` files and `map.json`, outputs fleet-median transit times per line.
@@ -67,14 +67,14 @@ Three programs share the same network:
 | Program | Role |
 |---------|------|
 | **SketchUp plugin** | 3D design — places structures, assigns CPs |
-| **Route-Time** (this tool) | 2D planning — simulates transit times, designs networks |
+| **MeshMobility** (this tool) | 2D planning — simulates transit times, designs networks |
 | **JPodsSM_RPi** | Runtime — Nora/Natalie/Noelle control on the Pi |
 
 ---
 
 ## Color Standard — Red Inbound, Blue Outbound
 
-**All directional indicators across the Route-Time GUI and JPods tools follow this rule:**
+**All directional indicators across the MeshMobility GUI and JPods tools follow this rule:**
 
 | Color | Meaning |
 |-------|---------|
