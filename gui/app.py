@@ -184,7 +184,7 @@ def main():
     # Also capture Werkzeug (Flask request logs)
     logging.getLogger("werkzeug").addHandler(file_handler)
 
-    print(f"Route-Time GUI → {url}")
+    print(f"MeshMobility → {url}")
     print(f"Log file        → {log_path}")
     app.run(host="0.0.0.0", port=args.port, debug=False, threaded=True)
 
