@@ -1616,6 +1616,9 @@ function _addNodeFeature(f) {
   marker.bindTooltip(nid, { direction: "top", offset: [0, -6] });
 
   marker.on("click", (e) => {
+    if (typeof TimeMap !== "undefined" && TimeMap.isActive()) {
+      TimeMap.handleClick(e.latlng.lat, e.latlng.lng); return;
+    }
     if (e.originalEvent.shiftKey) {
       Editor.removeNode(nid);
     } else if (Editor.isDrawingLine()) {
