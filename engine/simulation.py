@@ -1,5 +1,5 @@
 """
-route_time.engine.simulation
+mesh_mobility.engine.simulation
 ============================
 Discrete-tick simulation engine.
 
@@ -114,7 +114,7 @@ class SimResult:
 
     def to_dict(self) -> dict:
         return {
-            "schema": "jpods.route_time.v1",
+            "schema": "jpods.mesh_mobility.v1",
             "network_id": self.network_id,
             "settings": self.settings,
             "simulation": {

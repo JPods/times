@@ -1,10 +1,10 @@
 """
-route_time.gui.app
-==================
-Flask application entry point for the Route-Time browser GUI.
+mesh_mobility.gui.app
+=====================
+Flask application entry point for the MeshMobility browser GUI.
 
 Usage:
-  python -m route_time.gui [--port 5050] [network_file]
+  python -m mesh_mobility.gui [--port 5050] [network_file]
 
 Opens http://localhost:5050 in the default browser.
 """
@@ -24,8 +24,8 @@ _parent  = os.path.dirname(_rt_dir)
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
-from route_time.gui.api import api, _state, load_jpd, load_podpresenter, load_sketchup_map
-from route_time.engine.network import Network
+from mesh_mobility.gui.api import api, _state, load_jpd, load_podpresenter, load_sketchup_map
+from mesh_mobility.engine.network import Network
 import json
 
 app = Flask(__name__, static_folder=os.path.join(_gui_dir, "static"))
@@ -77,8 +77,8 @@ def index():
 
 @app.route("/examples/<path:filename>")
 def serve_example(filename):
-    """Serve example .jpd and .pdf files from route-time_maps."""
-    maps_dir = os.path.join(os.path.dirname(_rt_dir), "route-time_maps")
+    """Serve example .jpd and .pdf files from mesh_mobility_maps."""
+    maps_dir = os.path.join(os.path.dirname(_rt_dir), "mesh_mobility_maps")
     path = os.path.join(maps_dir, filename)
     if not os.path.isfile(path):
         return "Not found", 404
@@ -104,7 +104,7 @@ def serve_example(filename):
 @app.route("/examples")
 def list_examples():
     """List available example files."""
-    maps_dir = os.path.join(os.path.dirname(_rt_dir), "route-time_maps")
+    maps_dir = os.path.join(os.path.dirname(_rt_dir), "mesh_mobility_maps")
     if not os.path.isdir(maps_dir):
         return "[]", 200, {"Content-Type": "application/json"}
     files = sorted([f for f in os.listdir(maps_dir)
@@ -148,14 +148,14 @@ def _preload(path: str):
     _state["network"] = net
     _state["network_path"] = path
     if structs_data or cps_data:
-        from route_time.gui.api import _restore_structures
+        from mesh_mobility.gui.api import _restore_structures
         _restore_structures(structs_data, cps_data, net)
     if file_settings:
         _state["settings"].update(file_settings)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Route-Time Browser GUI")
+    parser = argparse.ArgumentParser(description="MeshMobility Browser GUI")
     parser.add_argument("network_file", nargs="?", help="Optional .jpd or map.json to open")
     parser.add_argument("--port", type=int, default=5050)
     parser.add_argument("--no-browser", action="store_true")
@@ -173,7 +173,7 @@ def main():
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
 
     # Log to file so external tools (Claude Code) can tail output
-    log_path = os.path.join(_rt_dir, "route_time.log")
+    log_path = os.path.join(_rt_dir, "mesh_mobility.log")
     file_handler = logging.FileHandler(log_path)
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter(

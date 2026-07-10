@@ -1,4 +1,4 @@
-/* Route-Time GUI stylesheet */
+/* MeshMobility GUI stylesheet */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -690,6 +690,19 @@ body {
   cursor: pointer;
 }
 .btn-secondary:hover { background: #333; }
+
+.btn-small {
+  padding: 2px 8px;
+  font-size: 11px;
+  background: #2a2a2a;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 3px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+.btn-small:hover { background: #444; }
+.btn-small.active { background: #2266aa; border-color: #4488cc; }
 
 /* Fixed scale bar */
 .fixed-scale-bar {

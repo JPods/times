@@ -6,7 +6,7 @@ Data sources:
   AADT:    FHWA HPMS via ArcGIS REST (geo.dot.gov) — free, no key
   Crashes: NHTSA FARS bulk CSV download — free, no key
 
-Output: route_time/overlays/
+Output: mesh_mobility/overlays/
   aadt_{st}.geojson          — traffic counts per state
   accidents_{st}.geojson     — fatal crash locations per state
   crash_density_{st}.geojson — crash density per state (grid-aggregated)
@@ -64,7 +64,7 @@ def _get_json(url, timeout=90):
     """Fetch URL, handle gzip, return parsed JSON or None."""
     try:
         req = urllib.request.Request(url, headers={
-            "User-Agent": "JPods/RouteTime-Harvester",
+            "User-Agent": "JPods/MeshMobility-Harvester",
             "Accept-Encoding": "gzip, identity",
         })
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -81,7 +81,7 @@ def _get_bytes(url, timeout=120):
     """Fetch URL, return raw bytes or None."""
     try:
         req = urllib.request.Request(url, headers={
-            "User-Agent": "JPods/RouteTime-Harvester",
+            "User-Agent": "JPods/MeshMobility-Harvester",
         })
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             return resp.read()

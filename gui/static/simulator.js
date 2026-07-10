@@ -1022,7 +1022,7 @@ const Sim = (() => {
     },
 
     // ── Reload network file without restarting server ─────────────────────
-    // Equivalent to "Reload Plugin" for Route-Time: edit .jpd, click Reload.
+    // Equivalent to "Reload Plugin" for MeshMobility: edit .jpd, click Reload.
     // The simulation state is cleared; run again to test the change.
     async reloadNetwork() {
       setStatus("Reloading network file…");

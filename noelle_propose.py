@@ -27,11 +27,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 RT_URL = "http://localhost:5050"
-HISTORY_DIR = Path.home() / "Documents" / "08_JPods" / "03_Technology" / "00_working_code" / "route_time" / "noelle_history"
+HISTORY_DIR = Path.home() / "Documents" / "08_JPods" / "03_Technology" / "00_working_code" / "mesh_mobility" / "noelle_history"
 
 
 def _api(method, path, body=None):
-    """Call Route-Time API."""
+    """Call MeshMobility API."""
     url = f"{RT_URL}{path}"
     data = json.dumps(body).encode() if body else None
     req = urllib.request.Request(url, data=data, method=method,
@@ -41,11 +41,11 @@ def _api(method, path, body=None):
 
 
 def _geocode(query):
-    """Geocode a location using Nominatim (same as Route-Time city search)."""
+    """Geocode a location using Nominatim (same as MeshMobility city search)."""
     import urllib.parse
     q = urllib.parse.quote(query + ", Greenville, SC")
     url = f"https://nominatim.openstreetmap.org/search?q={q}&format=json&limit=1"
-    req = urllib.request.Request(url, headers={"User-Agent": "JPods-RouteTime/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "JPods-MeshMobility/1.0"})
     with urllib.request.urlopen(req, timeout=10) as r:
         results = json.loads(r.read())
     if results:
@@ -113,7 +113,7 @@ PROPOSED_NODES = [
 
 
 def propose():
-    """Place proposed structures on the Route-Time map (not connected)."""
+    """Place proposed structures on the MeshMobility map (not connected)."""
     # Start fresh
     _api("POST", "/api/network/new", {"network_id": "noelle_greenville_draft"})
     print("Created new network: noelle_greenville_draft")
@@ -197,7 +197,7 @@ def diff():
     try:
         current_desc = _api("GET", "/api/network/describe")
     except Exception as e:
-        print(f"Cannot reach Route-Time: {e}")
+        print(f"Cannot reach MeshMobility: {e}")
         return
 
     prev = last.get("topology", {})

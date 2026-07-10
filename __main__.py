@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-route_time.py  —  JPods Route-Time Simulator (Python)
-======================================================
+mesh_mobility.py  —  JPods MeshMobility Simulator (Python)
+===========================================================
 Converts the Java Route-Time simulation to Python.
 Reads .jpd networks or SketchUp map.json files.
 Outputs fleet-median transit times per line for use in itinerary planning.
 
 Usage:
-  python route_time.py <network_file> [options]
+  python mesh_mobility.py <network_file> [options]
 
 Arguments:
   network_file   Path to a .jpd file or a map.json file.
@@ -16,12 +16,12 @@ Options:
   --settings FILE   Path to settings.json  (default: settings.json alongside this script)
   --slots N         Number of demand slots to simulate  (default: 360 = 1 hour)
   --out DIR         Output directory for results  (default: same dir as network_file)
-  --patch           Also write route_time_patch.json (line_id → route_time_ms)
+  --patch           Also write mesh_mobility_patch.json (line_id → route_time_ms)
   --summary         Print a human-readable summary to stdout
 
 Examples:
-  python route_time.py /Applications/RouteTime_JPods/OK_Tulsa_01.jpd --summary
-  python route_time.py map.json --patch --out ./results
+  python mesh_mobility.py /Applications/RouteTime_JPods/OK_Tulsa_01.jpd --summary
+  python mesh_mobility.py map.json --patch --out ./results
 """
 
 import argparse
@@ -29,17 +29,17 @@ import json
 import os
 import sys
 
-# __main__.py lives inside the route_time package.
-# When run as   python -m route_time   the package parent is already on sys.path.
-# When run as   python route_time/__main__.py  we add the parent manually.
+# __main__.py lives inside the mesh_mobility package.
+# When run as   python -m mesh_mobility   the package parent is already on sys.path.
+# When run as   python mesh_mobility/__main__.py  we add the parent manually.
 _this_dir = os.path.dirname(os.path.abspath(__file__))
 _parent   = os.path.dirname(_this_dir)
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
-from route_time.engine import Simulator
-from route_time.io import load_jpd, load_podpresenter, load_sketchup_map
-from route_time.io import write_results, write_itinerary_patch
+from mesh_mobility.engine import Simulator
+from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
+from mesh_mobility.io import write_results, write_itinerary_patch
 
 
 _DEFAULT_SETTINGS = os.path.join(os.path.dirname(__file__), "settings.json")
@@ -69,7 +69,7 @@ def _detect_format(path: str) -> str:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="JPods Route-Time Simulator",
+        description="JPods MeshMobility Simulator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -81,7 +81,7 @@ def main():
     parser.add_argument("--out", default=None,
                         help="Output directory (default: network file directory)")
     parser.add_argument("--patch", action="store_true",
-                        help="Write route_time_patch.json alongside results")
+                        help="Write mesh_mobility_patch.json alongside results")
     parser.add_argument("--summary", action="store_true",
                         help="Print human-readable summary to stdout")
     args = parser.parse_args()
@@ -143,7 +143,7 @@ def _print_summary(result):
     s = d["simulation"]
     print()
     print(f"{'=' * 56}")
-    print(f"  Route-Time Summary — {d['network_id']}")
+    print(f"  MeshMobility Summary — {d['network_id']}")
     print(f"{'=' * 56}")
     print(f"  Passengers generated : {s['passengers_generated']}")
     print(f"  Passengers served    : {s['passengers_served']}")

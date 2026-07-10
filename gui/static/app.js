@@ -1,5 +1,5 @@
 /**
- * app.js — Route-Time main application
+ * app.js — MeshMobility main application
  * Initialises the Leaflet map, loads/saves networks, coordinates modules.
  */
 
@@ -359,45 +359,124 @@ const Grid = (() => {
 
   function _val(id) { return parseFloat(document.getElementById(id).value) || 0; }
 
+  let _measureState = null;  // null | { first: L.LatLng, marker: L.Marker, line: L.Polyline }
+
   function _preview() {
     const sNS = _val("grid-spacing-ns") || 1;
     const sEW = _val("grid-spacing-ew") || 1;
     const eNS = _val("grid-extent-ns")  || 4;
     const eEW = _val("grid-extent-ew")  || 4;
+    const angle = _val("grid-angle") || 0;
     const rows    = Math.round(eNS / sNS) + 1;
     const cols    = Math.round(eEW / sEW) + 1;
     const circles = rows * cols;
-    const stNS    = cols * (rows - 1);   // N-S mid-block stations
-    const stEW    = rows * (cols - 1);   // E-W mid-block stations
+    const stNS    = cols * (rows - 1);
+    const stEW    = rows * (cols - 1);
     const stations = stNS + stEW;
-    const guideways = (stNS + stEW) * 2; // each station = 2 guideway pairs
+    const guideways = (stNS + stEW) * 2;
     const warn = (circles + stations) > 600
       ? `<br><span style="color:#c84">⚠ Large grid — generation may take a few seconds</span>`
       : "";
+    const angleNote = angle !== 0 ? ` · rotated ${angle}°` : "";
     document.getElementById("grid-preview").innerHTML =
       `<strong>${rows} rows × ${cols} cols</strong><br>` +
       `${circles} traffic circles &nbsp;·&nbsp; ${stations} stations<br>` +
       `~${guideways} guideway pairs &nbsp;·&nbsp; ` +
       `${(eNS).toFixed(1)} × ${(eEW).toFixed(1)} mi coverage` +
-      warn;
+      angleNote + warn;
+  }
+
+  function _cleanupMeasure() {
+    if (_measureState) {
+      if (_measureState.marker) map.removeLayer(_measureState.marker);
+      if (_measureState.line)   map.removeLayer(_measureState.line);
+      _measureState = null;
+    }
+    map.off("click", _onMeasureClick);
+    map.getContainer().style.cursor = "";
+    const btn = document.getElementById("grid-measure-btn");
+    if (btn) btn.classList.remove("active");
+  }
+
+  function _onMeasureClick(e) {
+    if (!_measureState) {
+      // First click — place marker
+      _measureState = {
+        first: e.latlng,
+        marker: L.circleMarker(e.latlng, {
+          radius: 6, color: "#4488cc", fillColor: "#4488cc", fillOpacity: 0.8, weight: 2,
+        }).addTo(map),
+        line: null,
+      };
+      setStatus("Measure: click second point along the street direction");
+    } else {
+      // Second click — compute angle and fill input
+      const p1 = _measureState.first;
+      const p2 = e.latlng;
+      // Draw the measured line
+      _measureState.line = L.polyline([p1, p2], {
+        color: "#4488cc", weight: 2, dashArray: "6,4",
+      }).addTo(map);
+
+      // Bearing from p1 to p2 (degrees clockwise from north)
+      const dLon = (p2.lng - p1.lng) * Math.cos((p1.lat + p2.lat) / 2 * Math.PI / 180);
+      const dLat = p2.lat - p1.lat;
+      let bearing = Math.atan2(dLon, dLat) * 180 / Math.PI;
+      // Normalize to -90..+90 (grid angle, not direction — a street at 210° is same grid as 30°)
+      while (bearing > 90)  bearing -= 180;
+      while (bearing < -90) bearing += 180;
+      bearing = Math.round(bearing);
+
+      document.getElementById("grid-angle").value = bearing;
+      _preview();
+      setStatus(`Grid angle: ${bearing}° (measured from two points)`);
+
+      // Clean up after a short delay so user sees the line
+      setTimeout(_cleanupMeasure, 2000);
+    }
   }
 
   return {
     openDialog() {
       document.getElementById("grid-dialog-backdrop").style.display = "flex";
       _preview();
-      // Live preview on any input change
-      ["grid-spacing-ns","grid-spacing-ew","grid-extent-ns","grid-extent-ew"]
+      ["grid-spacing-ns","grid-spacing-ew","grid-extent-ns","grid-extent-ew","grid-angle"]
         .forEach(id => {
           const el = document.getElementById(id);
           el.oninput = _preview;
-          // Also allow Enter to trigger generate
           el.onkeydown = e => { if (e.key === "Enter") Grid.generate(); };
         });
     },
 
     closeDialog() {
       document.getElementById("grid-dialog-backdrop").style.display = "none";
+      _cleanupMeasure();
+    },
+
+    measureAngle() {
+      // Minimize the dialog so user can click the map
+      document.getElementById("grid-dialog-backdrop").style.display = "none";
+      _cleanupMeasure();
+      map.getContainer().style.cursor = "crosshair";
+      const btn = document.getElementById("grid-measure-btn");
+      if (btn) btn.classList.add("active");
+      setStatus("Measure: click first point along a street");
+      map.on("click", _onMeasureClick);
+
+      // Re-open dialog after measurement (listen for second click)
+      const origClick = _onMeasureClick;
+      const wrappedClick = (e) => {
+        origClick(e);
+        // After second click, re-open dialog
+        if (!_measureState) {
+          map.off("click", wrappedClick);
+          setTimeout(() => {
+            document.getElementById("grid-dialog-backdrop").style.display = "flex";
+          }, 200);
+        }
+      };
+      map.off("click", _onMeasureClick);
+      map.on("click", wrappedClick);
     },
 
     async generate() {
@@ -405,6 +484,7 @@ const Grid = (() => {
       const spacingEW = _val("grid-spacing-ew") || 1;
       const extentNS  = _val("grid-extent-ns")  || 4;
       const extentEW  = _val("grid-extent-ew")  || 4;
+      const angleDeg  = _val("grid-angle") || 0;
 
       const rows    = Math.round(extentNS / spacingNS) + 1;
       const cols    = Math.round(extentEW / spacingEW) + 1;
@@ -415,7 +495,7 @@ const Grid = (() => {
 
       Grid.closeDialog();
       const c = map.getCenter();
-      setStatus(`Generating ${rows}×${cols} grid… ⏳`);
+      setStatus(`Generating ${rows}×${cols} grid at ${angleDeg}°… ⏳`);
 
       const r = await api("POST", "/api/network/grid", {
         center_lat: c.lat,
@@ -424,6 +504,7 @@ const Grid = (() => {
         spacing_ew: spacingEW,
         extent_ns:  extentNS,
         extent_ew:  extentEW,
+        angle_deg:  angleDeg,
         replace:    true,
       });
 
@@ -433,9 +514,10 @@ const Grid = (() => {
       App._render(geojson);
       App.setReadOnly(false);
 
+      const angleNote = angleDeg !== 0 ? ` at ${angleDeg}°` : "";
       setStatus(
         `Grid: ${r.rows}×${r.cols} — ${r.circles} circles, ${r.stations} stations ` +
-        `(${spacingNS}×${spacingEW} mi blocks, ${extentNS}×${extentEW} mi total)`
+        `(${spacingNS}×${spacingEW} mi blocks, ${extentNS}×${extentEW} mi total${angleNote})`
       );
     },
   };

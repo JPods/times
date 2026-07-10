@@ -855,14 +855,29 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
       </p>
 
       <div class="dialog-section">
+        <div class="dialog-section-label">Grid direction</div>
+        <div class="dialog-row">
+          <label>Angle</label>
+          <input id="grid-angle" type="number" value="0" min="-180" max="180" step="1">
+          <span class="dialog-unit">°</span>
+          <button class="btn-small" onclick="Grid.measureAngle()"
+                  title="Click two points on the map to measure the street grid angle"
+                  id="grid-measure-btn">📐 Measure</button>
+        </div>
+        <div class="dialog-hint" style="font-size:10px;margin-top:2px;color:#888">
+          0° = North–South. Austin ≈ 30°. Click Measure then two points along a street.
+        </div>
+      </div>
+
+      <div class="dialog-section">
         <div class="dialog-section-label">Block spacing</div>
         <div class="dialog-row">
-          <label>North–South</label>
+          <label>Up–Down</label>
           <input id="grid-spacing-ns" type="number" value="1" min="0.1" max="50" step="0.5">
           <span class="dialog-unit">miles</span>
         </div>
         <div class="dialog-row">
-          <label>East–West</label>
+          <label>Left–Right</label>
           <input id="grid-spacing-ew" type="number" value="1" min="0.1" max="50" step="0.5">
           <span class="dialog-unit">miles</span>
         </div>
@@ -871,12 +886,12 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
       <div class="dialog-section">
         <div class="dialog-section-label">Total coverage</div>
         <div class="dialog-row">
-          <label>North–South</label>
+          <label>Up–Down</label>
           <input id="grid-extent-ns" type="number" value="4" min="0.5" max="500" step="0.5">
           <span class="dialog-unit">miles</span>
         </div>
         <div class="dialog-row">
-          <label>East–West</label>
+          <label>Left–Right</label>
           <input id="grid-extent-ew" type="number" value="4" min="0.5" max="500" step="0.5">
           <span class="dialog-unit">miles</span>
         </div>

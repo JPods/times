@@ -1,5 +1,5 @@
 """
-route_time.io.map_reader
+mesh_mobility.io.map_reader
 ========================
 Parse a SketchUp-generated map.json (podPresenter format) into a Network.
 
@@ -26,7 +26,7 @@ map.json schema (podPresenter):
   }
 
 Coordinates in map.json are local mm (not lat/lon).
-Route-Time uses length_m for Dijkstra weights; we convert mm → m.
+MeshMobility uses length_m for Dijkstra weights; we convert mm → m.
 Nodes are synthesized from endpoint IDs.
 
 For the SketchUp new format (network.json / seg_NNNNNN IDs):

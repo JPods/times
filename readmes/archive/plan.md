@@ -1,4 +1,4 @@
-# Route-Time — Feature Plan
+# MeshMobility — Feature Plan
 
 Status legend: ✅ Done · 🔧 Partial · ⬜ Not started
 
@@ -8,8 +8,8 @@ Status legend: ✅ Done · 🔧 Partial · ⬜ Not started
 
 | Feature | Status | Test | Outcome |
 |---------|--------|------|---------|
-| Launch server from `03_Technology/` | ✅ | `python -m route_time.gui` opens http://localhost:5050 | Browser opens, empty map loads |
-| Preload network file at startup | ✅ | `python -m route_time.gui network.jpd` | Network renders on load |
+| Launch server from `03_Technology/` | ✅ | `python -m mesh_mobility.gui` opens http://localhost:5050 | Browser opens, empty map loads |
+| Preload network file at startup | ✅ | `python -m mesh_mobility.gui network.jpd` | Network renders on load |
 | Persist map view (pan/zoom) across sessions | ✅ | Pan, reload page | Returns to same view |
 | Restore last-loaded network | ⬜ | Restart server | Last network reloads automatically |
 | Kill stale server on restart | ⬜ | Script or `lsof -ti :5050 | xargs kill -9` | One command restarts cleanly |

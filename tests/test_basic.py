@@ -1,15 +1,15 @@
 """
-Smoke tests — run with:  python -m pytest route_time/tests/ -v
+Smoke tests — run with:  python -m pytest mesh_mobility/tests/ -v
 """
 import os
 import sys
 import pytest
 
-# Allow importing route_time from the repo root
+# Allow importing mesh_mobility from the repo root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
-from route_time.engine import Network, Node, Line, Simulator, find_path_by_id
-from route_time.engine.physics import PhysicsModel
+from mesh_mobility.engine import Network, Node, Line, Simulator, find_path_by_id
+from mesh_mobility.engine.physics import PhysicsModel
 
 SCALE_MAP = os.path.join(
     os.path.dirname(__file__),
@@ -81,7 +81,7 @@ class TestRouting:
 class TestJpdReader:
     @pytest.mark.skipif(not os.path.exists(JPD_EXAMPLE), reason="jpd example not found")
     def test_load_ok_tulsa(self):
-        from route_time.io import load_jpd
+        from mesh_mobility.io import load_jpd
         net, _, _, _ = load_jpd(JPD_EXAMPLE)
         assert len(net.nodes) > 0
         assert len(net.lines) > 0
@@ -90,7 +90,7 @@ class TestJpdReader:
 
     @pytest.mark.skipif(not os.path.exists(JPD_EXAMPLE), reason="jpd example not found")
     def test_all_lines_have_length(self):
-        from route_time.io import load_jpd
+        from mesh_mobility.io import load_jpd
         net, _, _, _ = load_jpd(JPD_EXAMPLE)
         for line in net.lines.values():
             assert line.length_m > 0, f"Line {line.line_id} has zero length"
@@ -103,14 +103,14 @@ class TestJpdReader:
 class TestMapReader:
     @pytest.mark.skipif(not os.path.exists(SCALE_MAP), reason="scale map not found")
     def test_load_scale_map(self):
-        from route_time.io import load_podpresenter
+        from mesh_mobility.io import load_podpresenter
         net = load_podpresenter(SCALE_MAP)
         assert len(net.lines) == 3
         assert len(net.stations) > 0
 
     @pytest.mark.skipif(not os.path.exists(SCALE_MAP), reason="scale map not found")
     def test_scale_map_lengths(self):
-        from route_time.io import load_podpresenter
+        from mesh_mobility.io import load_podpresenter
         net = load_podpresenter(SCALE_MAP)
         # Line 1 should be ~836mm = 0.836m
         line1 = net.lines.get("1")
@@ -125,7 +125,7 @@ class TestMapReader:
 class TestSimulator:
     def _build_loop_network(self) -> Network:
         """Two stations connected by two lines (CCW loop)."""
-        from route_time.engine import Station
+        from mesh_mobility.engine import Station
         net = Network(network_id="loop")
         nA = Node("SA", 0.0, 0.0, is_station=True)
         nB = Node("SB", 0.0, 0.01, is_station=True)

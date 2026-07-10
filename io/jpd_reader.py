@@ -1,5 +1,5 @@
 """
-route_time.io.jpd_reader
+mesh_mobility.io.jpd_reader
 ========================
 Parse a .jpd file into a Network.
 

@@ -10,16 +10,16 @@ every pair of adjacent stations and prints:
 
 Run from:
   cd /Users/williamjames/Documents/08_JPods/03_Technology
-  python3 -m route_time.diag_grid
+  python3 -m mesh_mobility.diag_grid
 """
 
 from __future__ import annotations
 import math
 from typing import Dict, List, Tuple
 
-from route_time.engine.network import Network, configure_jam_threshold
-from route_time.engine.structures import build_traffic_circle, build_station, connect_cps
-from route_time.engine.routing import find_path
+from mesh_mobility.engine.network import Network, configure_jam_threshold
+from mesh_mobility.engine.structures import build_traffic_circle, build_station, connect_cps
+from mesh_mobility.engine.routing import find_path
 
 _MI_TO_M = 1609.344
 

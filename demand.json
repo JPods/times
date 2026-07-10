@@ -1,5 +1,5 @@
 {
-  "_comment": "Passenger demand configuration for Route-Time simulation.",
+  "_comment": "Passenger demand configuration for MeshMobility simulation.",
   "_format": "Each station entry lists destination station IDs and the number of passengers/hour bound for that destination (out of total_slots=360). Stations not listed use uniform random distribution.",
 
   "total_slots": 360,

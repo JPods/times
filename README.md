@@ -8,9 +8,9 @@ generates walk-ride-walk isochrone coverage maps.
 
 ```bash
 cd /Users/williamjames/Documents/08_JPods/03_Technology/00_working_code
-python3 -m route_time.gui          # opens http://localhost:5050
-python3 -m route_time.gui file.jpd # preload a network
-bash route_time/runserver.sh       # kill old server + restart
+python3 -m mesh_mobility.gui          # opens http://localhost:5050
+python3 -m mesh_mobility.gui file.jpd # preload a network
+bash mesh_mobility/runserver.sh       # kill old server + restart
 ```
 
 ## Documentation

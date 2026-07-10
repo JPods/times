@@ -1,2 +1,2 @@
-from route_time.gui.app import main
+from mesh_mobility.gui.app import main
 main()

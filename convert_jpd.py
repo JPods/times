@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 convert_jpd.py — Convert legacy Java Route-Time .jpd files to the new
-Route-Time GUI format (with StructureMeta).
+MeshMobility GUI format (with StructureMeta).
 
 The old format stores raw Switches/Stations/Lines/Groups.
 The new format requires a StructureMeta block that encodes Structure and
@@ -25,10 +25,10 @@ Conversion strategy
 Usage
 -----
     cd /Users/williamjames/Documents/08_JPods/03_Technology
-    python3 -m route_time.convert_jpd <input.jpd> [output.jpd]
+    python3 -m mesh_mobility.convert_jpd <input.jpd> [output.jpd]
 
     # or directly:
-    python3 route_time/convert_jpd.py /Applications/RouteTime_JPods/2mi_oneSide.jpd
+    python3 mesh_mobility/convert_jpd.py /Applications/RouteTime_JPods/2mi_oneSide.jpd
 
 Output defaults to <stem>_new.jpd in the same directory as input.
 """
@@ -50,12 +50,12 @@ _ROOT = os.path.dirname(_HERE)   # .../03_Technology
 if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
-from route_time.engine.network import Network, vincenty_m
-from route_time.engine.structures import (
+from mesh_mobility.engine.network import Network, vincenty_m
+from mesh_mobility.engine.structures import (
     ConnectionPoint, Structure,
     build_station, build_traffic_circle, connect_cps,
 )
-from route_time.io.jpd_writer import save_jpd
+from mesh_mobility.io.jpd_writer import save_jpd
 
 
 # ---------------------------------------------------------------------------
@@ -396,7 +396,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description="Convert legacy JPods .jpd files to new Route-Time GUI format"
+        description="Convert legacy JPods .jpd files to new MeshMobility GUI format"
     )
     parser.add_argument("input", nargs="?",
                         help="Single .jpd file to convert")

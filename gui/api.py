@@ -1,5 +1,5 @@
 """
-route_time.gui.api
+mesh_mobility.gui.api
 ==================
 Flask REST API backing the browser GUI.
 
@@ -74,7 +74,7 @@ def _overlay_path_by_state(prefix):
     center_lat = sum(lats) / len(lats)
     center_lon = sum(lons) / len(lons)
     try:
-        from route_time.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+        from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
         state_fips, _ = fips_from_latlon(center_lat, center_lon)
         if state_fips:
             abbr = STATE_FIPS_TO_ABBR.get(state_fips)
@@ -102,15 +102,15 @@ def _overlay_save(filename, data):
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
-from route_time.engine import Network, Node, Line, Station, Simulator
-from route_time.engine.physics import PhysicsModel
-from route_time.engine.structures import (
+from mesh_mobility.engine import Network, Node, Line, Station, Simulator
+from mesh_mobility.engine.physics import PhysicsModel
+from mesh_mobility.engine.structures import (
     build_traffic_circle, build_station, connect_cps, disconnect_cp,
     rotate_station, rotate_traffic_circle,
     ConnectionPoint, Structure,
 )
-from route_time.io import load_jpd, load_podpresenter, load_sketchup_map
-from route_time.io.jpd_writer import save_jpd, serialise_jpd
+from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
+from mesh_mobility.io.jpd_writer import save_jpd, serialise_jpd
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
@@ -121,7 +121,7 @@ _NOELLE_LOG_DIR = "/Volumes/Allie/data/noelle_sessions"
 
 
 def _noelle_log(action, details=None):
-    """Log a Route-Time session event to Allie's 5TB. Fire-and-forget."""
+    """Log a MeshMobility session event to Allie's 5TB. Fire-and-forget."""
     try:
         os.makedirs(_NOELLE_LOG_DIR, exist_ok=True)
         ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -666,7 +666,7 @@ def _network_center(net: Network) -> List[float]:
     return [sum(lats) / len(lats), sum(lons) / len(lons)]
 
 
-# (traffic circle and station builders are in route_time.engine.structures)
+# (traffic circle and station builders are in mesh_mobility.engine.structures)
 
 
 # ---------------------------------------------------------------------------
@@ -826,7 +826,7 @@ def new_network():
 def reload_network():
     """Re-read the current network file without restarting the server.
 
-    Equivalent to the SketchUp Reload Plugin button for Route-Time.
+    Equivalent to the SketchUp Reload Plugin button for MeshMobility.
     The developer edits a .jpd or map.json file, then clicks Reload Network
     in the GUI — this is the tool boundary for the process capture cycle.
     """
@@ -923,7 +923,7 @@ def process_log_event():
         path.write_text(
             f"# TF — {ts_str}\n\n"
             f"summary: {summary or '(edit me)'}\n"
-            f"code:    route_time/gui/api.py\n"
+            f"code:    mesh_mobility/gui/api.py\n"
             f"context: network={network} passengers={pax_s}/{pax_g}\n"
             f"domain:  RT\n"
         )
@@ -1114,7 +1114,7 @@ def add_line():
     if start_id not in net.nodes or end_id not in net.nodes:
         return jsonify({"error": "Node not found"}), 404
     lid = data.get("id") or _new_id("L")
-    from route_time.engine.network import vincenty_m
+    from mesh_mobility.engine.network import vincenty_m
     sn = net.nodes[start_id]
     en = net.nodes[end_id]
     length_m = vincenty_m(sn.lat, sn.lon, en.lat, en.lon)
@@ -1228,7 +1228,7 @@ def remove_waypoint(line_id: str, idx: int):
 
 def _recalc_line_length(net: Network, line_id: str):
     """Recompute line.length_m to include waypoint path length."""
-    from route_time.engine.network import vincenty_m
+    from mesh_mobility.engine.network import vincenty_m
     line = net.lines[line_id]
     via  = _state["waypoints"].get(line_id, [])
     pts  = ([(line.start_node.lat, line.start_node.lon)] +
@@ -1407,7 +1407,7 @@ def move_structure(sid: str):
         rotate_traffic_circle(net, struct, _state["cps"], struct.arm_headings)
 
     # Log designer adjustment for Noelle learning
-    from route_time.engine.network import vincenty_m as _vm
+    from mesh_mobility.engine.network import vincenty_m as _vm
     move_dist = _vm(new_lat - dlat, new_lon - dlon, new_lat, new_lon)
     _noelle_log("structure_move", {
         "id": sid, "type": struct.structure_type,
@@ -1548,7 +1548,7 @@ def network_city_mesh():
     center_lon = (min_lon + max_lon) / 2
 
     # City span in miles
-    from route_time.engine.network import vincenty_m
+    from mesh_mobility.engine.network import vincenty_m
     span_ns_mi = vincenty_m(min_lat, center_lon, max_lat, center_lon) / 1609.34
     span_ew_mi = vincenty_m(center_lat, min_lon, center_lat, max_lon) / 1609.34
 
@@ -1837,10 +1837,11 @@ def network_grid():
 
     Body (all distances in miles):
       center_lat, center_lon  — geographic centre of the grid
-      spacing_ns              — N-S block size  (default 1.0)
-      spacing_ew              — E-W block size  (default 1.0)
-      extent_ns               — total N-S span  (default 4.0)
-      extent_ew               — total E-W span  (default 4.0)
+      spacing_ns              — up-down block size  (default 1.0)
+      spacing_ew              — left-right block size  (default 1.0)
+      extent_ns               — total up-down span  (default 4.0)
+      extent_ew               — total left-right span  (default 4.0)
+      angle_deg               — grid rotation in degrees CW from north (default 0)
       replace                 — if true (default), clear existing network first
     """
     data = request.json or {}
@@ -1850,6 +1851,7 @@ def network_grid():
     spacing_ew = float(data.get("spacing_ew", 1.0))
     extent_ns  = float(data.get("extent_ns",  4.0))
     extent_ew  = float(data.get("extent_ew",  4.0))
+    angle_deg  = float(data.get("angle_deg",  0.0))
     replace    = bool(data.get("replace", True))
 
     if replace:
@@ -1862,34 +1864,50 @@ def network_grid():
             net = Network(network_id="grid")
             _state["network"] = net
 
-    # Convert miles → metres → degrees
-    dlat_per_m = 1.0 / 111_320.0
-    dlon_per_m = 1.0 / (111_320.0 * math.cos(math.radians(center_lat)))
-
+    # Convert miles → metres
     ns_m = spacing_ns * _MI_TO_M
     ew_m = spacing_ew * _MI_TO_M
 
-    dlat = ns_m * dlat_per_m   # degrees lat per row step (going south)
-    dlon = ew_m * dlon_per_m   # degrees lon per col step (going east)
+    # Degrees per metre at this latitude
+    dlat_per_m = 1.0 / 111_320.0
+    dlon_per_m = 1.0 / (111_320.0 * math.cos(math.radians(center_lat)))
 
     n_rows = max(2, round(extent_ns / spacing_ns) + 1)
     n_cols = max(2, round(extent_ew / spacing_ew) + 1)
 
-    # Top-left corner (northwest)
-    start_lat = center_lat + dlat * (n_rows - 1) / 2.0
-    start_lon = center_lon - dlon * (n_cols - 1) / 2.0
+    # Rotation: angle_deg is clockwise from north
+    angle_rad = math.radians(angle_deg)
+    cos_a = math.cos(angle_rad)
+    sin_a = math.sin(angle_rad)
+
+    def _rotated(row_idx, col_idx):
+        """Return (lat, lon) for grid position (row, col) with rotation applied.
+        Rotate in metres (uniform scale), then convert to lat/lon."""
+        # Offsets from center in metres (before rotation)
+        # Row axis goes "down" (south), col axis goes "right" (east)
+        dy_m = ((n_rows - 1) / 2.0 - row_idx) * ns_m   # positive = north
+        dx_m = (col_idx - (n_cols - 1) / 2.0) * ew_m    # positive = east
+        # Clockwise rotation (north = +y, east = +x)
+        rot_dy = dy_m * cos_a - dx_m * sin_a
+        rot_dx = dx_m * cos_a + dy_m * sin_a
+        # Convert metres back to degrees
+        lat = center_lat + rot_dy * dlat_per_m
+        lon = center_lon + rot_dx * dlon_per_m
+        return lat, lon
+
+    # Arm headings for traffic circles, rotated by grid angle
+    arm_headings = [(h + angle_deg) % 360 for h in [0.0, 90.0, 180.0, 270.0]]
 
     # ── 1. Build traffic circles at every intersection ──────────────────────
     grid: List[List] = []          # grid[r][c] = (struct, cp_dict)
     for r in range(n_rows):
         row = []
         for c in range(n_cols):
-            lat = start_lat - r * dlat
-            lon = start_lon + c * dlon
+            lat, lon = _rotated(r, c)
             struct, cp_dict = build_traffic_circle(
                 net, lat, lon,
                 structure_id=_next_sid("c"),
-                arm_headings=[0.0, 90.0, 180.0, 270.0],
+                arm_headings=arm_headings,
             )
             _state["structures"][struct.structure_id] = struct
             _state["cps"].update(cp_dict)
@@ -1907,29 +1925,33 @@ def network_grid():
         n = max(1, round(block_mi / _STATION_SPACING_MI))
         return [(i + 1) / (n + 1) for i in range(n)]
 
-    # ── 2. N-S blocks: stations between (r,c) and (r+1,c) ─────────────────
+    # ── 2. Up-down blocks: stations between (r,c) and (r+1,c) ──────────────
     for r in range(n_rows - 1):
         for c in range(n_cols):
             positions = _stations_for_block(spacing_ns)
             prev_cps = None  # for chaining station-to-station
             for pi, frac in enumerate(positions):
-                lat = start_lat - (r + frac) * dlat
-                lon = start_lon + c * dlon
-                st, st_cps = build_station(net, lat, lon, heading_deg=0.0,
+                lat, lon = _rotated(r + frac, c)
+                st, st_cps = build_station(net, lat, lon,
+                                           heading_deg=(0.0 + angle_deg) % 360,
                                            structure_id=_next_sid("s"))
                 _state["structures"][st.structure_id] = st
                 _state["cps"].update(st_cps)
                 n_stations += 1
 
+                # Rotated arm headings for CP lookups
+                h_north = (0.0 + angle_deg) % 360
+                h_south = (180.0 + angle_deg) % 360
+
                 if pi == 0:
-                    # First station: connect to north circle south arm
+                    # First station: connect to upper circle's down arm
                     _, cp_dict_north = grid[r][c]
-                    tc_south = _cp_by_heading(cp_dict_north, 180.0)
+                    tc_south = _cp_by_heading(cp_dict_north, h_south)
                     st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
                     if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
                         connect_cps(net, tc_south, st_north, _state["cps"])
                 else:
-                    # Chain: connect to previous station's south CP
+                    # Chain: connect to previous station's down CP
                     st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
                     if prev_cps and st_north and st_north.connected_to is None:
                         prev_south = prev_cps.get(f"{prev_sid}.CP_far_near")
@@ -1937,9 +1959,9 @@ def network_grid():
                             connect_cps(net, prev_south, st_north, _state["cps"])
 
                 if pi == len(positions) - 1:
-                    # Last station: connect to south circle north arm
+                    # Last station: connect to lower circle's up arm
                     _, cp_dict_south = grid[r + 1][c]
-                    tc_north = _cp_by_heading(cp_dict_south, 0.0)
+                    tc_north = _cp_by_heading(cp_dict_south, h_north)
                     st_south = st_cps.get(f"{st.structure_id}.CP_far_near")
                     if tc_north and st_south and tc_north.connected_to is None and st_south.connected_to is None:
                         connect_cps(net, st_south, tc_north, _state["cps"])
@@ -1947,29 +1969,33 @@ def network_grid():
                 prev_cps = st_cps
                 prev_sid = st.structure_id
 
-    # ── 3. E-W blocks: stations between (r,c) and (r,c+1) ─────────────────
+    # ── 3. Left-right blocks: stations between (r,c) and (r,c+1) ─────────
     for r in range(n_rows):
         for c in range(n_cols - 1):
             positions = _stations_for_block(spacing_ew)
             prev_cps = None
             for pi, frac in enumerate(positions):
-                lat = start_lat - r * dlat
-                lon = start_lon + (c + frac) * dlon
-                st, st_cps = build_station(net, lat, lon, heading_deg=90.0,
+                lat, lon = _rotated(r, c + frac)
+                st, st_cps = build_station(net, lat, lon,
+                                           heading_deg=(90.0 + angle_deg) % 360,
                                            structure_id=_next_sid("s"))
                 _state["structures"][st.structure_id] = st
                 _state["cps"].update(st_cps)
                 n_stations += 1
 
+                # Rotated arm headings for CP lookups
+                h_east = (90.0 + angle_deg) % 360
+                h_west = (270.0 + angle_deg) % 360
+
                 if pi == 0:
-                    # First station: connect to west circle east arm
+                    # First station: connect to left circle's right arm
                     _, cp_dict_west = grid[r][c]
-                    tc_east = _cp_by_heading(cp_dict_west, 90.0)
+                    tc_east = _cp_by_heading(cp_dict_west, h_east)
                     st_west = st_cps.get(f"{st.structure_id}.CP_far_near")
                     if tc_east and st_west and tc_east.connected_to is None and st_west.connected_to is None:
                         connect_cps(net, tc_east, st_west, _state["cps"])
                 else:
-                    # Chain: connect to previous station's east CP
+                    # Chain: connect to previous station's right CP
                     st_west = st_cps.get(f"{st.structure_id}.CP_far_near")
                     if prev_cps and st_west and st_west.connected_to is None:
                         prev_east = prev_cps.get(f"{prev_sid}.CP_near_far")
@@ -1977,9 +2003,9 @@ def network_grid():
                             connect_cps(net, prev_east, st_west, _state["cps"])
 
                 if pi == len(positions) - 1:
-                    # Last station: connect to east circle west arm
+                    # Last station: connect to right circle's left arm
                     _, cp_dict_east = grid[r][c + 1]
-                    tc_west = _cp_by_heading(cp_dict_east, 270.0)
+                    tc_west = _cp_by_heading(cp_dict_east, h_west)
                     st_east = st_cps.get(f"{st.structure_id}.CP_near_far")
                     if tc_west and st_east and tc_west.connected_to is None and st_east.connected_to is None:
                         connect_cps(net, st_east, tc_west, _state["cps"])
@@ -1995,6 +2021,7 @@ def network_grid():
         "cols":      n_cols,
         "spacing_ns_mi": spacing_ns,
         "spacing_ew_mi": spacing_ew,
+        "angle_deg": angle_deg,
     })
 
 
@@ -2116,7 +2143,7 @@ def _save_sweep_json(result) -> None:
 
 @api.post("/simulation/run")
 def run_simulation():
-    from route_time.engine.demand import LoadArray
+    from mesh_mobility.engine.demand import LoadArray
 
     if _state.get("sim_active"):
         return jsonify({"error": "Simulation already running"}), 409
@@ -2154,7 +2181,7 @@ def run_simulation():
     _state["sim_error"]    = None
 
     # Tool boundary — simulation start captured.
-    # This is the "Reload Plugin" moment for Route-Time: the developer changed
+    # This is the "Reload Plugin" moment for MeshMobility: the developer changed
     # something and is now testing it. If a fix was being tested, write a TF
     # or TFTS after the run (the browser will prompt).
     network_name = getattr(net, "network_id", "") or ""
@@ -2416,7 +2443,7 @@ def _max_connect_dist_m(candidates) -> float:
     Returns inf when fewer than 2 candidates (no constraint applied).
     """
     import statistics
-    from route_time.engine.network import vincenty_m
+    from mesh_mobility.engine.network import vincenty_m
     if len(candidates) < 2:
         return float("inf")
     nn_dists = []
@@ -2511,8 +2538,8 @@ def _best_effort_connect(
     Each CP is matched at most once.  Uses connect_cps() so CP state and
     line_pairs are updated correctly.
     """
-    from route_time.engine.network import vincenty_m
-    from route_time.engine.structures import connect_cps as _connect_cps
+    from mesh_mobility.engine.network import vincenty_m
+    from mesh_mobility.engine.structures import connect_cps as _connect_cps
 
     global _last_autoconnect_skipped
     _last_autoconnect_skipped = []
@@ -2675,7 +2702,7 @@ def load_suggestion():
 
 def _geojson_to_network(geojson: dict) -> Network:
     """Reconstruct a Network from our own GeoJSON format."""
-    from route_time.engine.network import vincenty_m
+    from mesh_mobility.engine.network import vincenty_m
     meta = geojson.get("metadata", {})
     net = Network(network_id=meta.get("network_id", "suggested"))
     for f in geojson.get("features", []):
@@ -2783,7 +2810,7 @@ def overlay_fetch_all():
 
     # Census data (any US location)
     try:
-        from route_time.scripts.census_overlays import process_location, get_api_key
+        from mesh_mobility.scripts.census_overlays import process_location, get_api_key
         api_key = get_api_key()
         city_key = process_location(center_lat, center_lon, api_key)
         if city_key:
@@ -2805,7 +2832,7 @@ def overlay_fetch_all():
     state_fips = None
     state_abbr = None
     try:
-        from route_time.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+        from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
         state_fips, county_fips = fips_from_latlon(center_lat, center_lon)
         if state_fips:
             state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
@@ -2916,7 +2943,7 @@ def _fetch_aadt(state_abbr, center_lat, center_lon):
         log.info(f"AADT: trying HPMS {st} {year}...")
         try:
             req = urllib.request.Request(url, headers={
-                "User-Agent": "JPods/RouteTime",
+                "User-Agent": "JPods/MeshMobility",
                 "Accept-Encoding": "gzip, identity",
             })
             with urllib.request.urlopen(req, timeout=90) as resp:
@@ -3002,7 +3029,7 @@ def _fetch_fars(state_fips, state_abbr, center_lat, center_lon):
         url = f"https://static.nhtsa.gov/nhtsa/downloads/FARS/{year}/National/FARS{year}NationalCSV.zip"
         log.info(f"FARS: downloading {year} ZIP...")
         try:
-            req = urllib.request.Request(url, headers={"User-Agent": "JPods/RouteTime"})
+            req = urllib.request.Request(url, headers={"User-Agent": "JPods/MeshMobility"})
             with urllib.request.urlopen(req, timeout=180) as resp:
                 raw = resp.read()
         except Exception as e:
@@ -3301,7 +3328,7 @@ def _ensure_overlays(net):
     census_missing = [l for l in missing if l in ("population_density", "property_values", "jobs")]
     if census_missing:
         try:
-            from route_time.scripts.census_overlays import process_location, get_api_key
+            from mesh_mobility.scripts.census_overlays import process_location, get_api_key
             api_key = get_api_key()
             city_key = process_location(center_lat, center_lon, api_key)
             if city_key:
@@ -3321,7 +3348,7 @@ def _ensure_overlays(net):
     state_fips, state_abbr = None, None
     if any(l in missing for l in ("aadt", "accidents", "crash_density")):
         try:
-            from route_time.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+            from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
             state_fips, _ = fips_from_latlon(center_lat, center_lon)
             if state_fips:
                 state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
@@ -3364,7 +3391,7 @@ def _census_overlay_or_fetch(layer_name):
     center_lon = sum(lons) / len(lons)
 
     try:
-        from route_time.scripts.census_overlays import process_location, get_api_key
+        from mesh_mobility.scripts.census_overlays import process_location, get_api_key
         log.info(f"Auto-fetching census data for ({center_lat:.4f}, {center_lon:.4f})...")
         api_key = get_api_key()
         city_key = process_location(center_lat, center_lon, api_key)
@@ -3669,7 +3696,7 @@ def _check_overlap(new_lat: float, new_lon: float, new_type: str,
     Two structures overlap when the distance between their centres is less than
     footprint(new) + footprint(existing).
     """
-    from route_time.engine.network import vincenty_m
+    from mesh_mobility.engine.network import vincenty_m
     new_r = _footprint_m(new_type)
     for sid, struct in _state["structures"].items():
         if sid == exclude_sid:
@@ -3993,10 +4020,10 @@ def noelle_draft():
     acc_path = os.path.join(_rt_dir, "overlays", "accidents.geojson")
     if not os.path.exists(aadt_path):
         return jsonify({"error": "No AADT overlay — load aadt.geojson "
-                        "into route_time/overlays/"}), 404
+                        "into mesh_mobility/overlays/"}), 404
     if not os.path.exists(acc_path):
         return jsonify({"error": "No accident overlay — load "
-                        "accidents.geojson into route_time/overlays/"}), 404
+                        "accidents.geojson into mesh_mobility/overlays/"}), 404
 
     result = _noelle_analyze(aadt_path, acc_path)
     if "error" in result:
@@ -4064,7 +4091,7 @@ def noelle_wild_guess():
     # Find station pairs that need circles between them
     # Use distance threshold: stations within ~2.5 miles get a circle at their midpoint
     max_dist_m = 2.5 * 1609.34
-    from route_time.engine.network import vincenty_m
+    from mesh_mobility.engine.network import vincenty_m
 
     pairs = []
     for i in range(len(stations)):

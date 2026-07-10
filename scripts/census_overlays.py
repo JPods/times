@@ -2,7 +2,7 @@
 """
 census_overlays.py — Pull Census ACS data and generate heatmap GeoJSON overlays.
 
-Generates overlay files for Route-Time:
+Generates overlay files for MeshMobility:
   - population_density_{state}.geojson
   - property_values_{state}.geojson
   - jobs_{state}.geojson
@@ -137,7 +137,7 @@ def census_get(url):
     import gzip
     try:
         req = urllib.request.Request(url, headers={
-            "User-Agent": "JPods/RouteTime",
+            "User-Agent": "JPods/MeshMobility",
             "Accept-Encoding": "gzip, identity",
         })
         with urllib.request.urlopen(req, timeout=60) as resp:

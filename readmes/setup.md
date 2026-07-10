@@ -9,23 +9,23 @@ Reads `.jpd` files and `map.json`, outputs fleet-median transit times per line.
 
 ```bash
 cd /Users/williamjames/Documents/08_JPods/03_Technology/00_working_code
-python -m route_time.gui
+python -m mesh_mobility.gui
 ```
 
 Then open **http://localhost:5050** in the browser.
 
-> Must be run from `03_Technology/00_working_code/` (one level above `route_time/`).
-> Running from inside `route_time/` causes a `ModuleNotFoundError`.
+> Must be run from `03_Technology/00_working_code/` (one level above `mesh_mobility/`).
+> Running from inside `mesh_mobility/` causes a `ModuleNotFoundError`.
 
 --- I changed the path
-/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/route_time/route_time.log
+/Users/williamjames/Documents/08_JPods/03_Technology/00_working_code/mesh_mobility/mesh_mobility.log
 ## Running
 
 ```bash
 cd /Users/williamjames/Documents/08_JPods/03_Technology/00_working_code
-python -m route_time.gui          # opens http://localhost:5050
-python -m route_time.gui network.jpd   # preload a file
-python -m route_time <file>       # CLI only (no browser)
+python -m mesh_mobility.gui          # opens http://localhost:5050
+python -m mesh_mobility.gui network.jpd   # preload a file
+python -m mesh_mobility <file>       # CLI only (no browser)
 ```
 
 ---
@@ -35,7 +35,7 @@ python -m route_time <file>       # CLI only (no browser)
 **Check for ghost processes** (server still holding port 5050 from a previous session):
 
 ```bash
-python route_time/tests/test_server.py
+python mesh_mobility/tests/test_server.py
 # Prints OK if port is free, or PID(s) to kill if occupied.
 ```
 
@@ -43,7 +43,7 @@ python route_time/tests/test_server.py
 
 ```bash
 cd /Users/williamjames/Documents/08_JPods/03_Technology/00_working_code
-bash route_time/runserver.sh
+bash mesh_mobility/runserver.sh
 ```
 
 **Manual kill** if you know the PID:
@@ -53,7 +53,7 @@ lsof -ti :5050          # find PID
 kill <PID>
 ```
 
-> ⚠️ **The `&&` trap:** `kill <PID> && python -m route_time.gui` is unsafe.
+> ⚠️ **The `&&` trap:** `kill <PID> && python -m mesh_mobility.gui` is unsafe.
 > If the PID no longer exists, `kill` returns exit 1, the `&&` short-circuits,
 > and the new server never starts.  Use `runserver.sh` or separate the
 > kill and start into two commands.

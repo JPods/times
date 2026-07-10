@@ -1,5 +1,5 @@
 """
-route_time.io.jpd_writer
+mesh_mobility.io.jpd_writer
 ========================
 Serialize a Network to the .jpd JSON format.
 

@@ -1,9 +1,9 @@
 """
-Server pre-flight check — run before starting Route-Time to detect ghost processes.
+Server pre-flight check — run before starting MeshMobility to detect ghost processes.
 
 Usage:
-  python -m pytest route_time/tests/test_server.py -v
-  python route_time/tests/test_server.py        # standalone, prints result
+  python -m pytest mesh_mobility/tests/test_server.py -v
+  python mesh_mobility/tests/test_server.py        # standalone, prints result
 
 The test PASSES when no process is holding port 5050.
 The test FAILS (with PID list) when the port is occupied, which is the signal
@@ -42,14 +42,14 @@ def _port_open(port: int) -> bool:
 
 def test_port_5050_is_free():
     """
-    Fail loudly if Route-Time server is already running (or some other process
+    Fail loudly if MeshMobility server is already running (or some other process
     has grabbed port 5050).  Provides the PID so the user knows exactly what
     to kill.
 
     To kill the old server:
         kill $(lsof -ti :5050)
     Or use the restart script:
-        bash route_time/runserver.sh
+        bash mesh_mobility/runserver.sh
     """
     pids = _pids_on_port(PORT)
     if pids:
@@ -57,7 +57,7 @@ def test_port_5050_is_free():
         raise AssertionError(
             f"Port {PORT} is already in use by PID(s): {pid_str}\n"
             f"  Kill with:  kill {pid_str}\n"
-            f"  Or restart: bash route_time/runserver.sh"
+            f"  Or restart: bash mesh_mobility/runserver.sh"
         )
 
 
@@ -71,7 +71,7 @@ def test_server_responds_if_running():
     """
     import pytest
     if not _port_open(PORT):
-        pytest.skip("No server on port 5050 — start with: python -m route_time.gui")
+        pytest.skip("No server on port 5050 — start with: python -m mesh_mobility.gui")
 
     import urllib.request
     import urllib.error
@@ -97,7 +97,7 @@ if __name__ == "__main__":
     if pids:
         print(f"[!!] Port {PORT} is held by PID(s): {', '.join(str(p) for p in pids)}")
         print(f"     Kill with:  kill {' '.join(str(p) for p in pids)}")
-        print(f"     Or restart: bash route_time/runserver.sh")
+        print(f"     Or restart: bash mesh_mobility/runserver.sh")
     if accepting and not pids:
         # Port accepting but lsof found nothing (e.g., permission issue)
         print(f"[!!] Port {PORT} is accepting connections but lsof found no PID.")
