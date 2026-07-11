@@ -26,6 +26,7 @@ import logging
 import math
 import os
 import threading
+import time
 import urllib.parse
 import uuid
 from datetime import datetime, timezone
@@ -33,7 +34,7 @@ from datetime import datetime, timezone
 log = logging.getLogger(__name__)
 from typing import Dict, List, Optional, Tuple
 
-from flask import Blueprint, jsonify, request, current_app, Response
+from flask import Blueprint, jsonify, request, current_app, Response, g, has_request_context
 
 # Import engine and IO
 import sys
@@ -242,28 +243,99 @@ def _default_settings() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Server state (single-user desktop tool)
+# ---------------------------------------------------------------------------
+# Session-keyed state — each user gets independent network state
 # ---------------------------------------------------------------------------
 
-_state: Dict = {
-    "network": None,
-    "network_path": None,
-    "settings": _default_settings(),
-    "sim_frames": [],
-    "sim_result": None,
-    "sim_active": False,        # True while a simulation thread is running
-    "sim_instance": None,       # active Simulator object (for progress reads)
-    "sim_error": None,          # error string if sim thread failed
-    "structures":   {},   # structure_id → Structure
-    "cps":          {},   # cp_id → ConnectionPoint
-    "waypoints":    {},   # line_id → [{"lat": float, "lon": float}, ...]
-    "line_pairs":   {},   # line_id → partner_line_id  (guideways always paired)
-    "line_roles":   {},   # line_id → role string, e.g. "siding"
-    "_next_s":      1,    # counter for s1, s2, s3 ... station IDs
-    "_next_c":      1,    # counter for c1, c2, c3 ... circle IDs
-    "overlays":     None, # overlay file references saved with .jpd
-    "_undo_stack":  [],   # list of serialised network snapshots for undo
-}
+_sessions: Dict[str, Dict] = {}
+_sessions_lock = threading.Lock()
+_SESSION_COOKIE = "mm_session"
+_SESSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
+_SESSION_MAX = 200  # max concurrent sessions before LRU cleanup
+
+
+def _new_state() -> Dict:
+    """Create a fresh state dict for a new session."""
+    return {
+        "network": None,
+        "network_path": None,
+        "settings": _default_settings(),
+        "sim_frames": [],
+        "sim_result": None,
+        "sim_active": False,
+        "sim_instance": None,
+        "sim_error": None,
+        "structures":   {},
+        "cps":          {},
+        "waypoints":    {},
+        "line_pairs":   {},
+        "line_roles":   {},
+        "_next_s":      1,
+        "_next_c":      1,
+        "overlays":     None,
+        "_undo_stack":  [],
+        "_last_access": time.time(),
+    }
+
+
+def _get_session_id() -> str:
+    """Get or create a session ID from the request cookie."""
+    sid = request.cookies.get(_SESSION_COOKIE)
+    if sid and sid in _sessions:
+        return sid
+    # Check query param (for API calls that can't send cookies)
+    sid = request.args.get("session")
+    if sid and sid in _sessions:
+        return sid
+    # New session
+    return None
+
+
+def _get_state() -> Dict:
+    """Return the state dict for the current session."""
+    if not has_request_context():
+        return None
+    sid = getattr(g, '_mm_session_id', None)
+    if sid and sid in _sessions:
+        return _sessions[sid]
+    # Fallback: try cookie/param directly
+    sid = _get_session_id()
+    if sid and sid in _sessions:
+        return _sessions[sid]
+    return None
+
+
+class _SessionStateProxy:
+    """Proxy object that makes _state[key] work by delegating to the current session.
+    Falls back to a default state for non-request contexts (startup, background tasks)."""
+
+    _default = _new_state()
+
+    def __getitem__(self, key):
+        s = _get_state()
+        return (s or self._default)[key]
+
+    def __setitem__(self, key, value):
+        s = _get_state()
+        if s:
+            s[key] = value
+        else:
+            self._default[key] = value
+
+    def __contains__(self, key):
+        s = _get_state()
+        return key in (s or self._default)
+
+    def get(self, key, default=None):
+        s = _get_state()
+        return (s or self._default).get(key, default)
+
+    def __repr__(self):
+        sid = _get_session_id() if has_request_context() else None
+        return f"<SessionState sid={sid}>"
+
+
+_state = _SessionStateProxy()
 
 
 _UNDO_MAX = 20  # max snapshots
@@ -273,12 +345,41 @@ _UNDO_SKIP_PATHS = {"/api/network/undo", "/api/network/load", "/api/network/load
 
 
 @api.before_request
+def _ensure_session():
+    """Create or resume a session for every API request."""
+    sid = _get_session_id()
+    if not sid:
+        sid = str(uuid.uuid4())[:12]
+        with _sessions_lock:
+            # LRU cleanup if too many sessions
+            if len(_sessions) >= _SESSION_MAX:
+                oldest = sorted(_sessions.items(), key=lambda x: x[1].get("_last_access", 0))
+                for old_sid, _ in oldest[:len(_sessions) - _SESSION_MAX + 1]:
+                    del _sessions[old_sid]
+                    log.info(f"Session expired: {old_sid}")
+            _sessions[sid] = _new_state()
+        log.info(f"New session: {sid} (total: {len(_sessions)})")
+    else:
+        _sessions[sid]["_last_access"] = time.time()
+    g._mm_session_id = sid
+
+
+@api.after_request
+def _set_session_cookie(response):
+    """Set session cookie on every response."""
+    sid = getattr(g, '_mm_session_id', None)
+    if sid:
+        response.set_cookie(_SESSION_COOKIE, sid, max_age=_SESSION_MAX_AGE,
+                            httponly=True, samesite='Lax')
+    return response
+
+
+@api.before_request
 def _auto_push_undo():
     """Snapshot before any network mutation for undo support.
     Skips moves/rotates — those are high-frequency; browser pushes undo once on mousedown."""
     if request.method in ("POST", "DELETE", "PUT"):
         if request.path not in _UNDO_SKIP_PATHS and request.path.startswith("/api/network"):
-            # Skip structure move/rotate — too frequent for per-call snapshots
             if "/move" in request.path or "/rotate" in request.path:
                 return
             _push_undo()
