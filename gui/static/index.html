@@ -745,7 +745,8 @@
       <button onclick="App.saveFile()">Save</button>
       <button onclick="App.refresh()" title="Re-fetch network from server and redraw all lines">&#8635; Refresh</button>
       <button onclick="NetClipboard.open()" title="Copy network to clipboard or load from pasted text">&#128203; Clipboard…</button>
-      <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button>
+      <!-- Capture hidden — html2canvas misaligns lines. Use Cmd+Shift+4 (Mac) or Win+Shift+S -->
+      <!-- <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button> -->
       <button onclick="App.printReport()" title="Printable network summary — stations, miles, economics">&#128196; Report</button>
       <button onclick="Guide.open()" title="User guide — how to build and simulate a JPods network">? Guide</button>
       <button onclick="ExamplesPanel.toggle()" title="Example networks, videos, and resources">&#128218; Examples</button>
