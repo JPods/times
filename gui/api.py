@@ -673,6 +673,44 @@ def _network_center(net: Network) -> List[float]:
 # Routes
 # ---------------------------------------------------------------------------
 
+@api.get("/library")
+def get_library():
+    """Return the network library index."""
+    maps_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "..", "mesh_mobility_maps")
+    lib_path = os.path.join(maps_dir, "library.json")
+    if os.path.isfile(lib_path):
+        with open(lib_path) as f:
+            return jsonify(json.load(f))
+    # Fallback: scan directory
+    networks = []
+    if os.path.isdir(maps_dir):
+        for fn in sorted(os.listdir(maps_dir)):
+            if not fn.endswith(".jpd"):
+                continue
+            path = os.path.join(maps_dir, fn)
+            try:
+                with open(path) as f:
+                    data = json.load(f)
+                structs = data.get("structures", [])
+                networks.append({
+                    "filename": fn,
+                    "name": fn.replace(".jpd", ""),
+                    "total": len(structs),
+                    "stations": sum(1 for s in structs if s.get("structure_type") == "station"),
+                    "circles": sum(1 for s in structs if s.get("structure_type") == "traffic_circle"),
+                    "country": "US",
+                    "state": "",
+                    "city": fn.replace(".jpd", "").replace("_", " "),
+                    "developer": "JPods",
+                    "modified": "",
+                    "size_kb": round(os.path.getsize(path) / 1024),
+                })
+            except Exception:
+                continue
+    return jsonify({"networks": networks})
+
+
 @api.get("/network")
 def get_network():
     net = _net()

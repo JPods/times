@@ -459,7 +459,7 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Mesh</div>
 
     <div class="ov-row">
-      <button onclick="CityMesh.generate()" class="tool-btn" style="flex:1;background:#1a4a3a;border-color:#2a6a5a">&#127961; City Mesh</button>
+      <button id="btn-city-mesh" onclick="CityMesh.generate()" class="tool-btn" style="flex:1;background:#1a4a3a;border-color:#2a6a5a">&#127961; City Mesh</button>
       <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Custom Mesh</button>
       <button onclick="ToolsPanel.toggleDetail('mesh')" class="ov-info">?</button>
     </div>
@@ -1185,8 +1185,24 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
 
 <script>
 const CityMesh = (() => {
+  const _btnId = "btn-city-mesh";
+  let _originalLabel = "";
+
+  function _setWorking(working) {
+    const btn = document.getElementById(_btnId);
+    if (!btn) return;
+    if (working) {
+      _originalLabel = btn.innerHTML;
+      btn.innerHTML = "&#9203; Calculating…";
+      btn.classList.add("working");
+    } else {
+      btn.innerHTML = _originalLabel || "&#127961; City Mesh";
+      btn.classList.remove("working");
+    }
+  }
+
   async function generate() {
-    // Check prerequisites: need a saved file with overlay data
+    // Check prerequisites: need a city boundary
     let fence = CitySearch.getFence();
 
     // Try server state if browser lost the fence
@@ -1200,15 +1216,14 @@ const CityMesh = (() => {
 
     if (!fence) {
       alert(
-        "City Mesh requires these steps first:\n\n" +
-        "1. Find City → Go (sets the city boundary)\n" +
-        "2. Save (establishes the file)\n" +
-        "3. Overlays → Fetch Data (pulls traffic, crash, census data)\n" +
-        "4. Save again (embeds data in the file)\n\n" +
-        "Then City Mesh can build a network in the urban areas."
+        "City Mesh requires Find City first.\n\n" +
+        "Use Find City → Go to set the city boundary,\n" +
+        "then click City Mesh again."
       );
       return;
     }
+
+    _setWorking(true);
 
     // Auto-fetch overlays if not already loaded
     setStatus("City Mesh: checking overlay data…");
@@ -1237,6 +1252,7 @@ const CityMesh = (() => {
       });
       const data = await r.json();
       if (!r.ok) {
+        _setWorking(false);
         alert("City Mesh: " + (data.error || "failed"));
         return;
       }
@@ -1251,6 +1267,8 @@ const CityMesh = (() => {
       App._render(geojson);
     } catch (e) {
       alert("City Mesh failed: " + e.message);
+    } finally {
+      _setWorking(false);
     }
   }
   return { generate };

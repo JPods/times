@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeshMobility — Design Transit for Your City</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #e0e0e0; background: #0a1520; }
+  a { color: #5cb8ff; text-decoration: none; }
+
+  .hero {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 40px 24px;
+    background: radial-gradient(ellipse at 50% 30%, #0f2a40 0%, #0a1520 70%);
+  }
+  .hero h1 {
+    font-size: 3.2em; font-weight: 300; letter-spacing: -1px;
+    margin-bottom: 12px;
+  }
+  .hero h1 span { color: #2e8b57; font-weight: 600; }
+  .hero .tagline {
+    font-size: 1.3em; color: #8aa; max-width: 580px;
+    margin-bottom: 40px; line-height: 1.6;
+  }
+
+  .cta-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 48px; }
+  .cta {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 16px 36px; border-radius: 10px; font-size: 1.1em; font-weight: 600;
+    transition: transform 0.15s, box-shadow 0.2s; cursor: pointer;
+  }
+  .cta:hover { transform: translateY(-2px); text-decoration: none; }
+  .cta-primary { background: #2e8b57; color: white; box-shadow: 0 4px 20px rgba(46,139,87,0.35); }
+  .cta-primary:hover { box-shadow: 0 6px 28px rgba(46,139,87,0.5); color: white; }
+  .cta-secondary { background: rgba(255,255,255,0.08); color: #bdd; border: 1px solid rgba(255,255,255,0.15); }
+  .cta-secondary:hover { background: rgba(255,255,255,0.14); color: white; }
+
+  .stats {
+    display: flex; gap: 40px; flex-wrap: wrap; justify-content: center;
+    margin-bottom: 56px;
+  }
+  .stat { text-align: center; }
+  .stat .num { font-size: 2.2em; font-weight: 700; color: white; }
+  .stat .lbl { font-size: 0.85em; color: #6a8a8a; margin-top: 2px; }
+
+  .features {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px; max-width: 900px; margin-bottom: 56px;
+  }
+  .feature {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; padding: 24px;
+  }
+  .feature .icon { font-size: 1.6em; margin-bottom: 8px; }
+  .feature h3 { font-size: 1em; color: #ddd; margin-bottom: 6px; font-weight: 600; }
+  .feature p { font-size: 0.9em; color: #8aa; line-height: 1.5; }
+
+  .video-section {
+    max-width: 700px; text-align: center; margin-bottom: 56px;
+  }
+  .video-section h2 { font-size: 1.3em; color: #bdd; margin-bottom: 16px; font-weight: 400; }
+  .video-links { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .video-link {
+    padding: 10px 20px; background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+    font-size: 0.9em; color: #9bb; transition: background 0.15s;
+  }
+  .video-link:hover { background: rgba(255,255,255,0.12); color: #dff; }
+  .video-link .dur { color: #567; margin-left: 4px; }
+
+  .bottom-bar {
+    padding: 32px 24px; text-align: center;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .bottom-bar .by { color: #456; font-size: 0.9em; margin-bottom: 8px; }
+  .bottom-bar .by a { color: #6a9; }
+  .bottom-bar .links { font-size: 0.85em; color: #345; }
+  .bottom-bar .links a { color: #578; margin: 0 10px; }
+  .bottom-bar .pirate { font-style: italic; color: #3a5a5a; margin-top: 10px; font-size: 0.9em; }
+
+  @media (max-width: 600px) {
+    .hero h1 { font-size: 2.2em; }
+    .cta-row { flex-direction: column; align-items: center; }
+    .stats { gap: 24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+
+  <h1><span>Mesh</span>Mobility</h1>
+  <p class="tagline">
+    Free software to design a JPods solar-powered transit network for your city.
+    Real crash data, traffic counts, and census data for all 50 states.
+  </p>
+
+  <div class="cta-row">
+    <a href="/app" class="cta cta-primary">Launch MeshMobility</a>
+    <a href="/citytool" class="cta cta-secondary">CityTool — See Your City's Numbers</a>
+    <a href="/library" class="cta cta-secondary">Library — Browse City Networks</a>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="num">50</div><div class="lbl">states with data</div></div>
+    <div class="stat"><div class="num">10&times;</div><div class="lbl">lower cost than highways</div></div>
+    <div class="stat"><div class="num">24/7</div><div class="lbl">on-demand mobility</div></div>
+    <div class="stat"><div class="num">Free</div><div class="lbl">open to everyone</div></div>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <div class="icon">&#127961;</div>
+      <h3>City Mesh</h3>
+      <p>Search any US city. One click generates a complete network fitted to the city boundary, aligned to the street grid.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#128200;</div>
+      <h3>CityTool</h3>
+      <p>Type a city name. See build cost, annual savings, and payback in 10 seconds. The numbers are radical — and conservative.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#128752;</div>
+      <h3>Crash &amp; Traffic Data</h3>
+      <p>AADT traffic counts, fatal crashes, all-severity crash density, census population, property values, and jobs — overlaid on the map.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#129302;</div>
+      <h3>Noelle AI</h3>
+      <p>AI-assisted network design. Draft a starting layout, refine based on data, score your network across 5 dimensions.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#128736;</div>
+      <h3>10xMakers</h3>
+      <p>Move from screen to street. Kits from $50 to $300 — cargo robots, scale models, rideable vehicles. Build what you design.</p>
+    </div>
+    <div class="feature">
+      <div class="icon">&#127758;</div>
+      <h3>Physical Internet&reg;</h3>
+      <p>Packet-switched transit. The same paradigm shift that let the Internet replace the telephone network — applied to physical movement.</p>
+    </div>
+  </div>
+
+  <div class="video-section">
+    <h2>Training Videos</h2>
+    <div class="video-links">
+      <a href="/videos/citytool-60s" class="video-link">60-Second CityTool <span class="dur">1m</span></a>
+      <a href="/videos/first-network" class="video-link">First Network <span class="dur">5m</span></a>
+      <a href="/videos/noelle-design" class="video-link">Designing with Noelle <span class="dur">4m</span></a>
+      <a href="/videos/simulation" class="video-link">Simulation <span class="dur">3m</span></a>
+      <a href="/videos/capital-report" class="video-link">Capital Report <span class="dur">2m</span></a>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-bar">
+  <div class="by">Built by <a href="https://jpods.com">JPods</a> — inventor of solar-powered transport networks (US Patent 6,810,817, 2002)</div>
+  <div class="links">
+    <a href="https://jpods.com">jpods.com</a>
+    <a href="https://10xmakers.com">10xMakers.com</a>
+    <a href="https://betterphysics.com">BetterPhysics.com</a>
+  </div>
+  <div class="pirate">Want a sustainable future? Create it. — Pirates and Patriots.</div>
+</div>
+
+</body>
+</html>

@@ -71,8 +71,18 @@ def _serve_static(filename):
 
 
 @app.route("/")
+def landing():
+    return _serve_static("landing.html")
+
+
+@app.route("/app")
 def index():
     return _serve_static("index.html")
+
+
+@app.route("/library")
+def library():
+    return _serve_static("library.html")
 
 
 @app.route("/examples/<path:filename>")

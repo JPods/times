@@ -747,8 +747,20 @@ body {
   font-size: 11px;
   cursor: pointer;
   text-align: center;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s, box-shadow 0.15s;
+  user-select: none;
 }
-.tool-btn:hover { background: #3a4a3a; border-color: #5a8a5a; }
+.tool-btn:hover { background: #3a5a3a; border-color: #6aaa6a; color: #bfe; box-shadow: 0 0 6px rgba(100,200,150,0.25); }
+.tool-btn:active { background: #5a8a5a; border-color: #8cc8a8; transform: scale(0.96); color: white; }
+.tool-btn.working {
+  background: #2a4a6a; border-color: #4488cc; color: #8cf;
+  cursor: wait; pointer-events: none;
+  animation: pulse-working 1.2s ease-in-out infinite;
+}
+@keyframes pulse-working {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.65; }
+}
 
 /* Overlay panel */
 .ov-row {

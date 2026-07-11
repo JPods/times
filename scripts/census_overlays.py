@@ -295,16 +295,122 @@ def process_city(city_name, api_key):
     print(f"  Done: {city_name}")
 
 
+def process_state(state_fips, api_key):
+    """Fetch census overlays for an entire state (all counties, all tracts)."""
+    abbr = STATE_FIPS_TO_ABBR.get(state_fips)
+    if not abbr:
+        print(f"Unknown state FIPS: {state_fips}")
+        return
+
+    # Skip if already done
+    if (OVERLAY_DIR / f"population_density_{abbr}.geojson").exists():
+        print(f"  {abbr.upper()}: already exists, skipping")
+        return
+
+    print(f"\n{'='*60}")
+    print(f"  {abbr.upper()} (state FIPS={state_fips}) — statewide")
+    print(f"{'='*60}")
+
+    # Fetch tract centroids for all counties (county="*" is not supported by TIGERweb)
+    # Instead, fetch county list first, then centroids per county
+    centroids = {}
+    try:
+        county_url = (f"https://api.census.gov/data/2022/acs/acs5?"
+                      f"get=NAME&for=county:*&in=state:{state_fips}&key={api_key}")
+        county_data = census_get(county_url)
+        if county_data and len(county_data) > 1:
+            counties = [row[-1] for row in county_data[1:]]
+        else:
+            counties = []
+    except Exception as e:
+        print(f"  FAILED to list counties: {e}")
+        return
+
+    print(f"  {len(counties)} counties")
+    for ci, county in enumerate(counties):
+        try:
+            c = fetch_tract_centroids(state_fips, county)
+            if c:
+                centroids.update(c)
+        except Exception:
+            pass
+        if (ci + 1) % 20 == 0:
+            print(f"    centroids: {ci+1}/{len(counties)} counties, {len(centroids)} tracts")
+
+    if not centroids:
+        print("  FAILED to fetch any centroids. Skipping.")
+        return
+    print(f"  {len(centroids)} total tracts")
+
+    # Population density
+    print("  Fetching population...")
+    try:
+        pop_url = (f"https://api.census.gov/data/2022/acs/acs5?"
+                   f"get=NAME,B01003_001E&for=tract:*&in=state:{state_fips}&key={api_key}")
+        pop = census_get(pop_url)
+        if pop and len(pop) > 1:
+            geo = build_overlay(pop, centroids, 1, "population_density",
+                                state_fips, "*", compute_density=True)
+            if geo and geo["features"]:
+                _save_overlay(f"population_density_{abbr}.geojson", geo)
+                print(f"  population_density_{abbr}: {len(geo['features'])} tracts")
+    except Exception as e:
+        print(f"  population FAILED: {e}")
+
+    # Property values
+    print("  Fetching property values...")
+    try:
+        prop_url = (f"https://api.census.gov/data/2022/acs/acs5?"
+                    f"get=NAME,B25077_001E&for=tract:*&in=state:{state_fips}&key={api_key}")
+        prop = census_get(prop_url)
+        if prop and len(prop) > 1:
+            geo = build_overlay(prop, centroids, 1, "property_values",
+                                state_fips, "*")
+            if geo and geo["features"]:
+                _save_overlay(f"property_values_{abbr}.geojson", geo)
+                print(f"  property_values_{abbr}: {len(geo['features'])} tracts")
+    except Exception as e:
+        print(f"  property_values FAILED: {e}")
+
+    # Jobs
+    print("  Fetching employment...")
+    try:
+        jobs_url = (f"https://api.census.gov/data/2022/acs/acs5?"
+                    f"get=NAME,B23025_004E&for=tract:*&in=state:{state_fips}&key={api_key}")
+        jobs = census_get(jobs_url)
+        if jobs and len(jobs) > 1:
+            geo = build_overlay(jobs, centroids, 1, "jobs",
+                                state_fips, "*")
+            if geo and geo["features"]:
+                _save_overlay(f"jobs_{abbr}.geojson", geo)
+                print(f"  jobs_{abbr}: {len(geo['features'])} tracts")
+    except Exception as e:
+        print(f"  jobs FAILED: {e}")
+
+    print(f"  Done: {abbr.upper()}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--city", help="Greenville, Tulsa, or Bloomington")
+    parser.add_argument("--state", help="State FIPS code (e.g. 48 for TX)")
+    parser.add_argument("--all-states", action="store_true",
+                        help="Process all 51 states (skips existing)")
     parser.add_argument("--all", action="store_true")
     args = parser.parse_args()
 
     OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
     api_key = get_api_key()
 
-    if args.all:
+    if args.all_states:
+        for fips in sorted(STATE_FIPS_TO_ABBR.keys()):
+            try:
+                process_state(fips, api_key)
+            except Exception as e:
+                print(f"  {STATE_FIPS_TO_ABBR[fips].upper()} FAILED: {e}")
+    elif args.state:
+        process_state(args.state, api_key)
+    elif args.all:
         for city in CITIES:
             process_city(city, api_key)
     elif args.city:
