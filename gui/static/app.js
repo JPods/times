@@ -505,7 +505,7 @@ const Grid = (() => {
         extent_ns:  extentNS,
         extent_ew:  extentEW,
         angle_deg:  angleDeg,
-        replace:    true,
+        replace:    false,
       });
 
       if (r.error) { alert(r.error); return; }
@@ -1194,6 +1194,18 @@ const NetClipboard = (() => {
     }
   }
 
+  async function _pasteFromClipboard() {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        document.getElementById("netclip-textarea").value = text;
+        document.getElementById("netclip-status").textContent = "Pasted from clipboard. Choose Merge or Merge at Center.";
+      }
+    } catch {
+      document.getElementById("netclip-status").textContent = "Paste failed — use Ctrl+V in the text area.";
+    }
+  }
+
   async function _load() {
     const text = document.getElementById("netclip-textarea").value.trim();
     if (!text) return;
@@ -1207,10 +1219,43 @@ const NetClipboard = (() => {
     Settings.apply(r.settings);
     App.setReadOnly(true);
     _close();
-    setStatus("Network loaded from clipboard");
+    setStatus("Network replaced from clipboard");
   }
 
-  return { open: _open, close: _close, copy: _copy, load: _load };
+  async function _merge(mode) {
+    const text = document.getElementById("netclip-textarea").value.trim();
+    if (!text) {
+      document.getElementById("netclip-status").textContent = "Paste a network first.";
+      return;
+    }
+    document.getElementById("netclip-status").textContent = "Merging…";
+    const body = { content: text, mode: mode };
+    if (mode === "center") {
+      const c = map.getCenter();
+      body.center_lat = c.lat;
+      body.center_lon = c.lng;
+    }
+    const r = await _postRaw("/api/network/merge_text", body);
+    if (r.error) {
+      document.getElementById("netclip-status").textContent = "Merge failed: " + r.error;
+      return;
+    }
+    App._render(r);
+    _close();
+    const msg = `Merged: ${r.merged_structures} structures, ${r.merged_cps} CPs` +
+                (mode === "center" ? " (placed at map center)" : " (original coordinates)");
+    setStatus(msg);
+    if (App.flash) App.flash(msg, 5000);
+  }
+
+  return {
+    open: _open,
+    close: _close,
+    copy: _copy,
+    pasteFromClipboard: _pasteFromClipboard,
+    load: _load,
+    merge: _merge,
+  };
 })();
 
 // ── App module ────────────────────────────────────────────────────────────────
@@ -1413,13 +1458,34 @@ const App = {
   async captureMap() {
     setStatus("Capturing map…");
     try {
+      // Hide UI elements that shouldn't appear in capture
+      const hideEls = document.querySelectorAll(
+        ".leaflet-control-zoom, #palette, .leaflet-control-attribution"
+      );
+      hideEls.forEach(el => el.style.visibility = "hidden");
+
       const canvas = await html2canvas(document.getElementById("map"), {
         useCORS:    true,
         allowTaint: false,
         logging:    false,
-        // Exclude the palette div (it floats over the map) — clone-based approach
-        ignoreElements: el => el.id === "palette",
+        ignoreElements: el => el.id === "palette" || el.id === "sidebar",
       });
+
+      // Restore hidden elements
+      hideEls.forEach(el => el.style.visibility = "");
+
+      // Add city name watermark if available
+      const cityName = document.getElementById("sidebar-city")?.textContent?.trim();
+      if (cityName) {
+        const ctx = canvas.getContext("2d");
+        ctx.font = "bold 18px -apple-system, sans-serif";
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.strokeStyle = "rgba(0,0,0,0.5)";
+        ctx.lineWidth = 3;
+        const text = `${cityName} — JPods MeshMobility`;
+        ctx.strokeText(text, 14, canvas.height - 14);
+        ctx.fillText(text, 14, canvas.height - 14);
+      }
       canvas.toBlob(async (blob) => {
         const dt       = new Date().toISOString().slice(0, 10);
         const filename = `jpods-network-${dt}.png`;

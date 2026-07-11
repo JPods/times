@@ -4,11 +4,21 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   background: #1a1a1a;
   color: #e0e0e0;
   height: 100vh;
   overflow: hidden;
+}
+
+/* Readable panel text — override 10-11px sizes */
+#sidebar .panel, #sidebar .ov-row, #sidebar .ov-btn,
+#sidebar .tool-btn, #sidebar .ov-section-label,
+#sidebar .ov-detail { font-size: 13px; }
+#sidebar h3 { font-size: 15px; }
+#sidebar kbd {
+  background: #2a3a2a; border: 1px solid #4a6a4a; border-radius: 3px;
+  padding: 1px 5px; font-size: 11px; font-family: inherit; color: #bdd;
 }
 
 /* ── Full-window map ──────────────────────────────────────────────────────── */
@@ -690,6 +700,12 @@ body {
   cursor: pointer;
 }
 .btn-secondary:hover { background: #333; }
+
+.sb-nav-btn.active {
+  background: #2a5a3a !important;
+  border-color: #4a8a5a !important;
+  color: #bfe !important;
+}
 
 .btn-small {
   padding: 2px 8px;

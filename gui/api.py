@@ -2826,6 +2826,188 @@ def load_network_text():
                     "overlays": _state.get("overlays")})
 
 
+@api.post("/network/merge_text")
+def merge_network_text():
+    """Merge a pasted network INTO the current network (add, don't replace).
+
+    Body:
+      content   — .jpd file text
+      mode      — "world" (default): keep original lat/lon
+                   "center": shift to center_lat/center_lon
+      center_lat, center_lon — target center when mode="center"
+    """
+    import tempfile
+    data = request.json or {}
+    content = data.get("content", "")
+    mode = data.get("mode", "world")
+    target_lat = float(data.get("center_lat", 0))
+    target_lon = float(data.get("center_lon", 0))
+
+    if not content.strip():
+        return jsonify({"error": "No content to merge"}), 400
+
+    # Ensure we have a network to merge into
+    if _state["network"] is None:
+        _state["network"] = Network(network_id="merged")
+        _clear_edit_state()
+
+    # Parse the incoming network
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".jpd", delete=False) as tmp:
+        tmp.write(content)
+        tmp_path = tmp.name
+
+    try:
+        src_net, src_structs, src_cps, src_settings, src_overlays, src_qa = load_jpd(tmp_path)
+    except Exception as e:
+        return jsonify({"error": f"Parse failed: {e}"}), 500
+    finally:
+        os.unlink(tmp_path)
+
+    # Calculate offset if mode="center"
+    offset_lat, offset_lon = 0.0, 0.0
+    if mode == "center" and target_lat != 0:
+        # Find center of source network
+        src_lats = [s.get("lat", 0) for s in (src_structs or []) if s.get("lat")]
+        src_lons = [s.get("lon", 0) for s in (src_structs or []) if s.get("lon")]
+        if not src_lats:
+            # Try from nodes
+            for n in src_net.nodes.values():
+                if hasattr(n, "lat") and n.lat:
+                    src_lats.append(n.lat)
+                    src_lons.append(n.lon)
+        if src_lats:
+            src_center_lat = sum(src_lats) / len(src_lats)
+            src_center_lon = sum(src_lons) / len(src_lons)
+            offset_lat = target_lat - src_center_lat
+            offset_lon = target_lon - src_center_lon
+
+    # Build ID mapping: old_id → new_id (avoid collisions)
+    dst_net = _state["network"]
+    id_map = {}
+
+    # Merge nodes with new IDs
+    for old_id, node in src_net.nodes.items():
+        new_id = old_id
+        suffix = 1
+        while new_id in dst_net.nodes:
+            new_id = f"{old_id}_m{suffix}"
+            suffix += 1
+        id_map[old_id] = new_id
+        node.id = new_id
+        if hasattr(node, "lat") and node.lat:
+            node.lat += offset_lat
+            node.lon += offset_lon
+        dst_net.nodes[new_id] = node
+
+    # Merge stations
+    for old_id, station in src_net.stations.items():
+        new_id = id_map.get(old_id, old_id)
+        station.id = new_id
+        # Update node references
+        if hasattr(station, "node_ids"):
+            station.node_ids = [id_map.get(nid, nid) for nid in station.node_ids]
+        dst_net.stations[new_id] = station
+
+    # Merge lines with remapped node IDs
+    for old_id, line in src_net.lines.items():
+        new_id = old_id
+        suffix = 1
+        while new_id in dst_net.lines:
+            new_id = f"{old_id}_m{suffix}"
+            suffix += 1
+        id_map[old_id] = new_id
+        line.id = new_id
+        line.start = id_map.get(line.start, line.start)
+        line.end = id_map.get(line.end, line.end)
+        dst_net.lines[new_id] = line
+
+    # Merge structures metadata with new IDs and offset
+    merged_structs = 0
+    merged_cps = 0
+    for s_data in (src_structs or []):
+        old_sid = s_data.get("structure_id", "")
+        new_sid = old_sid
+        suffix = 1
+        while new_sid in _state["structures"]:
+            new_sid = f"{old_sid}_m{suffix}"
+            suffix += 1
+        id_map[old_sid] = new_sid
+
+        s_data["structure_id"] = new_sid
+        if offset_lat != 0:
+            if "lat" in s_data:
+                s_data["lat"] = s_data["lat"] + offset_lat
+            if "lon" in s_data:
+                s_data["lon"] = s_data["lon"] + offset_lon
+
+        # Remap node_ids and cp_ids
+        if "node_ids" in s_data:
+            s_data["node_ids"] = [id_map.get(nid, nid) for nid in s_data["node_ids"]]
+        if "cp_ids" in s_data:
+            s_data["cp_ids"] = [id_map.get(cid, cid) if cid in id_map
+                                else cid.replace(old_sid, new_sid, 1)
+                                for cid in s_data["cp_ids"]]
+        if "line_ids" in s_data:
+            s_data["line_ids"] = [id_map.get(lid, lid) if lid in id_map
+                                  else lid.replace(old_sid, new_sid, 1)
+                                  for lid in s_data["line_ids"]]
+
+        # Create Structure object
+        struct = Structure(
+            structure_id=new_sid,
+            structure_type=s_data.get("structure_type", "station"),
+            cp_ids=s_data.get("cp_ids", []),
+            node_ids=s_data.get("node_ids", []),
+            line_ids=s_data.get("line_ids", []),
+            lat=s_data.get("lat"),
+            lon=s_data.get("lon"),
+            heading_deg=s_data.get("heading_deg", 0),
+        )
+        _state["structures"][new_sid] = struct
+        merged_structs += 1
+
+    # Merge CP metadata
+    for cp_data in (src_cps or []):
+        old_cpid = cp_data.get("cp_id", "")
+        # Find which structure this CP belongs to and remap
+        new_cpid = old_cpid
+        for old_sid, new_sid in id_map.items():
+            if old_cpid.startswith(old_sid + "."):
+                new_cpid = old_cpid.replace(old_sid, new_sid, 1)
+                break
+
+        cp = ConnectionPoint(
+            cp_id=new_cpid,
+            structure_id=id_map.get(cp_data.get("structure_id", ""), cp_data.get("structure_id", "")),
+            heading_deg=cp_data.get("heading_deg", 0),
+            lat=cp_data.get("lat", 0) + offset_lat,
+            lon=cp_data.get("lon", 0) + offset_lon,
+        )
+        # Don't reconnect CPs — leave them open for manual connection
+        _state["cps"][new_cpid] = cp
+        merged_cps += 1
+
+    # Rebuild network graph
+    dst_net.build()
+    _sync_counters()
+
+    log.info(f"Merged: {merged_structs} structures, {merged_cps} CPs, mode={mode}")
+    _noelle_log("merge_network", {
+        "mode": mode,
+        "structures": merged_structs,
+        "cps": merged_cps,
+        "offset_lat": offset_lat,
+        "offset_lon": offset_lon,
+    })
+
+    return jsonify({
+        **_network_to_geojson(dst_net),
+        "merged_structures": merged_structs,
+        "merged_cps": merged_cps,
+        "mode": mode,
+    })
+
+
 @api.post("/network/load_suggestion")
 def load_suggestion():
     """Accept an Allie-suggested GeoJSON network and load it."""

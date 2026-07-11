@@ -26,6 +26,14 @@
     <div id="sidebar-filename" style="font-size:11px;color:#666;min-height:14px;margin-top:2px"></div>
   </div>
 
+  <!-- Persistent toolbar — always visible -->
+  <div id="sidebar-toolbar" style="padding:6px 10px;border-bottom:1px solid #2a3a2a;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
+    <button onclick="SidebarNav.toggle('panel-city-search')" class="tool-btn sb-nav-btn" data-panel="panel-city-search">&#128269; Find City</button>
+    <button onclick="SidebarNav.toggle('panel-tools')" class="tool-btn sb-nav-btn" data-panel="panel-tools">&#9881; Tools</button>
+    <button onclick="SidebarNav.toggle('panel-overlays')" class="tool-btn sb-nav-btn" data-panel="panel-overlays">&#127760; Overlays</button>
+    <button onclick="SidebarNav.toggle('panel-settings')" class="tool-btn sb-nav-btn" data-panel="panel-settings">&#9881; Settings</button>
+  </div>
+
   <!-- City search — toggled by Find City button -->
   <div class="panel" id="panel-city-search" style="display:none">
     <h3 style="display:flex;justify-content:space-between;align-items:center">
@@ -386,6 +394,15 @@
               style="background:none;border:none;color:#c44;font-size:16px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
     </h3>
 
+    <!-- Quick reference — how to use tools -->
+    <div style="font-size:12px;color:#9ab;line-height:1.7;margin-bottom:10px;padding:8px 10px;background:#1a2a1a;border-radius:4px">
+      <div><strong style="color:#8bc">Place:</strong> Click a tool below, then click the map. <kbd>Esc</kbd> to cancel.</div>
+      <div><strong style="color:#8bc">Connect:</strong> Click a CP, then click a 2nd CP to connect. <kbd>Ctrl</kbd>+CP to disconnect.</div>
+      <div><strong style="color:#8bc">Move:</strong> <kbd>Alt</kbd>+drag a CP to move the structure.</div>
+      <div><strong style="color:#8bc">Route:</strong> Waypoint tool + click line to add a bend. Right-click to align.</div>
+      <div><strong style="color:#8bc">Delete:</strong> <kbd>Shift</kbd>+drag to select a region, then <kbd>Delete</kbd>.</div>
+    </div>
+
     <!-- Stations -->
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin-bottom:4px">Stations</div>
 
@@ -723,7 +740,6 @@
     <!-- FILE -->
     <div class="pal-section">
       <div class="pal-label">File</div>
-      <button onclick="CitySearchPanel.toggle()" title="Search for a city — centers map and sets location">&#128269; Find City</button>
       <button onclick="App.newNetwork()">New</button>
       <button onclick="App.openFile(event)" title="Open .jpd file. Shift-click = open + download Noelle's draft for comparison">Open</button>
       <button onclick="App.saveFile()">Save</button>
@@ -741,14 +757,14 @@
               title="Network is editable — click to lock" style="width:100%">&#128275; Edit</button>
     </div>
 
-    <!-- TOOLS — single button opens sidebar panel -->
+    <!-- EXTERNAL LINKS + CITYTOOL -->
     <div class="pal-section">
-      <button onclick="ToolsPanel.toggle()" style="width:100%"
-              title="Stations, circles, guideways, grid, Noelle">&#9881; Tools</button>
-      <button onclick="OverlayPanel.toggle()" style="width:100%"
-              title="Toggle data overlay layers — traffic, crashes, census">&#127760; Overlays</button>
       <button onclick="(function(){var c=document.getElementById('sidebar-city');var q=c&&c.textContent.trim();var url='/citytool'+(q?'?city='+encodeURIComponent(q):'');window.open(url,'_blank')})()" style="width:100%"
               title="Open City Assessment Tool — economic analysis for capital presentations">&#128200; CityTool</button>
+      <button onclick="window.open('https://www.5x5FreeMarket.com','_blank')" style="width:100%"
+              title="5X5 Standard — performance-based regulations for solar-powered mobility networks">&#9878; Regulations</button>
+      <button onclick="window.open('https://www.ClimateChangeRootCause.com','_blank')" style="width:100%"
+              title="Climate Change Root Cause — why Federal monopolies created the crisis">&#127793; Root Cause</button>
     </div>
 
     <!-- SIMULATE -->
@@ -760,7 +776,6 @@
       <button id="btn-timemap" onclick="TimeMap.toggle()"
               title="Isochrone: click a point to see walk-ride-walk travel-time zones (5/10/20/30 min)">&#9711; Isochrone</button>
       <button onclick="Demand.togglePanel()"   title="Set passenger demand per station">&#128100; Demand</button>
-      <button onclick="Settings.togglePanel()" title="Edit simulation settings (vehicle, fleet, timing)">&#9881; Settings</button>
       <div class="pal-row">
         <label>Slots</label>
         <input id="sim-slots" type="number" value="360" min="1" max="3600">
@@ -778,41 +793,10 @@
       </select>
     </div>
 
-    <!-- ALLIE AI -->
-    <div class="pal-section">
-      <div class="pal-label">AI</div>
-      <button onclick="AI.togglePanel()" title="Allie network recommendations">&#129504; Allie</button>
-    </div>
-
-    <!-- HELP -->
+    <!-- HELP hints kept minimal on left -->
     <div class="pal-section pal-hints">
-      <div class="pal-label">Place</div>
-      <div>Click map → place selected tool</div>
-      <div>Esc → cancel tool</div>
-    </div>
-    <div class="pal-section pal-hints">
-      <div class="pal-label">Connect</div>
-      <div>Click CP → select</div>
-      <div>Click 2nd CP → connect pair</div>
-      <div>Ctrl+CP → disconnect</div>
-    </div>
-    <div class="pal-section pal-hints">
-      <div class="pal-label">Move</div>
-      <div>Alt+drag CP → move structure</div>
-      <div>Waypoint tool + drag line → move</div>
-    </div>
-    <div class="pal-section pal-hints">
-      <div class="pal-label">Route lines</div>
-      <div>Waypoint tool + click line → add bend</div>
-      <div>Right-click line → add align pt</div>
-      <div>Shift+waypoint pt → remove</div>
-    </div>
-    <div class="pal-section pal-hints">
-      <div class="pal-label">Delete</div>
-      <div>Shift+drag → select region</div>
-      <div>Delete/Bksp → remove selection</div>
-      <div>Shift+node → remove node</div>
-      <div>Ctrl+line → remove guideway pair</div>
+      <div class="pal-label">Quick ref</div>
+      <div>Open <strong>Tools</strong> panel for full guide</div>
     </div>
 
   </div><!-- /palette-body -->
@@ -923,21 +907,28 @@ document.querySelectorAll('.pal-hints').forEach(el => el.classList.add('collapse
 
     <div class="dialog-body">
       <p class="dialog-hint">
-        Copy the network text below to share it, or paste a network here and click <strong>Load</strong>.
-        All station and circle positions include latitude &amp; longitude.
+        <strong>Copy</strong> your network to share it.<br>
+        <strong>Paste + Merge</strong> adds a network into your current one (doesn't replace).<br>
+        <strong>Paste at Center</strong> places it at the current map view for positioning.
       </p>
       <textarea id="netclip-textarea"
-                style="width:100%;height:220px;font-size:10px;font-family:monospace;
+                style="width:100%;height:200px;font-size:10px;font-family:monospace;
                        background:#111;color:#9dc;border:1px solid #444;border-radius:3px;
                        padding:6px;resize:vertical;box-sizing:border-box"
                 spellcheck="false" autocomplete="off"></textarea>
-      <div id="netclip-status" style="font-size:10px;color:#7a7;margin-top:4px;min-height:14px"></div>
+      <div style="margin-top:6px">
+        <button class="btn-small" onclick="NetClipboard.pasteFromClipboard()"
+                title="Read from system clipboard into the text area above">&#128203; Paste from clipboard</button>
+      </div>
+      <div id="netclip-status" style="font-size:11px;color:#7a7;margin-top:4px;min-height:14px"></div>
     </div>
 
-    <div class="dialog-footer">
+    <div class="dialog-footer" style="flex-wrap:wrap;gap:6px">
       <button class="btn-secondary" onclick="NetClipboard.close()">Cancel</button>
-      <button class="btn-secondary" onclick="NetClipboard.copy()" title="Copy network text to clipboard">&#128203; Copy</button>
-      <button class="btn-primary"   onclick="NetClipboard.load()" title="Load the network in the text area">&#8594; Load</button>
+      <button class="btn-secondary" onclick="NetClipboard.copy()" title="Copy current network to system clipboard">&#128203; Copy</button>
+      <button class="btn-secondary" onclick="NetClipboard.load()" title="Replace current network with pasted text">&#8594; Replace</button>
+      <button class="btn-primary"   onclick="NetClipboard.merge('world')" title="Add pasted network at its original coordinates">&#8853; Merge</button>
+      <button class="btn-primary"   onclick="NetClipboard.merge('center')" title="Add pasted network at current map center">&#127759; Merge at Center</button>
     </div>
 
   </div>
@@ -1275,13 +1266,55 @@ const CityMesh = (() => {
 })();
 </script>
 <script>
+const SidebarNav = (() => {
+  let _autoCollapse = true;
+  const _panels = ["panel-city-search", "panel-tools", "panel-overlays", "panel-settings"];
+
+  function _updateButtons() {
+    document.querySelectorAll(".sb-nav-btn").forEach(btn => {
+      const panelId = btn.getAttribute("data-panel");
+      const panel = document.getElementById(panelId);
+      if (panel && panel.style.display !== "none") {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+  }
+
+  return {
+    toggle(panelId) {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const isOpen = panel.style.display !== "none";
+
+      if (_autoCollapse) {
+        // Close all other panels
+        _panels.forEach(id => {
+          const p = document.getElementById(id);
+          if (p && id !== panelId) p.style.display = "none";
+        });
+      }
+
+      panel.style.display = isOpen ? "none" : "block";
+
+      // Focus search input when opening city search
+      if (panelId === "panel-city-search" && !isOpen) {
+        document.getElementById("city-search").focus();
+      }
+
+      _updateButtons();
+    },
+
+    setAutoCollapse(on) {
+      _autoCollapse = on;
+    },
+  };
+})();
+
 const CitySearchPanel = (() => {
   function toggle() {
-    const el = document.getElementById("panel-city-search");
-    el.style.display = el.style.display === "none" ? "block" : "none";
-    if (el.style.display === "block") {
-      document.getElementById("city-search").focus();
-    }
+    SidebarNav.toggle("panel-city-search");
   }
   return { toggle };
 })();
@@ -1327,8 +1360,7 @@ const ExamplesPanel = (() => {
 <script>
 const ToolsPanel = (() => {
   function toggle() {
-    const el = document.getElementById("panel-tools");
-    el.style.display = el.style.display === "none" ? "block" : "none";
+    SidebarNav.toggle("panel-tools");
   }
   function toggleDetail(key) {
     const el = document.getElementById("tool-detail-" + key);
@@ -1340,9 +1372,9 @@ const ToolsPanel = (() => {
 <script>
 const OverlayPanel = (() => {
   function toggle() {
+    SidebarNav.toggle("panel-overlays");
     const el = document.getElementById("panel-overlays");
-    el.style.display = el.style.display === "none" ? "block" : "none";
-    if (el.style.display === "block") refresh();
+    if (el.style.display !== "none") refresh();
   }
   function toggleDetail(key) {
     const el = document.getElementById("ov-detail-" + key);
