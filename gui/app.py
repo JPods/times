@@ -199,5 +199,10 @@ def main():
     app.run(host="0.0.0.0", port=args.port, debug=False, threaded=True)
 
 
+def create_app():
+    """Factory function for gunicorn: gunicorn 'mesh_mobility.gui.app:create_app()'"""
+    return app
+
+
 if __name__ == "__main__":
     main()

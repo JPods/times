@@ -27,4 +27,27 @@ else
 fi
 
 # Always start — never conditional on the kill result
-cd "$(dirname "$0")/.." && python3 -m mesh_mobility.gui "$@"
+cd "$(dirname "$0")/.."
+
+# Activate venv if present
+VENV="$(dirname "$0")/.venv"
+if [ -d "$VENV" ]; then
+    source "$VENV/bin/activate"
+fi
+
+# Use gunicorn for production (handles concurrent users)
+# Fall back to Flask dev server if gunicorn not installed
+if command -v gunicorn &>/dev/null; then
+    echo "Starting with gunicorn (1 worker, 8 threads — handles ~100 concurrent users)"
+    gunicorn "mesh_mobility.gui.app:create_app()" \
+        --bind 0.0.0.0:$PORT \
+        --workers 1 \
+        --threads 8 \
+        --timeout 120 \
+        --access-logfile - \
+        "$@"
+else
+    echo "gunicorn not found — using Flask dev server (single user only)"
+    echo "Install gunicorn:  pip install gunicorn"
+    python3 -m mesh_mobility.gui "$@"
+fi
