@@ -42,64 +42,52 @@ _gui_dir = os.path.dirname(os.path.abspath(__file__))
 _rt_dir  = os.path.dirname(_gui_dir)
 _parent  = os.path.dirname(_rt_dir)
 
-# Overlay data: 5TB is the durable store, local overlays/ is the working cache
-_OVERLAY_5TB   = "/Volumes/Allie/data/overlays"
-_OVERLAY_LOCAL = os.path.join(_rt_dir, "overlays")
+# ---------------------------------------------------------------------------
+# Overlay data — reads from CrashHarvester library
+# Harvesting is a separate program. MeshMobility is read-only.
+# ---------------------------------------------------------------------------
+from CrashHarvester.reader import MobilityData
+_md = MobilityData()
 
 
-def _overlay_path(filename):
-    """Return the best path for an overlay file: 5TB if mounted, else local cache.
-    Validates that the file contains valid JSON with features."""
-    for d in (_OVERLAY_5TB, _OVERLAY_LOCAL):
-        p = os.path.join(d, filename)
-        if os.path.exists(p) and os.path.getsize(p) > 10:
-            try:
-                with open(p) as f:
-                    data = json.load(f)
-                if isinstance(data, dict) and data.get("features"):
-                    return p
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                continue
-    return None
-
-
-def _overlay_path_by_state(prefix):
-    """Find a state-specific overlay file by detecting state from network centroid."""
-    net = _state.get("network")
-    if not net:
-        return None
-    lats = [n.lat for n in net.nodes.values() if n.lat]
-    lons = [n.lon for n in net.nodes.values() if n.lon]
-    if not lats:
-        return None
-    center_lat = sum(lats) / len(lats)
-    center_lon = sum(lons) / len(lons)
+def _detect_state():
+    """Detect state abbreviation from request params or network centroid."""
+    lat = request.args.get("lat", type=float)
+    lon = request.args.get("lon", type=float)
+    if lat is None or lon is None:
+        net = _state.get("network")
+        if net:
+            lats = [n.lat for n in net.nodes.values() if n.lat]
+            lons = [n.lon for n in net.nodes.values() if n.lon]
+            if lats:
+                lat = sum(lats) / len(lats)
+                lon = sum(lons) / len(lons)
+    if lat is None:
+        return None, None, None
     try:
         from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
-        state_fips, _ = fips_from_latlon(center_lat, center_lon)
+        state_fips, _ = fips_from_latlon(lat, lon)
         if state_fips:
-            abbr = STATE_FIPS_TO_ABBR.get(state_fips)
-            if abbr:
-                p = _overlay_path(f"{prefix}_{abbr}.geojson")
-                if p:
-                    # Also copy to generic so next request is fast
-                    import shutil
-                    dst = os.path.join(_OVERLAY_LOCAL, f"{prefix}.geojson")
-                    shutil.copy2(p, dst)
-                    return p
+            return STATE_FIPS_TO_ABBR.get(state_fips), lat, lon
     except Exception:
         pass
-    return None
+    return None, lat, lon
 
 
-def _overlay_save(filename, data):
-    """Save overlay data to both 5TB (durable) and local (cache)."""
-    for d in (_OVERLAY_5TB, _OVERLAY_LOCAL):
-        os.makedirs(d, exist_ok=True)
-        path = os.path.join(d, filename)
-        with open(path, "w") as f:
-            json.dump(data, f)
-    log.info(f"Overlay saved: {filename} (5TB + local)")
+def _get_overlay_center_radius():
+    """Extract center lat/lon and radius from request params or network centroid."""
+    lat = request.args.get("lat", type=float)
+    lon = request.args.get("lon", type=float)
+    radius = request.args.get("radius", default=10, type=float)
+    if lat is not None and lon is not None:
+        return lat, lon, radius
+    net = _state.get("network")
+    if net:
+        lats = [n.lat for n in net.nodes.values() if n.lat]
+        lons = [n.lon for n in net.nodes.values() if n.lon]
+        if lats:
+            return sum(lats) / len(lats), sum(lons) / len(lons), radius
+    return None, None, radius
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
@@ -889,9 +877,6 @@ def save_network():
     if not path.endswith(".jpd"):
         path = path + ".jpd"
 
-    # Auto-populate census overlays before saving so they embed in the .jpd
-    _ensure_overlays(net)
-
     try:
         save_jpd(net, path, _state["structures"], _state["cps"],
                  _state["settings"], _state.get("overlays"))
@@ -957,7 +942,10 @@ def new_network():
     _state["network_path"] = None
     _state["sim_frames"] = []
     _state["sim_result"] = None
+    _state["overlays"] = None
+    _state["qa"] = None
     _clear_edit_state()
+    _md.clear_cache()
     return jsonify({"network_id": nid})
 
 
@@ -1780,20 +1768,18 @@ def network_city_mesh():
     if not grid_points:
         return jsonify({"error": "No grid points fall within city boundary"}), 400
 
-    # Filter to urban areas — only keep grid points near population, crashes, or traffic
-    urban_pts = []  # (lat, lon) of data signal points
-    for prefix in ("population_density", "crash_density", "aadt", "accidents"):
-        p = _overlay_path(f"{prefix}.geojson")
-        if not p:
-            continue
-        try:
-            with open(p) as f:
-                geo = json.load(f)
-            for feat in geo.get("features", []):
-                coords = feat["geometry"]["coordinates"]
-                urban_pts.append((coords[1], coords[0]))
-        except Exception:
-            continue
+    # Filter to urban areas — only keep grid points near CrashHarvester library data
+    urban_pts = []
+    state_abbr, _, _ = _detect_state()
+    if state_abbr:
+        for dtype in ("population_density", "crash", "traffic", "fatal"):
+            lib_data = _md.get_census(dtype, state_abbr) if dtype == "population_density" else \
+                       _md._get(dtype, state_abbr, None, None, None)
+            if lib_data:
+                for feat in lib_data.get("features", []):
+                    coords = feat.get("geometry", {}).get("coordinates")
+                    if coords:
+                        urban_pts.append((coords[1], coords[0]))
 
     if urban_pts:
         # Keep grid points within 2 miles of any data signal
@@ -1963,6 +1949,611 @@ def network_city_mesh():
         "total_miles": total_miles,
         "span_ns_mi": round(span_ns_mi, 1),
         "span_ew_mi": round(span_ew_mi, 1),
+    })
+
+
+@api.post("/network/line")
+def network_line():
+    """Build a guideway between two user-clicked points.
+    Stations every mile along the line, oriented along the line direction.
+    Airport-to-city connector. Adds to existing network (does not replace)."""
+    from mesh_mobility.engine.network import vincenty_m
+    data = request.json or {}
+    p1 = data.get("point1")  # {lat, lon}
+    p2 = data.get("point2")  # {lat, lon}
+    if not p1 or not p2:
+        return jsonify({"error": "Two points required (point1, point2 with lat/lon)"}), 400
+
+    lat1, lon1 = float(p1["lat"]), float(p1["lon"])
+    lat2, lon2 = float(p2["lat"]), float(p2["lon"])
+    total_m = vincenty_m(lat1, lon1, lat2, lon2)
+    total_mi = total_m / 1609.34
+
+    # Station spacing: 1 mile, minimum 2 stations (at endpoints)
+    station_spacing_mi = 1.0
+    n_stations = max(2, round(total_mi / station_spacing_mi) + 1)
+
+    # Heading from point1 to point2
+    dlat = lat2 - lat1
+    dlon = (lon2 - lon1) * math.cos(math.radians((lat1 + lat2) / 2))
+    heading = math.degrees(math.atan2(dlon, dlat)) % 360
+
+    # Use existing network or create new
+    net = _state.get("network")
+    if not net:
+        net = Network(network_id="line")
+        _state["network"] = net
+        _clear_edit_state()
+    _sync_counters()
+
+    # Place stations along the line
+    placed = []
+    for i in range(n_stations):
+        frac = i / max(1, n_stations - 1)
+        slat = lat1 + (lat2 - lat1) * frac
+        slon = lon1 + (lon2 - lon1) * frac
+        st, st_cps = build_station(net, slat, slon, heading_deg=heading,
+                                    structure_id=_next_sid("s"))
+        _state["structures"][st.structure_id] = st
+        _state["cps"].update(st_cps)
+        placed.append((st, st_cps))
+
+    # Connect consecutive stations
+    connected = 0
+    for i in range(len(placed) - 1):
+        st_a, cps_a = placed[i]
+        st_b, cps_b = placed[i + 1]
+        # far_near = "back" CP, near_far = "front" CP
+        cp_out = cps_a.get(f"{st_a.structure_id}.CP_near_far")
+        cp_in = cps_b.get(f"{st_b.structure_id}.CP_far_near")
+        if not cp_out:
+            cp_out = _cp_by_heading(cps_a, heading)
+        if not cp_in:
+            cp_in = _cp_by_heading(cps_b, (heading + 180) % 360)
+        if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
+            connect_cps(net, cp_out, cp_in, _state["cps"])
+            connected += 1
+
+    net.build()
+    total_miles = round(net.total_length_m() / 1609.34, 1)
+
+    _noelle_log("line_build", {
+        "stations": n_stations, "connected": connected,
+        "heading": round(heading, 1), "length_mi": round(total_mi, 1),
+    })
+
+    return jsonify({
+        "stations": n_stations,
+        "connected": connected,
+        "heading_deg": round(heading, 1),
+        "line_miles": round(total_mi, 1),
+        "total_miles": total_miles,
+    })
+
+
+@api.post("/network/save_drawn_lines")
+def save_drawn_lines():
+    """Save designer-drawn corridor lines for retrospection and iteration."""
+    data = request.json or {}
+    lines = data.get("lines", [])
+    _state["drawn_lines"] = lines
+    # Also save to file for persistence across restarts
+    lines_dir = os.path.join(_rt_dir, "drawn_lines")
+    os.makedirs(lines_dir, exist_ok=True)
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%S")
+    path = os.path.join(lines_dir, f"lines_{ts}.json")
+    with open(path, "w") as f:
+        json.dump({"lines": lines, "saved_at": ts}, f, indent=2)
+    # Also save as "latest"
+    with open(os.path.join(lines_dir, "lines_latest.json"), "w") as f:
+        json.dump({"lines": lines, "saved_at": ts}, f, indent=2)
+    log.info(f"Saved {len(lines)} drawn lines to {path}")
+    return jsonify({"saved": len(lines), "path": path})
+
+
+@api.get("/network/drawn_lines")
+def get_drawn_lines():
+    """Load the most recently saved drawn lines."""
+    # Try in-memory first
+    if _state.get("drawn_lines"):
+        return jsonify({"lines": _state["drawn_lines"]})
+    # Try latest file
+    path = os.path.join(_rt_dir, "drawn_lines", "lines_latest.json")
+    if os.path.exists(path):
+        with open(path) as f:
+            return jsonify(json.load(f))
+    return jsonify({"lines": []})
+
+
+@api.post("/network/build_on_lines")
+def network_build_on_lines():
+    """Build a network on designer-drawn corridor lines.
+
+    Input: {lines: [[{lat, lon}, ...], ...]}
+    Each line is a polyline the designer drew on the map.
+    Places stations every ~0.6 mi along each line, oriented to local heading.
+    Places traffic circles where lines cross within 400m.
+    Connects stations along their line and to circles at intersections.
+    """
+    from mesh_mobility.engine.network import vincenty_m
+    data = request.json or {}
+    lines = data.get("lines", [])
+    if not lines:
+        return jsonify({"error": "No lines provided. Draw corridor lines first."}), 400
+
+    STATION_SPACING_M = 1000  # ~0.6 miles
+
+    # Build new network
+    net = Network(network_id="drawn_corridors")
+    _state["network"] = net
+    _clear_edit_state()
+
+    n_stations = 0
+    n_circles = 0
+
+    # ── Find where lines cross → traffic circles ──
+    circle_points = []
+    cross_threshold_m = 400
+
+    for i in range(len(lines)):
+        for j in range(i + 1, len(lines)):
+            for pi in lines[i]:
+                for pj in lines[j]:
+                    dist = vincenty_m(pi["lat"], pi["lon"], pj["lat"], pj["lon"])
+                    if dist < cross_threshold_m:
+                        mlat = (pi["lat"] + pj["lat"]) / 2
+                        mlon = (pi["lon"] + pj["lon"]) / 2
+                        too_close = any(vincenty_m(mlat, mlon, c[0], c[1]) < 800
+                                        for c in circle_points)
+                        if not too_close:
+                            circle_points.append((mlat, mlon, [i, j]))
+                            break
+                else:
+                    continue
+                break
+
+    # Place traffic circles
+    circle_structs = {}
+    for clat, clon, line_idxs in circle_points:
+        headings = []
+        for li in line_idxs:
+            pts = lines[li]
+            if len(pts) >= 2:
+                dlat = pts[-1]["lat"] - pts[0]["lat"]
+                dlon = (pts[-1]["lon"] - pts[0]["lon"]) * math.cos(math.radians(pts[0]["lat"]))
+                h = math.degrees(math.atan2(dlon, dlat)) % 360
+                headings.extend([h, (h + 180) % 360])
+        headings = sorted(set(round(h / 10) * 10 for h in headings))
+        if len(headings) < 4:
+            headings = [0.0, 90.0, 180.0, 270.0]
+
+        struct, cp_dict = build_traffic_circle(
+            net, clat, clon,
+            structure_id=_next_sid("c"),
+            arm_headings=[float(h) for h in headings[:8]],
+        )
+        _state["structures"][struct.structure_id] = struct
+        _state["cps"].update(cp_dict)
+        circle_structs[(round(clat, 5), round(clon, 5))] = (struct, cp_dict)
+        n_circles += 1
+
+    # ── Place stations along each line ──
+    all_placed = {}  # line_idx → [(struct, cps, lat, lon, heading)]
+
+    for li, line_pts in enumerate(lines):
+        if len(line_pts) < 2:
+            continue
+
+        # Cumulative distance along the polyline
+        cum_dist = [0.0]
+        for k in range(1, len(line_pts)):
+            d = vincenty_m(line_pts[k-1]["lat"], line_pts[k-1]["lon"],
+                           line_pts[k]["lat"], line_pts[k]["lon"])
+            cum_dist.append(cum_dist[-1] + d)
+        total_len = cum_dist[-1]
+        if total_len < 200:
+            continue
+
+        n_seg = max(1, round(total_len / STATION_SPACING_M))
+        station_dists = [total_len * i / n_seg for i in range(n_seg + 1)]
+
+        placed = []
+        for target_d in station_dists:
+            # Interpolate position
+            slat, slon = line_pts[-1]["lat"], line_pts[-1]["lon"]
+            for k in range(1, len(cum_dist)):
+                if cum_dist[k] >= target_d:
+                    frac = (target_d - cum_dist[k-1]) / max(1, cum_dist[k] - cum_dist[k-1])
+                    slat = line_pts[k-1]["lat"] + (line_pts[k]["lat"] - line_pts[k-1]["lat"]) * frac
+                    slon = line_pts[k-1]["lon"] + (line_pts[k]["lon"] - line_pts[k-1]["lon"]) * frac
+                    break
+
+            # Skip if too close to a traffic circle
+            near_circle = any(vincenty_m(slat, slon, cl, cn) < 300
+                              for (cl, cn) in circle_structs)
+            if near_circle:
+                continue
+
+            # Local heading
+            local_heading = 0
+            for k in range(1, len(line_pts)):
+                if cum_dist[k] >= target_d:
+                    dl = line_pts[k]["lat"] - line_pts[k-1]["lat"]
+                    dn = (line_pts[k]["lon"] - line_pts[k-1]["lon"]) * math.cos(math.radians(line_pts[k]["lat"]))
+                    if abs(dl) + abs(dn) > 0.0001:
+                        local_heading = math.degrees(math.atan2(dn, dl)) % 360
+                    break
+
+            st, st_cps = build_station(net, slat, slon, heading_deg=local_heading,
+                                        structure_id=_next_sid("s"))
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            placed.append((st, st_cps, slat, slon, local_heading))
+            n_stations += 1
+
+        all_placed[li] = placed
+
+        # Connect consecutive stations along this line
+        for k in range(1, len(placed)):
+            prev_st, prev_cps, _, _, prev_h = placed[k-1]
+            cur_st, cur_cps, _, _, cur_h = placed[k]
+            cp_out = _cp_by_heading(prev_cps, prev_h)
+            cp_in = _cp_by_heading(cur_cps, (cur_h + 180) % 360)
+            if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
+                connect_cps(net, cp_out, cp_in, _state["cps"])
+
+    # Connect line endpoints to nearest traffic circles
+    for li, placed in all_placed.items():
+        if not placed:
+            continue
+        for endpoint in [placed[0], placed[-1]]:
+            st, st_cps, slat, slon, sh = endpoint
+            best_dist = 2000
+            best_circle = None
+            for (clat, clon), (cstruct, ccps) in circle_structs.items():
+                d = vincenty_m(slat, slon, clat, clon)
+                if d < best_dist:
+                    best_dist = d
+                    best_circle = (cstruct, ccps, clat, clon)
+            if best_circle:
+                cstruct, ccps, clat, clon = best_circle
+                dl = clat - slat
+                dn = (clon - slon) * math.cos(math.radians(slat))
+                h_to = math.degrees(math.atan2(dn, dl)) % 360
+                cp_st = _cp_by_heading(st_cps, h_to)
+                cp_tc = _cp_by_heading(ccps, (h_to + 180) % 360)
+                if cp_st and cp_tc and cp_st.connected_to is None and cp_tc.connected_to is None:
+                    connect_cps(net, cp_st, cp_tc, _state["cps"])
+
+    net.build()
+    total_miles = round(net.total_length_m() / 1609.34, 1)
+
+    _noelle_log("build_on_lines", {
+        "lines": len(lines), "circles": n_circles,
+        "stations": n_stations, "total_miles": total_miles,
+    })
+
+    return jsonify({
+        "lines_used": len(lines),
+        "circles": n_circles,
+        "stations": n_stations,
+        "total_miles": total_miles,
+    })
+
+
+@api.post("/network/crash_mesh")
+def network_crash_mesh():
+    """Build a network from crash corridor lines.
+
+    5-stage algorithm:
+    1. Extract corridor LINES from crash density data (top 10% cells → polylines)
+    2. (Future: Option-drag to adjust lines)
+    3. Place traffic circles where corridors cross
+    4. Place stations along each line, 0.5-0.75 mi apart, oriented to line heading
+    5. Connect along lines and between lines at circles
+    """
+    from mesh_mobility.engine.network import vincenty_m
+    data = request.json or {}
+    fence = data.get("fence")
+    threshold_pct = data.get("threshold_pct", 10)
+
+    if not fence:
+        return jsonify({"error": "No city boundary provided"}), 400
+
+    coords = []
+    if fence.get("type") == "Polygon":
+        coords = fence["coordinates"][0]
+    elif fence.get("type") == "MultiPolygon":
+        for poly in fence["coordinates"]:
+            coords.extend(poly[0])
+    if not coords:
+        return jsonify({"error": "Invalid boundary polygon"}), 400
+
+    lons_f = [c[0] for c in coords]
+    lats_f = [c[1] for c in coords]
+    center_lat = (min(lats_f) + max(lats_f)) / 2
+    center_lon = (min(lons_f) + max(lons_f)) / 2
+
+    # Detect state
+    state_abbr = None
+    try:
+        from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+        state_fips, _ = fips_from_latlon(center_lat, center_lon)
+        if state_fips:
+            state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
+    except Exception:
+        pass
+    if not state_abbr:
+        return jsonify({"error": "Cannot determine state for crash data"}), 400
+
+    # Get crash data from library
+    span_mi = vincenty_m(min(lats_f), center_lon, max(lats_f), center_lon) / 1609.34
+    crash_data = _md.get_crashes(state_abbr, center_lat, center_lon, radius_miles=max(20, span_mi))
+    if not crash_data or not crash_data.get("features"):
+        return jsonify({"error": f"No crash data for {state_abbr.upper()}. Run CrashHarvester first."}), 404
+
+    # Point-in-polygon filter
+    def _pip(px, py, poly):
+        n = len(poly)
+        inside = False
+        j = n - 1
+        for i in range(n):
+            xi, yi = poly[i]
+            xj, yj = poly[j]
+            if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi) + xi):
+                inside = not inside
+            j = i
+        return inside
+
+    poly_coords = coords
+
+    # Filter crash cells to boundary
+    in_boundary = []
+    for f in crash_data["features"]:
+        lon, lat = f["geometry"]["coordinates"]
+        if _pip(lon, lat, poly_coords):
+            in_boundary.append(f)
+
+    if not in_boundary:
+        return jsonify({"error": "No crash data within boundary"}), 400
+
+    # ── STAGE 1: Extract corridor lines from top crash cells ──────────────
+    all_counts = sorted([f["properties"]["crashes"] for f in in_boundary], reverse=True)
+    cutoff_idx = max(1, int(len(all_counts) * threshold_pct / 100))
+    threshold = all_counts[min(cutoff_idx, len(all_counts) - 1)]
+    hot_cells = [(f["geometry"]["coordinates"][1], f["geometry"]["coordinates"][0],
+                  f["properties"]["crashes"])
+                 for f in in_boundary if f["properties"]["crashes"] >= threshold]
+    log.info(f"Crash Mesh Stage 1: {len(hot_cells)} hot cells (threshold={threshold})")
+
+    # Cluster into corridors: cells within ~500m are same corridor
+    cluster_deg = 0.005  # ~500m
+    corridors = []  # each corridor = ordered list of (lat, lon)
+    used = [False] * len(hot_cells)
+
+    # Sort hottest first — seed corridors from biggest concentrations
+    indices = sorted(range(len(hot_cells)), key=lambda i: hot_cells[i][2], reverse=True)
+
+    for seed_idx in indices:
+        if used[seed_idx]:
+            continue
+        corridor = [seed_idx]
+        used[seed_idx] = True
+        # Grow by adding nearest unused neighbor repeatedly
+        grew = True
+        while grew:
+            grew = False
+            tail_lat, tail_lon, _ = hot_cells[corridor[-1]]
+            head_lat, head_lon, _ = hot_cells[corridor[0]]
+            best_tail = (-1, float("inf"))
+            best_head = (-1, float("inf"))
+            for j in range(len(hot_cells)):
+                if used[j]:
+                    continue
+                jlat, jlon, _ = hot_cells[j]
+                dt = abs(jlat - tail_lat) + abs(jlon - tail_lon)
+                dh = abs(jlat - head_lat) + abs(jlon - head_lon)
+                if dt < cluster_deg and dt < best_tail[1]:
+                    best_tail = (j, dt)
+                if dh < cluster_deg and dh < best_head[1]:
+                    best_head = (j, dh)
+            if best_tail[0] >= 0:
+                corridor.append(best_tail[0])
+                used[best_tail[0]] = True
+                grew = True
+            if best_head[0] >= 0 and best_head[0] != best_tail[0]:
+                corridor.insert(0, best_head[0])
+                used[best_head[0]] = True
+                grew = True
+
+        if len(corridor) >= 3:
+            # Convert to (lat, lon) list — already ordered by growth
+            line = [(hot_cells[i][0], hot_cells[i][1]) for i in corridor]
+            corridors.append(line)
+
+    log.info(f"Crash Mesh Stage 1: {len(corridors)} corridor lines extracted")
+
+    # ── STAGE 3: Find where corridors cross → traffic circles ─────────────
+    circle_points = []  # (lat, lon, [corridor_indices])
+    cross_threshold_m = 400  # corridors within 400m of each other = intersection
+
+    for i in range(len(corridors)):
+        for j in range(i + 1, len(corridors)):
+            # Check each point on corridor i against corridor j
+            for plat, plon in corridors[i]:
+                for qlat, qlon in corridors[j]:
+                    dist = vincenty_m(plat, plon, qlat, qlon)
+                    if dist < cross_threshold_m:
+                        # Intersection found — use midpoint
+                        mlat = (plat + qlat) / 2
+                        mlon = (plon + qlon) / 2
+                        # Check not too close to existing circle
+                        too_close = False
+                        for clat, clon, _ in circle_points:
+                            if vincenty_m(mlat, mlon, clat, clon) < 800:
+                                too_close = True
+                                break
+                        if not too_close:
+                            circle_points.append((mlat, mlon, [i, j]))
+                            break  # one intersection per corridor pair is enough
+                else:
+                    continue
+                break
+
+    log.info(f"Crash Mesh Stage 3: {len(circle_points)} intersection circles")
+
+    # ── STAGE 4 & 5: Build network — circles, stations, connections ───────
+    net = Network(network_id="crash_mesh")
+    _state["network"] = net
+    _clear_edit_state()
+
+    n_stations = 0
+    n_circles = 0
+    STATION_SPACING_M = 1000  # ~0.6 miles
+
+    # Place traffic circles at intersections
+    circle_structs = {}  # (lat,lon) → (struct, cp_dict)
+    for clat, clon, corridor_idxs in circle_points:
+        # Determine arm headings from the corridors that cross here
+        headings = []
+        for ci in corridor_idxs:
+            corr = corridors[ci]
+            lat_s, lon_s = corr[0]
+            lat_e, lon_e = corr[-1]
+            dlat = lat_e - lat_s
+            dlon = (lon_e - lon_s) * math.cos(math.radians((lat_s + lat_e) / 2))
+            h = math.degrees(math.atan2(dlon, dlat)) % 360
+            headings.append(h)
+            headings.append((h + 180) % 360)
+        # Deduplicate headings that are too close
+        headings = sorted(set(round(h / 10) * 10 for h in headings))
+        if len(headings) < 4:
+            headings = [0.0, 90.0, 180.0, 270.0]
+
+        struct, cp_dict = build_traffic_circle(
+            net, clat, clon,
+            structure_id=_next_sid("c"),
+            arm_headings=[float(h) for h in headings[:8]],
+        )
+        _state["structures"][struct.structure_id] = struct
+        _state["cps"].update(cp_dict)
+        circle_structs[(round(clat, 5), round(clon, 5))] = (struct, cp_dict)
+        n_circles += 1
+
+    # Place stations along each corridor line
+    corridor_stations = {}  # corridor_idx → [(struct, cps, lat, lon)]
+    for ci, line in enumerate(corridors):
+        # Compute cumulative distance along the line
+        cum_dist = [0.0]
+        for k in range(1, len(line)):
+            d = vincenty_m(line[k-1][0], line[k-1][1], line[k][0], line[k][1])
+            cum_dist.append(cum_dist[-1] + d)
+        total_len = cum_dist[-1]
+        if total_len < 200:
+            continue
+
+        # Compute corridor heading
+        dlat = line[-1][0] - line[0][0]
+        dlon = (line[-1][1] - line[0][1]) * math.cos(math.radians((line[0][0] + line[-1][0]) / 2))
+        heading = math.degrees(math.atan2(dlon, dlat)) % 360
+
+        # Generate station positions at regular intervals
+        n_seg = max(1, round(total_len / STATION_SPACING_M))
+        station_dists = [total_len * i / n_seg for i in range(n_seg + 1)]
+
+        placed = []
+        for target_d in station_dists:
+            # Interpolate position along the polyline
+            for k in range(1, len(cum_dist)):
+                if cum_dist[k] >= target_d:
+                    frac = (target_d - cum_dist[k-1]) / max(1, cum_dist[k] - cum_dist[k-1])
+                    slat = line[k-1][0] + (line[k][0] - line[k-1][0]) * frac
+                    slon = line[k-1][1] + (line[k][1] - line[k-1][1]) * frac
+                    break
+            else:
+                slat, slon = line[-1]
+
+            # Check if a traffic circle is already close — skip station
+            is_circle = False
+            for (clat, clon), _ in circle_structs.items():
+                if vincenty_m(slat, slon, clat, clon) < 300:
+                    is_circle = True
+                    break
+            if is_circle:
+                continue
+
+            # Local heading between neighboring line points
+            local_heading = heading
+            for k in range(1, len(line)):
+                if cum_dist[k] >= target_d:
+                    dl = line[k][0] - line[k-1][0]
+                    dn = (line[k][1] - line[k-1][1]) * math.cos(math.radians(line[k][0]))
+                    if abs(dl) + abs(dn) > 0.0001:
+                        local_heading = math.degrees(math.atan2(dn, dl)) % 360
+                    break
+
+            st, st_cps = build_station(net, slat, slon, heading_deg=local_heading,
+                                        structure_id=_next_sid("s"))
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            placed.append((st, st_cps, slat, slon, local_heading))
+            n_stations += 1
+
+        corridor_stations[ci] = placed
+
+        # Connect consecutive stations along this corridor
+        for k in range(1, len(placed)):
+            prev_st, prev_cps, _, _, prev_h = placed[k-1]
+            cur_st, cur_cps, _, _, cur_h = placed[k]
+            cp_out = _cp_by_heading(prev_cps, prev_h)
+            cp_in = _cp_by_heading(cur_cps, (cur_h + 180) % 360)
+            if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
+                connect_cps(net, cp_out, cp_in, _state["cps"])
+
+    # Connect corridor endpoints to nearest traffic circles
+    for ci, placed in corridor_stations.items():
+        if not placed:
+            continue
+        for endpoint in [placed[0], placed[-1]]:
+            st, st_cps, slat, slon, sh = endpoint
+            best_dist = 2000  # max 2km to connect
+            best_circle = None
+            best_heading = None
+            for (clat, clon), (cstruct, ccps) in circle_structs.items():
+                d = vincenty_m(slat, slon, clat, clon)
+                if d < best_dist:
+                    best_dist = d
+                    best_circle = (cstruct, ccps, clat, clon)
+            if best_circle:
+                cstruct, ccps, clat, clon = best_circle
+                # heading from station to circle
+                dl = clat - slat
+                dn = (clon - slon) * math.cos(math.radians(slat))
+                h_to_circle = math.degrees(math.atan2(dn, dl)) % 360
+                cp_st = _cp_by_heading(st_cps, h_to_circle)
+                cp_tc = _cp_by_heading(ccps, (h_to_circle + 180) % 360)
+                if cp_st and cp_tc and cp_st.connected_to is None and cp_tc.connected_to is None:
+                    connect_cps(net, cp_st, cp_tc, _state["cps"])
+
+    net.build()
+    total_miles = round(net.total_length_m() / 1609.34, 1)
+
+    _noelle_log("crash_mesh", {
+        "corridors": len(corridors),
+        "circles": n_circles,
+        "stations": n_stations,
+        "threshold": threshold,
+        "hot_cells": len(hot_cells),
+        "total_miles": total_miles,
+    })
+
+    return jsonify({
+        "corridors": len(corridors),
+        "circles": n_circles,
+        "stations": n_stations,
+        "hot_cells": len(hot_cells),
+        "threshold": threshold,
+        "total_miles": total_miles,
     })
 
 
@@ -3060,26 +3651,28 @@ def _geojson_to_network(geojson: dict) -> Network:
 
 @api.get("/overlays/aadt")
 def overlay_aadt():
-    """FHWA HPMS traffic data — checks generic, then state file from 5TB."""
-    p = _overlay_path("aadt.geojson")
-    if not p:
-        p = _overlay_path_by_state("aadt")
-    if p:
-        with open(p) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "AADT data not configured — click Fetch Data"}), 404
+    """HPMS traffic data from CrashHarvester library."""
+    center_lat, center_lon, radius = _get_overlay_center_radius()
+    state, _, _ = _detect_state()
+    if not state:
+        return jsonify({"error": "Cannot determine state — place a station first"}), 404
+    data = _md.get_traffic(state, center_lat, center_lon, radius)
+    if data and data.get("features"):
+        return jsonify(data)
+    return jsonify({"error": f"No traffic data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --hpms {state}"}), 404
 
 
 @api.get("/overlays/accidents")
 def overlay_accidents():
-    """NHTSA FARS fatal crash data — checks generic, then state file from 5TB."""
-    p = _overlay_path("accidents.geojson")
-    if not p:
-        p = _overlay_path_by_state("accidents")
-    if p:
-        with open(p) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "Crash data not configured — click Fetch Data"}), 404
+    """FARS fatal crash data from CrashHarvester library."""
+    center_lat, center_lon, radius = _get_overlay_center_radius()
+    state, _, _ = _detect_state()
+    if not state:
+        return jsonify({"error": "Cannot determine state — place a station first"}), 404
+    data = _md.get_fatals(state, center_lat, center_lon, radius)
+    if data and data.get("features"):
+        return jsonify(data)
+    return jsonify({"error": f"No fatal crash data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --fars {state}"}), 404
 
 
 @api.post("/overlays/active")
@@ -3097,19 +3690,42 @@ def get_active_overlays():
     return jsonify(_state.get("overlays") or {})
 
 
+@api.post("/overlays/signal_missing")
+def overlay_signal_missing():
+    """User signals that a data layer is missing for their location.
+    Logs it so we know which cities/states need data harvesting."""
+    data = request.json or {}
+    layer = data.get("layer", "unknown")
+    lat = data.get("lat")
+    lon = data.get("lon")
+    log.warning(f"SIGNAL MISSING DATA: layer={layer} lat={lat} lon={lon}")
+    # Write to Allie's inbox for nightly processing
+    try:
+        import pathlib
+        from datetime import datetime, timezone
+        ts = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')
+        inbox = pathlib.Path.home() / 'Allie' / 'process' / 'inbox'
+        inbox.mkdir(parents=True, exist_ok=True)
+        path = inbox / f'{ts}-signal-missing-{layer}.md'
+        path.write_text(
+            f"# SIGNAL — Missing overlay data\n\n"
+            f"layer: {layer}\n"
+            f"lat: {lat}\n"
+            f"lon: {lon}\n"
+            f"dt: {datetime.now(timezone.utc).isoformat()}\n"
+        )
+    except Exception:
+        pass
+    return jsonify({"message": f"Noted: {layer} data missing at ({lat:.3f}, {lon:.3f}). Will prioritize harvesting."})
+
+
 @api.post("/overlays/fetch")
 def overlay_fetch_all():
-    """Fetch all available overlay data for the current network location.
-
-    Census (population, property values, jobs) — works for any US location.
-    FARS fatal crashes — works for any US state.
-    AADT and all-crash density — only available for pre-harvested cities.
-    """
+    """Check CrashHarvester library for available data at this location.
+    Reports what's available and what's missing. Does not harvest."""
     data = request.json or {}
-    center_lat = None
-    center_lon = None
+    center_lat = center_lon = None
 
-    # Try network centroid first
     net = _state.get("network")
     if net:
         lats = [n.lat for n in net.nodes.values() if n.lat]
@@ -3117,333 +3733,51 @@ def overlay_fetch_all():
         if lats:
             center_lat = sum(lats) / len(lats)
             center_lon = sum(lons) / len(lons)
-
-    # Fall back to map center sent by browser
     if center_lat is None and "lat" in data and "lon" in data:
         center_lat = float(data["lat"])
         center_lon = float(data["lon"])
-
     if center_lat is None:
         return jsonify({"error": "No location — place a station or search for a city first"}), 400
+
     _noelle_log("overlay_fetch", {"lat": center_lat, "lon": center_lon})
-    fetched = []
-    errors = []
 
-    # Census data (any US location)
-    try:
-        from mesh_mobility.scripts.census_overlays import process_location, get_api_key
-        api_key = get_api_key()
-        city_key = process_location(center_lat, center_lon, api_key)
-        if city_key:
-            fetched.extend(["population_density", "property_values", "jobs"])
-            overlays = _state.get("overlays") or {}
-            overlays["city"] = city_key
-            if "files" not in overlays:
-                overlays["files"] = []
-            for layer in ("population_density", "property_values", "jobs"):
-                if layer not in overlays["files"]:
-                    overlays["files"].append(layer)
-            _state["overlays"] = overlays
-        else:
-            errors.append("Census: could not determine US location")
-    except Exception as e:
-        errors.append(f"Census: {e}")
-
-    # Determine state FIPS for FARS + AADT
-    state_fips = None
+    # Detect state from the coordinates we already resolved
     state_abbr = None
     try:
         from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
-        state_fips, county_fips = fips_from_latlon(center_lat, center_lon)
+        state_fips, _ = fips_from_latlon(center_lat, center_lon)
         if state_fips:
             state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
-    except Exception as e:
-        errors.append(f"Location lookup: {e}")
+    except Exception:
+        pass
 
-    # Load ALL available data from 5TB for this state — always reload, never skip
+    fetched = []
+    missing = []
+
+    library_types = {
+        "traffic": "aadt",
+        "fatal": "accidents",
+        "crash": "crash_density",
+        "population_density": "population_density",
+        "property_values": "property_values",
+        "jobs": "jobs",
+    }
+
     if state_abbr:
-        import shutil
-        log.info(f"Fetch Data: checking 5TB for {state_abbr.upper()}...")
-        # All overlay types that might exist on 5TB per state
-        state_prefixes = ["aadt", "accidents", "crash_density", "crashes_all"]
-        for prefix in state_prefixes:
-            src = os.path.join(_OVERLAY_5TB, f"{prefix}_{state_abbr}.geojson")
-            if os.path.exists(src) and os.path.getsize(src) > 100:
-                dst = os.path.join(_OVERLAY_LOCAL, f"{prefix}.geojson")
-                shutil.copy2(src, dst)
-                try:
-                    with open(src) as _f:
-                        _count = len(json.load(_f).get("features", []))
-                except Exception:
-                    _count = "?"
-                name = prefix.replace("crashes_all", "all_crashes")
-                log.info(f"  ✓ {prefix}_{state_abbr}: {_count} features")
-                if name not in fetched:
-                    fetched.append(name)
+        available = _md.available_types(state_abbr)
+        for lib_type, button_name in library_types.items():
+            if lib_type in available:
+                fetched.append(button_name)
             else:
-                log.info(f"  ✗ {prefix}_{state_abbr}: not on 5TB")
-
-        # Also check county-specific census files
-        if county_fips:
-            city_key = f"{state_abbr}_{county_fips}"
-            for prefix in ("population_density", "property_values", "jobs"):
-                src = os.path.join(_OVERLAY_5TB, f"{prefix}_{city_key}.geojson")
-                if os.path.exists(src) and os.path.getsize(src) > 100:
-                    dst = os.path.join(_OVERLAY_LOCAL, f"{prefix}.geojson")
-                    shutil.copy2(src, dst)
-                    try:
-                        with open(src) as _f:
-                            _count = len(json.load(_f).get("features", []))
-                    except Exception:
-                        _count = "?"
-                    log.info(f"  ✓ {prefix}_{city_key}: {_count} features")
-                    if prefix not in fetched:
-                        fetched.append(prefix)
-
-        if fetched:
-            log.info(f"Fetch Data: loaded from 5TB for {state_abbr.upper()}: {fetched}")
-
-        # On-demand fallback for AADT if 5TB didn't have it
-        if "aadt" not in fetched:
-            try:
-                aadt_ok = _fetch_aadt(state_abbr, center_lat, center_lon)
-                if aadt_ok:
-                    fetched.append("aadt")
-            except Exception as e:
-                errors.append(f"AADT: {e}")
-
-    # FARS on-demand fallback if 5TB didn't have it
-    if state_fips and "accidents" not in fetched:
-        try:
-            fars_ok = _fetch_fars(state_fips, state_abbr, center_lat, center_lon)
-            if fars_ok:
-                fetched.extend(["accidents", "crash_density"])
-        except Exception as e:
-            errors.append(f"FARS: {e}")
+                missing.append(button_name)
+        log.info(f"Library: {state_abbr.upper()} available={fetched}, missing={missing}")
 
     return jsonify({
         "fetched": fetched,
+        "missing": missing,
         "location": {"lat": center_lat, "lon": center_lon},
-        "errors": errors,
+        "state": state_abbr,
     })
-
-
-def _fetch_aadt(state_abbr, center_lat, center_lon):
-    """Fetch AADT data from FHWA HPMS for a state, filtered near the network centroid.
-
-    Source: https://geo.dot.gov/server/rest/services/Hosted/HPMS_FULL_{ST}_{YEAR}/FeatureServer/0
-    Fields: aadt (int), route_id, routename, f_system
-    Geometry: polylines — we extract midpoints
-    """
-    import urllib.request, gzip
-    overlay_dir = os.path.join(_rt_dir, "overlays")
-    st = state_abbr.upper()
-
-    # Bounding box ~30 miles around centroid
-    delta = 0.4
-    bbox = f"{center_lon-delta},{center_lat-delta},{center_lon+delta},{center_lat+delta}"
-
-    features = []
-    for year in (2024, 2023, 2022, 2020):
-        base = (
-            f"https://geo.dot.gov/server/rest/services/Hosted/"
-            f"HPMS_FULL_{st}_{year}/FeatureServer/0/query"
-        )
-        params = (
-            f"?where=aadt%3E%3D5000"
-            f"&geometry={bbox}"
-            f"&geometryType=esriGeometryEnvelope"
-            f"&spatialRel=esriSpatialRelIntersects"
-            f"&outFields=aadt,route_id,routename,f_system"
-            f"&returnGeometry=true"
-            f"&outSR=4326"
-            f"&f=json"
-            f"&resultRecordCount=4000"
-        )
-        url = base + params
-        log.info(f"AADT: trying HPMS {st} {year}...")
-        try:
-            req = urllib.request.Request(url, headers={
-                "User-Agent": "JPods/MeshMobility",
-                "Accept-Encoding": "gzip, identity",
-            })
-            with urllib.request.urlopen(req, timeout=90) as resp:
-                raw = resp.read()
-                if raw[:2] == b'\x1f\x8b':
-                    raw = gzip.decompress(raw)
-                data = json.loads(raw.decode())
-        except Exception as e:
-            log.warning(f"AADT {year}: {e}")
-            continue
-
-        if data and "features" in data and len(data["features"]) > 0:
-            features = data["features"]
-            log.info(f"AADT: got {len(features)} records from HPMS {st} {year}")
-            break
-        elif data and "error" in data:
-            log.warning(f"AADT {year}: {data['error'].get('message', '')}")
-
-    if not features:
-        log.info(f"AADT: no data for {st}")
-        return False
-
-    # Convert polylines to point features (midpoint)
-    geojson_features = []
-    seen = set()
-    for feat in features:
-        attrs = feat.get("attributes", {})
-        geom = feat.get("geometry", {})
-        aadt = attrs.get("aadt", 0)
-        if not aadt or aadt < 5000:
-            continue
-
-        route = attrs.get("routename") or attrs.get("route_id") or ""
-        tier = "core" if aadt >= 10000 else "secondary"
-
-        lat, lon = None, None
-        paths = geom.get("paths", [])
-        if paths and paths[0]:
-            path = paths[0]
-            mid = path[len(path) // 2]
-            lon, lat = mid[0], mid[1]
-        elif "x" in geom and "y" in geom:
-            lon, lat = geom["x"], geom["y"]
-
-        if lat is None or lon is None:
-            continue
-
-        # Deduplicate: snap to ~500m grid
-        gkey = (round(lat * 200) / 200, round(lon * 200) / 200)
-        if gkey in seen:
-            continue
-        seen.add(gkey)
-
-        geojson_features.append({
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [lon, lat]},
-            "properties": {"aadt": aadt, "route_name": route, "tier": tier},
-        })
-
-    if not geojson_features:
-        return False
-
-    geojson = {"type": "FeatureCollection", "features": geojson_features}
-    _overlay_save("aadt.geojson", geojson)
-    return True
-
-
-def _fetch_fars(state_fips, state_abbr, center_lat, center_lon):
-    """Fetch FARS fatal crash data from NHTSA bulk CSV downloads.
-
-    Source: https://static.nhtsa.gov/nhtsa/downloads/FARS/{YEAR}/National/FARS{YEAR}NationalCSV.zip
-    Contains ACCIDENT.CSV with LATITUDE, LONGITUD, FATALS, STATE, etc.
-    Downloads national ZIP, filters to state, then filters to ~30mi around centroid.
-    """
-    import urllib.request, csv, io, zipfile
-    from collections import defaultdict
-    overlay_dir = os.path.join(_rt_dir, "overlays")
-    state_num = int(state_fips)
-    delta = 0.4  # ~30 miles
-    all_crashes = []
-
-    for year in (2022, 2021, 2020, 2019):
-        url = f"https://static.nhtsa.gov/nhtsa/downloads/FARS/{year}/National/FARS{year}NationalCSV.zip"
-        log.info(f"FARS: downloading {year} ZIP...")
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "JPods/MeshMobility"})
-            with urllib.request.urlopen(req, timeout=180) as resp:
-                raw = resp.read()
-        except Exception as e:
-            log.warning(f"FARS {year} download: {e}")
-            continue
-
-        try:
-            zf = zipfile.ZipFile(io.BytesIO(raw))
-            acc_name = None
-            for name in zf.namelist():
-                basename = name.split("/")[-1].upper()
-                if basename.startswith("ACCIDENT") and basename.endswith(".CSV"):
-                    acc_name = name
-                    break
-            if not acc_name:
-                continue
-
-            with zf.open(acc_name) as csvf:
-                reader = csv.DictReader(io.TextIOWrapper(csvf, encoding="utf-8-sig", errors="replace"))
-                for row in reader:
-                    try:
-                        st = int(row.get("STATE", row.get("state", row.get("\ufeffSTATE", 0))))
-                    except (ValueError, TypeError):
-                        continue
-                    if st != state_num:
-                        continue
-
-                    try:
-                        lat = float(row.get("LATITUDE", row.get("latitude", 0)))
-                        lon = float(row.get("LONGITUD", row.get("longitud", 0)))
-                        fatals = int(row.get("FATALS", row.get("fatals", 1)))
-                    except (ValueError, TypeError):
-                        continue
-
-                    if lat == 0 or lon == 0 or abs(lat) > 90 or abs(lon) > 180:
-                        continue
-                    if lon > 0:
-                        lon = -lon
-
-                    # Filter to area near centroid
-                    if abs(lat - center_lat) > delta or abs(lon - center_lon) > delta:
-                        continue
-
-                    all_crashes.append({
-                        "lat": lat, "lon": lon, "fatals": fatals, "year": year,
-                        "county": row.get("COUNTYNAME", row.get("countyname", "")),
-                        "road": row.get("TWAY_ID", row.get("tway_id", "")),
-                        "weather": row.get("WEATHERNAME", row.get("weathername", "")),
-                        "light": row.get("LGT_CONDNAME", row.get("lgt_condname", "")),
-                        "manner": row.get("MAN_COLLNAME", row.get("man_collname", "")),
-                        "month": row.get("MONTHNAME", row.get("monthname", "")),
-                        "hour": row.get("HOUR", row.get("hour", "")),
-                    })
-
-            log.info(f"FARS {year}: {sum(1 for c in all_crashes if c['year']==year)} crashes near centroid")
-        except Exception as e:
-            log.warning(f"FARS {year} processing: {e}")
-            continue
-
-    if not all_crashes:
-        log.info("FARS: no crash data found near centroid")
-        return False
-
-    # Save fatal crashes
-    features = [{
-        "type": "Feature",
-        "geometry": {"type": "Point", "coordinates": [c["lon"], c["lat"]]},
-        "properties": {k: v for k, v in c.items() if k not in ("lat", "lon")},
-    } for c in all_crashes]
-
-    geojson = {"type": "FeatureCollection", "features": features}
-    _overlay_save("accidents.geojson", geojson)
-
-    # Build crash density grid (200m cells)
-    cell_deg = 200 / 111000
-    grid = defaultdict(lambda: {"crashes": 0, "injury": 0, "fatal": 0, "pedestrian": 0})
-    for feat in features:
-        lon, lat = feat["geometry"]["coordinates"]
-        gx = round(lon / cell_deg) * cell_deg
-        gy = round(lat / cell_deg) * cell_deg
-        key = (round(gx, 6), round(gy, 6))
-        grid[key]["crashes"] += 1
-        grid[key]["fatal"] += feat["properties"].get("fatals", 1)
-        grid[key]["injury"] += 1
-
-    density_features = [{
-        "type": "Feature",
-        "geometry": {"type": "Point", "coordinates": [lon, lat]},
-        "properties": {**counts, "density": round(counts["crashes"] / 4, 1)},
-    } for (lon, lat), counts in grid.items()]
-
-    _overlay_save("crash_density.geojson", {"type": "FeatureCollection", "features": density_features})
-    return True
 
 
 @api.get("/overlays/cities")
@@ -3523,230 +3857,71 @@ def _default_qa():
 
 @api.get("/overlays/crash_density")
 def overlay_crash_density():
-    """All-severity crashes if available, falls back to FARS fatal density.
-    Normalizes different state DOT formats to standard {crashes, injury, fatal, pedestrian, density}."""
-    # Prefer all-severity crash data
-    p = _overlay_path("crashes_all.geojson")
-    if not p:
-        p = _overlay_path_by_state("crashes_all")
+    """All-severity crash data from CrashHarvester library.
+    Checks data quality — warns if it's just repackaged fatal data."""
+    center_lat, center_lon, radius = _get_overlay_center_radius()
+    state, _, _ = _detect_state()
+    if not state:
+        return jsonify({"error": "Cannot determine state — place a station first"}), 404
+    data = _md.get_crashes(state, center_lat, center_lon, radius)
+    if not data or not data.get("features"):
+        return jsonify({"error": f"No all-severity crash data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --state-dot {state} RAW_FILE"}), 404
 
-    if p:
-        with open(p) as f:
-            data = json.load(f)
-        # Check if this needs normalization (state DOT format vs our standard)
-        if data.get("features") and "crashes" not in data["features"][0].get("properties", {}):
-            data = _normalize_crash_data(data)
-        return jsonify(data)
+    # Quality check: if crashes ≈ fatal, this is just FARS repackaged, not real all-severity
+    sample = data["features"][:200]
+    if sample:
+        total_crashes = sum(f["properties"].get("crashes", 0) for f in sample)
+        total_fatal = sum(f["properties"].get("fatal", 0) for f in sample)
+        if total_crashes > 0 and total_fatal > 0 and total_crashes < total_fatal * 3:
+            log.warning(f"Crash data for {state.upper()} appears to be repackaged FARS — "
+                        f"crashes/fatal ratio = {total_crashes/total_fatal:.1f} (expected >50)")
+            return jsonify({"error": f"All-severity crash data for {state.upper()} is not available. "
+                            f"Current data is only fatal crashes repackaged. "
+                            f"Use the ! button to signal this state needs real DOT crash data."}), 404
 
-    return jsonify({"error": "All-severity crash data not available for this state. "
-                    "Currently harvested: OK (OKC). More states coming."}), 404
-
-
-def _normalize_crash_data(raw_geojson):
-    """Convert state DOT crash point data to gridded density format.
-    Aggregates individual crash points to 200m grid cells with standard properties."""
-    from collections import defaultdict
-    cell_deg = 200 / 111000  # ~0.0018°
-
-    grid = defaultdict(lambda: {"crashes": 0, "injury": 0, "fatal": 0, "pedestrian": 0})
-
-    for feat in raw_geojson.get("features", []):
-        props = feat.get("properties", {})
-        geom = feat.get("geometry", {})
-
-        # Get coordinates — might be in geometry or properties
-        if geom and geom.get("coordinates"):
-            lon, lat = geom["coordinates"][0], geom["coordinates"][1]
-        elif "LATITUDE" in props and "LONGITUDE" in props:
-            lat = float(props["LATITUDE"])
-            lon = float(props["LONGITUDE"])
-        else:
-            continue
-
-        if lat == 0 or lon == 0:
-            continue
-
-        # Snap to grid
-        gx = round(lon / cell_deg) * cell_deg
-        gy = round(lat / cell_deg) * cell_deg
-        key = (round(gx, 6), round(gy, 6))
-
-        grid[key]["crashes"] += 1
-        # Detect injury — various field names across states
-        fat = props.get("FAT", props.get("fatals", props.get("FATALS", 0)))
-        inj = props.get("INJ", props.get("INJURED", props.get("injuries", 0)))
-        ped = props.get("PEDSTRIANS", props.get("pedestrian", props.get("PEDS", 0)))
-        try:
-            fat = int(fat) if fat and fat != "N" else 0
-        except (ValueError, TypeError):
-            fat = 0
-        try:
-            inj = int(inj) if inj and inj != "N" else 0
-        except (ValueError, TypeError):
-            inj = 0
-        try:
-            ped = int(ped) if ped and ped != "No" else 0
-        except (ValueError, TypeError):
-            ped = 0
-
-        grid[key]["fatal"] += fat
-        grid[key]["injury"] += (1 if inj > 0 or fat > 0 else 0)
-        grid[key]["pedestrian"] += (1 if ped > 0 else 0)
-
-    # Estimate years from data range
-    years = 4  # default
-    features = []
-    for (lon, lat), counts in grid.items():
-        density = round(counts["crashes"] / years, 1)
-        features.append({
-            "type": "Feature",
-            "geometry": {"type": "Point", "coordinates": [lon, lat]},
-            "properties": {**counts, "density": density},
-        })
-
-    log.info(f"Normalized crash data: {len(raw_geojson.get('features',[]))} points → {len(features)} grid cells")
-    return {"type": "FeatureCollection", "features": features}
+    return jsonify(data)
 
 
 @api.get("/overlays/mobility")
 def overlay_mobility():
-    """Cell mobility travel pattern data — checks 5TB then local cache."""
-    p = _overlay_path("mobility.geojson")
-    if p:
-        with open(p) as f:
-            return jsonify(json.load(f))
-    return jsonify({"error": "Mobility data not configured"}), 404
-
-
-def _ensure_overlays(net):
-    """On .jpd save, check if overlay files exist for this network's location.
-
-    If any are missing or empty, auto-fetch from government APIs:
-      - Census (population density, property values, jobs) — any US location
-      - AADT (traffic counts) — any US state via FHWA HPMS
-      - FARS (fatal crashes + crash density) — any US state via NHTSA bulk CSV
-    """
-    all_layers = ("population_density", "property_values", "jobs", "aadt", "accidents", "crash_density")
-
-    # Check which are missing (from both 5TB and local)
-    missing = [layer for layer in all_layers if not _overlay_path(f"{layer}.geojson")]
-
-    if not missing:
-        return
-
-    # Compute centroid from network
-    lats = [n.lat for n in net.nodes.values() if n.lat]
-    lons = [n.lon for n in net.nodes.values() if n.lon]
-    if not lats:
-        log.warning("Overlay auto-fetch: no positioned nodes in network")
-        return
-
-    center_lat = sum(lats) / len(lats)
-    center_lon = sum(lons) / len(lons)
-    log.info(f"Overlay auto-fetch: missing {missing} for ({center_lat:.4f}, {center_lon:.4f})")
-
-    # Census overlays
-    census_missing = [l for l in missing if l in ("population_density", "property_values", "jobs")]
-    if census_missing:
-        try:
-            from mesh_mobility.scripts.census_overlays import process_location, get_api_key
-            api_key = get_api_key()
-            city_key = process_location(center_lat, center_lon, api_key)
-            if city_key:
-                overlays = _state.get("overlays") or {}
-                overlays["city"] = city_key
-                if "files" not in overlays:
-                    overlays["files"] = []
-                for layer in ("population_density", "property_values", "jobs"):
-                    if layer not in overlays["files"]:
-                        overlays["files"].append(layer)
-                _state["overlays"] = overlays
-                log.info(f"Census overlays populated for {city_key}")
-        except Exception as e:
-            log.error(f"Census auto-fetch failed: {e}")
-
-    # Determine state for AADT + FARS
-    state_fips, state_abbr = None, None
-    if any(l in missing for l in ("aadt", "accidents", "crash_density")):
-        try:
-            from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
-            state_fips, _ = fips_from_latlon(center_lat, center_lon)
-            if state_fips:
-                state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
-        except Exception as e:
-            log.error(f"FIPS lookup failed: {e}")
-
-    # AADT
-    if "aadt" in missing and state_abbr:
-        try:
-            _fetch_aadt(state_abbr, center_lat, center_lon)
-        except Exception as e:
-            log.error(f"AADT auto-fetch failed: {e}")
-
-    # FARS + crash density
-    if ("accidents" in missing or "crash_density" in missing) and state_fips and state_abbr:
-        try:
-            _fetch_fars(state_fips, state_abbr, center_lat, center_lon)
-        except Exception as e:
-            log.error(f"FARS auto-fetch failed: {e}")
-
-
-def _census_overlay_or_fetch(layer_name):
-    """Serve a census overlay — checks 5TB then local, auto-fetches if missing."""
-    p = _overlay_path(f"{layer_name}.geojson")
-    if p:
-        with open(p) as f:
-            return jsonify(json.load(f))
-
-    # Auto-fetch: detect location from current network centroid
-    net = _state.get("network")
-    if not net:
-        return jsonify({"error": f"No network loaded — load a .jpd first"}), 404
-
-    lats = [n.lat for n in net.nodes.values() if n.lat]
-    lons = [n.lon for n in net.nodes.values() if n.lon]
-    if not lats:
-        return jsonify({"error": "Network has no positioned nodes"}), 404
-
-    center_lat = sum(lats) / len(lats)
-    center_lon = sum(lons) / len(lons)
-
-    try:
-        from mesh_mobility.scripts.census_overlays import process_location, get_api_key
-        log.info(f"Auto-fetching census data for ({center_lat:.4f}, {center_lon:.4f})...")
-        api_key = get_api_key()
-        city_key = process_location(center_lat, center_lon, api_key)
-    except Exception as e:
-        log.error(f"Census auto-fetch failed: {e}")
-        return jsonify({"error": f"Census data fetch failed: {e}"}), 500
-
-    if not city_key:
-        return jsonify({"error": "Could not determine location — is this in the US?"}), 404
-
-    # Serve the now-populated file
-    if os.path.exists(local_path) and os.path.getsize(local_path) > 10:
-        with open(local_path) as f:
-            return jsonify(json.load(f))
-
-    return jsonify({"error": f"Census data fetched but {layer_name} not generated for this county"}), 404
+    """Cell mobility data — not yet in CrashHarvester library."""
+    return jsonify({"error": "Mobility data not yet harvested"}), 404
 
 
 @api.get("/overlays/population_density")
 def overlay_population_density():
-    """Census ACS population density by tract — auto-fetches if missing."""
-    return _census_overlay_or_fetch("population_density")
+    """Census population density from CrashHarvester library."""
+    state, _, _ = _detect_state()
+    if not state:
+        return jsonify({"error": "Cannot determine state"}), 404
+    data = _md.get_census("population_density", state)
+    if data and data.get("features"):
+        return jsonify(data)
+    return jsonify({"error": f"No population data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --census {state}"}), 404
 
 
 @api.get("/overlays/property_values")
 def overlay_property_values():
-    """Census ACS median home value by tract — auto-fetches if missing."""
-    return _census_overlay_or_fetch("property_values")
+    """Census property values from CrashHarvester library."""
+    state, _, _ = _detect_state()
+    if not state:
+        return jsonify({"error": "Cannot determine state"}), 404
+    data = _md.get_census("property_values", state)
+    if data and data.get("features"):
+        return jsonify(data)
+    return jsonify({"error": f"No property value data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --census {state}"}), 404
 
 
 @api.get("/overlays/jobs")
 def overlay_jobs():
-    """Census ACS employed civilians by tract — auto-fetches if missing."""
-    return _census_overlay_or_fetch("jobs")
+    """Census jobs data from CrashHarvester library."""
+    state, _, _ = _detect_state()
+    if not state:
+        return jsonify({"error": "Cannot determine state"}), 404
+    data = _md.get_census("jobs", state)
+    if data and data.get("features"):
+        return jsonify(data)
+    return jsonify({"error": f"No jobs data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --census {state}"}), 404
 
 
 # ---------------------------------------------------------------------------

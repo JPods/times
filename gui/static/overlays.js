@@ -42,12 +42,22 @@ const Overlays = (() => {
   };
 
   let _aadtData = null;  // cached GeoJSON
+  let _radius = 10;      // default overlay radius in miles
+  let _tooltipsOn = false; // overlay tooltips default off
+
+  /** Build query string with map center + radius for spatial filtering. */
+  function _spatialParams() {
+    const m = App.getMap();
+    if (!m) return "";
+    const c = m.getCenter();
+    return `?lat=${c.lat.toFixed(5)}&lon=${c.lng.toFixed(5)}&radius=${_radius}`;
+  }
 
   // ── AADT ────────────────────────────────────────────────────────────────────
 
   async function _ensureAADTData() {
     if (_aadtData) return _aadtData;
-    const r = await fetch("/api/overlays/aadt");
+    const r = await fetch("/api/overlays/aadt" + _spatialParams());
     if (!r.ok) {
       _showOverlayNote("aadt", "No traffic data for this area yet. Save the network first, then data will be pulled for this location.");
       return null;
@@ -109,12 +119,32 @@ const Overlays = (() => {
   // ── Accident data ────────────────────────────────────────────────────────────
 
   async function _loadAccidents() {
-    const r = await fetch("/api/overlays/accidents");
+    const r = await fetch("/api/overlays/accidents" + _spatialParams());
     if (!r.ok) {
       _showOverlayNote("accident", "No fatal crash data for this area yet. Data will be available after Noelle processes this location.");
       return null;
     }
     const geojson = await r.json();
+    // Update Morgantown comparison with fatal data
+    if (geojson.features && geojson.features.length) {
+      let totalFatal = 0;
+      for (const f of geojson.features) totalFatal += f.properties.fatals || 1;
+      const el = document.getElementById("ov-morgantown");
+      if (el) {
+        document.getElementById("ov-mort-fatal").textContent = totalFatal.toLocaleString();
+        // Only set crash count if All Crashes hasn't set it yet
+        const crashEl = document.getElementById("ov-mort-crashes");
+        if (crashEl && (crashEl.textContent === "—" || crashEl.textContent === "")) {
+          crashEl.textContent = "— (toggle All Crashes)";
+        }
+        const cityEl = document.getElementById("ov-mort-city");
+        const cityLabel = document.getElementById("overlay-city-label");
+        if (cityEl && cityLabel && cityLabel.textContent) {
+          cityEl.textContent = cityLabel.textContent.split(",")[0];
+        }
+        el.style.display = "block";
+      }
+    }
     return L.geoJSON(geojson, {
       pointToLayer: (f, latlng) => {
         const fatals = f.properties.fatals || f.properties.severity || 1;
@@ -152,23 +182,48 @@ const Overlays = (() => {
 
   // ── Crash density (all severities) ──────────────────────────────────────────
 
+  let _crashData = null;     // cached raw GeoJSON
+  let _crashThreshold = 0;   // minimum crashes to render (0 = show all)
+
   async function _loadCrashDensity() {
-    const r = await fetch("/api/overlays/crash_density");
+    const r = await fetch("/api/overlays/crash_density" + _spatialParams());
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
       _showOverlayNote("crash_density", err.error || "All-severity crash data not available for this state. Click Fetch Data first.");
       return null;
     }
-    const geojson = await r.json();
-    if (!geojson.features || geojson.features.length === 0) {
+    _crashData = await r.json();
+    if (!_crashData.features || _crashData.features.length === 0) {
       _showOverlayNote("crash_density", "Crash data file is empty — click Fetch Data to reload.");
       return null;
     }
+    // Compute percentiles for the threshold slider
+    const counts = _crashData.features.map(f => f.properties.crashes).sort((a,b) => a - b);
+    const p90 = counts[Math.floor(counts.length * 0.90)] || 1;
+    const max = counts[counts.length - 1] || 1;
+    _updateThresholdSlider(0, max, p90, counts.length);
+    // Update Morgantown comparison
+    _updateMorgantown(_crashData);
+    return _buildCrashLayer();
+  }
+
+  function _buildCrashLayer() {
+    if (!_crashData) return null;
+    const filtered = {
+      type: "FeatureCollection",
+      features: _crashData.features.filter(f => f.properties.crashes >= _crashThreshold),
+    };
+    if (filtered.features.length === 0) return null;
+
     let maxCrashes = 1;
-    for (const f of geojson.features) {
+    for (const f of filtered.features) {
       if (f.properties.crashes > maxCrashes) maxCrashes = f.properties.crashes;
     }
-    return L.geoJSON(geojson, {
+    // Update the count display
+    const countEl = document.getElementById("ov-threshold-count");
+    if (countEl) countEl.textContent = `${filtered.features.length} / ${_crashData.features.length} cells`;
+
+    return L.geoJSON(filtered, {
       pointToLayer: (f, latlng) => {
         const crashes = f.properties.crashes || 1;
         const ratio = Math.min(crashes / maxCrashes, 1);
@@ -192,6 +247,39 @@ const Overlays = (() => {
         );
       },
     });
+  }
+
+  function _updateMorgantown(geojson) {
+    const el = document.getElementById("ov-morgantown");
+    if (!el) return;
+    let totalCrashes = 0, totalFatal = 0;
+    for (const f of geojson.features) {
+      totalCrashes += f.properties.crashes || 0;
+      totalFatal += f.properties.fatal || 0;
+    }
+    // Use metadata total_raw if available (more accurate than grid sum)
+    if (geojson.metadata && geojson.metadata.total_raw) {
+      totalCrashes = geojson.metadata.total_raw;
+    }
+    document.getElementById("ov-mort-crashes").textContent = totalCrashes.toLocaleString();
+    document.getElementById("ov-mort-fatal").textContent = totalFatal.toLocaleString();
+    const cityEl = document.getElementById("ov-mort-city");
+    const cityLabel = document.getElementById("overlay-city-label");
+    if (cityEl && cityLabel && cityLabel.textContent) {
+      cityEl.textContent = cityLabel.textContent.split(",")[0];
+    }
+    el.style.display = "block";
+  }
+
+  function _updateThresholdSlider(min, max, p90, total) {
+    const slider = document.getElementById("ov-crash-threshold");
+    if (!slider) return;
+    slider.min = min;
+    slider.max = max;
+    slider.style.display = "block";
+    // Show the threshold controls
+    const row = document.getElementById("ov-threshold-row");
+    if (row) row.style.display = "flex";
   }
 
   function _densityColor(ratio) {
@@ -362,6 +450,13 @@ const Overlays = (() => {
         layer.addTo(m);
         _layers[key] = layer;
         _active[key] = true;
+        // Default non-interactive — toggle with Tooltips button
+        if (!_tooltipsOn) {
+          layer.eachLayer(l => {
+            if (l.getElement) { const el = l.getElement(); if (el) el.style.pointerEvents = "none"; }
+            else if (l._path) l._path.style.pointerEvents = "none";
+          });
+        }
         if (btn) btn.textContent = btnOrigText;
         console.log(`[Overlay] ${key} toggled ON`);
         setStatus(`${key} overlay on`);
@@ -393,7 +488,7 @@ const Overlays = (() => {
         return;
       }
       if (_active[key] && _layers[key]) { m.removeLayer(_layers[key]); _layers[key] = null; }
-      if (forceReload) _aadtData = null;  // clear cache to force re-fetch
+      if (forceReload) _aadtData = null;  // clear cache to force re-fetch from current center
       (async () => {
         setStatus(forceReload ? `Reloading traffic ${tier}…` : `Loading traffic ${tier}…`);
         await _ensureAADTData();
@@ -412,6 +507,81 @@ const Overlays = (() => {
     togglePopDensity(f) { _toggle("pop_density", _loadPopDensity, f); },
     togglePropertyValues(f) { _toggle("property_values", _loadPropertyValues, f); },
     toggleJobs(f) { _toggle("jobs", _loadJobs, f); },
+
+    /** Toggle overlay tooltips on/off. Default is off. */
+    toggleTooltips() {
+      _tooltipsOn = !_tooltipsOn;
+      this.setInteractive(_tooltipsOn);
+      const btn = document.getElementById("ov-btn-tooltips");
+      if (btn) btn.textContent = _tooltipsOn ? "Tooltips: On" : "Tooltips: Off";
+    },
+
+    /** Disable/enable mouse interaction on all overlay layers. */
+    setInteractive(enabled) {
+      for (const layer of Object.values(_layers)) {
+        if (!layer) continue;
+        layer.eachLayer(l => {
+          if (l.getElement) {
+            const el = l.getElement();
+            if (el) el.style.pointerEvents = enabled ? "auto" : "none";
+          } else if (l._path) {
+            l._path.style.pointerEvents = enabled ? "auto" : "none";
+          }
+        });
+      }
+    },
+
+    /** Remove all overlay layers and reset state. Called on city switch / new network. */
+    clearAll() {
+      const m = App.getMap();
+      for (const [key, layer] of Object.entries(_layers)) {
+        if (layer) m.removeLayer(layer);
+        _layers[key] = null;
+        _active[key] = false;
+      }
+      _aadtData = null;
+      _crashData = null;
+      // Re-disable overlay buttons
+      document.querySelectorAll(".ov-btn[id^='ov-btn-']").forEach(btn => {
+        if (btn.id === "ov-btn-fetch" || btn.id === "ov-btn-coverage") return;
+        btn.classList.add("ov-disabled");
+      });
+      document.querySelectorAll(".ov-signal").forEach(el => el.style.display = "none");
+      const thresholdRow = document.getElementById("ov-threshold-row");
+      if (thresholdRow) thresholdRow.style.display = "none";
+      // Reset Fetch Data button
+      const fetchBtn = document.getElementById("ov-btn-fetch");
+      if (fetchBtn) {
+        fetchBtn.classList.remove("fetch-done", "fetch-loading");
+        fetchBtn.classList.add("fetch-needed");
+        fetchBtn.innerHTML = "&#8681; Fetch Data";
+      }
+      const fetchStatus = document.getElementById("overlay-fetch-status");
+      if (fetchStatus) fetchStatus.textContent = "";
+      const morg = document.getElementById("ov-morgantown");
+      if (morg) morg.style.display = "none";
+    },
+
+    /** Set the overlay radius (miles). Clears cached data so next toggle re-fetches. */
+    setRadius(miles) {
+      _radius = Math.max(1, Math.min(miles, 100));
+      _aadtData = null;
+      console.log(`[Overlay] radius set to ${_radius} miles`);
+    },
+    getRadius() { return _radius; },
+
+    /** Set crash threshold — re-renders the crash density layer without re-fetching. */
+    setCrashThreshold(val) {
+      _crashThreshold = val;
+      if (!_active.crash_density || !_crashData) return;
+      const m = App.getMap();
+      if (_layers.crash_density) m.removeLayer(_layers.crash_density);
+      const layer = _buildCrashLayer();
+      if (layer) {
+        layer.addTo(m);
+        _layers.crash_density = layer;
+      }
+    },
 
     /** Return which overlays are currently active (for saving with .jpd). */
     getActive() {

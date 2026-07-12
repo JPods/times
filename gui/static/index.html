@@ -42,12 +42,12 @@
               style="background:none;border:none;color:#c44;font-size:16px;cursor:pointer;line-height:1;padding:0 2px">&times;</button>
     </h3>
     <div style="display:flex;gap:4px;align-items:center">
+      <button onclick="CitySearch.go()" class="tool-btn" style="flex:0;padding:5px 12px;font-size:14px;font-weight:600;background:#1a4a3a;border-color:#2a6a5a">Go</button>
       <input id="city-search" type="text" placeholder="City, State or Country"
              style="flex:1;min-width:0;background:#1a1a1a;border:1px solid #3a5a3a;color:#e0e0e0;
                     border-radius:3px;padding:5px 8px;font-size:16px"
              autocomplete="off"
              onkeydown="if(event.key==='Enter') CitySearch.go()">
-      <button onclick="CitySearch.go()" class="tool-btn" style="flex:0;padding:5px 10px">Go</button>
       <button onclick="CitySearch.clearFence()" class="tool-btn" style="flex:0;padding:5px 6px" title="Remove city boundary">&#10005;</button>
     </div>
     <div id="city-error" style="display:none;font-size:10px;color:#c44;margin-top:3px"></div>
@@ -476,16 +476,36 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Mesh</div>
 
     <div class="ov-row">
+      <button id="btn-draw" onclick="DrawTool.toggle()" class="tool-btn" style="flex:1;background:#4a3a1a;border-color:#6a5a3a" title="Show drawing help">&#9998; Draw</button>
+      <button id="btn-build-lines" onclick="DrawTool.build()" class="tool-btn" style="flex:1;background:#1a3a4a;border-color:#2a5a6a">&#9654; Build on Lines</button>
+      <button onclick="DrawTool.loadLines()" class="tool-btn" style="flex:0;padding:5px 6px" title="Load saved lines">&#8634;</button>
+      <button onclick="DrawTool.saveLines()" class="tool-btn" style="flex:0;padding:5px 6px" title="Save lines">&#128190;</button>
+    </div>
+    <div class="ov-row">
       <button id="btn-city-mesh" onclick="CityMesh.generate()" class="tool-btn" style="flex:1;background:#1a4a3a;border-color:#2a6a5a">&#127961; City Mesh</button>
+      <button id="btn-crash-mesh" onclick="CrashMesh.generate()" class="tool-btn" style="flex:1;background:#0b2f4a;border-color:#1a5276">&#128165; Crash Mesh</button>
+    </div>
+    <div class="ov-row">
+      <button onclick="LineTool.start()" class="tool-btn" style="flex:1;background:#3a2a1a;border-color:#5a4a3a">&#9135; Line</button>
       <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Custom Mesh</button>
       <button onclick="ToolsPanel.toggleDetail('mesh')" class="ov-info">?</button>
     </div>
+    <div id="draw-status" style="display:none;font-size:10px;color:#fc0;padding:2px 8px">
+      <span id="draw-count">0</span> lines drawn.
+    </div>
+    <table style="font-size:10px;color:#9ab;margin:6px 8px;border-collapse:collapse;width:calc(100% - 16px)">
+      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Cmd + click</td><td>Draw corridor points (release Cmd to finish line)</td></tr>
+      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Option + click</td><td>Insert or drag a point on a line</td></tr>
+      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Shift + click</td><td>Delete nearest point</td></tr>
+      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Shift + dblclick</td><td>Delete entire line</td></tr>
+    </table>
     <div class="ov-detail" id="tool-detail-mesh" style="display:none">
-      <strong>City Mesh:</strong> Fills the city boundary with a mesh network. Auto-picks 1x1 or 1x2 mile
-      spacing based on city size. Snaps traffic circles to real road intersections.
-      Requires Find City first (sets the boundary).<br>
-      <strong>Custom:</strong> Manual mesh with adjustable spacing and coverage area.
-      After generating either, use Noelle Refine to prune and fill based on data.
+      <strong>Draw:</strong> Click to draw corridor lines on the map. Double-click ends each line. Draw over crash data. Then Build on Lines places stations.<br>
+      <strong>Build on Lines:</strong> Places stations every 0.5-0.75 mi along drawn lines. Traffic circles at intersections.<br>
+      <strong>City Mesh:</strong> Grid-based coverage.<br>
+      <strong>Crash Mesh:</strong> Auto-extract corridors from crash data.<br>
+      <strong>Line:</strong> Click two points — airport-to-city connector.<br>
+      <strong>Custom:</strong> Manual grid mesh.
     </div>
 
     <!-- Select & Delete -->
@@ -550,8 +570,8 @@
     <!-- Fetch data -->
     <div style="margin-bottom:10px;padding:6px 8px;background:#1a2a1a;border:1px solid #2a4a2a;border-radius:4px">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-        <button onclick="OverlayPanel.fetchData()" class="tool-btn"
-                style="flex:1;background:#1a5a1a;border-color:#2a7a2a;font-weight:600"
+        <button id="ov-btn-fetch" onclick="OverlayPanel.fetchData()" class="tool-btn fetch-needed"
+                style="flex:1;background:#1a5a1a;border-color:#2a7a2a;font-weight:600;font-size:14px"
                 title="Fetch all overlay data (census, crashes, traffic) for this network's location">&#8681; Fetch Data</button>
         <button onclick="OverlayPanel.toggleDetail('fetch')" class="ov-info">?</button>
       </div>
@@ -565,11 +585,26 @@
       <div id="overlay-fetch-status" style="font-size:10px;color:#7a7;min-height:0"></div>
     </div>
 
+    <!-- Tooltips toggle -->
+    <div style="margin-bottom:4px;padding:2px 8px">
+      <button id="ov-btn-tooltips" onclick="Overlays.toggleTooltips()" class="tool-btn" style="font-size:10px;padding:3px 8px;background:#2a2a2a">Tooltips: Off</button>
+    </div>
+
+    <!-- Radius control -->
+    <div style="margin-bottom:8px;padding:4px 8px;display:flex;align-items:center;gap:6px">
+      <label style="font-size:11px;color:#9ab;white-space:nowrap" for="ov-radius">Radius:</label>
+      <input type="range" id="ov-radius" min="2" max="50" value="10" step="1"
+             style="flex:1;height:16px"
+             oninput="Overlays.setRadius(+this.value); document.getElementById('ov-radius-val').textContent=this.value+' mi'">
+      <span id="ov-radius-val" style="font-size:11px;color:#9ab;min-width:36px">10 mi</span>
+    </div>
+
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin-bottom:4px">Safety</div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleAADT('all', event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-aadt"
+      <button onclick="Overlays.toggleAADT('all', event.shiftKey); OverlayPanel.refresh()" class="ov-btn ov-disabled" id="ov-btn-aadt"
               style="background:#8b0000">Traffic (AADT)</button>
+      <button onclick="OverlayPanel.signalMissing('aadt')" class="ov-signal" style="display:none" title="Signal missing data">!</button>
       <button onclick="OverlayPanel.toggleDetail('aadt')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-aadt" style="display:none">
@@ -579,8 +614,9 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleAccident(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-accident"
+      <button onclick="Overlays.toggleAccident(event.shiftKey); OverlayPanel.refresh()" class="ov-btn ov-disabled" id="ov-btn-accident"
               style="background:#1a5276">Fatal Crashes</button>
+      <button onclick="OverlayPanel.signalMissing('accidents')" class="ov-signal" style="display:none" title="Signal missing data">!</button>
       <button onclick="OverlayPanel.toggleDetail('accident')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-accident" style="display:none">
@@ -590,22 +626,31 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleCrashDensity(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-crash_density"
+      <button onclick="Overlays.toggleCrashDensity(event.shiftKey); OverlayPanel.refresh()" class="ov-btn ov-disabled" id="ov-btn-crash_density"
               style="background:#0b2f4a">All Crashes</button>
+      <button onclick="OverlayPanel.signalMissing('crash_density')" class="ov-signal" style="display:none" title="Signal missing data">!</button>
       <button onclick="OverlayPanel.toggleDetail('crash_density')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-crash_density" style="display:none">
-      All-severity crash data when available (state DOT sources), falls back to
-      FARS fatal-only density. Shows where crashes cluster — shopping centers,
-      school zones, dangerous curves. This is Noelle's primary placement signal.
-      Local arterials are 9x more dangerous per unit of traffic than interstates.
+      All-severity crash data from CrashHarvester library. Shows where crashes
+      cluster. Use the threshold slider to cut noise and reveal corridors.
+      Top 10% of cells typically hold ~50% of all crashes.
+    </div>
+    <div id="ov-threshold-row" style="display:none;padding:2px 8px;align-items:center;gap:6px;margin-bottom:4px">
+      <label style="font-size:10px;color:#9ab;white-space:nowrap">Min crashes:</label>
+      <input type="range" id="ov-crash-threshold" min="0" max="500" value="0" step="1"
+             style="flex:1;height:14px"
+             oninput="Overlays.setCrashThreshold(+this.value); document.getElementById('ov-threshold-val').textContent=this.value">
+      <span id="ov-threshold-val" style="font-size:10px;color:#9ab;min-width:24px">0</span>
+      <span id="ov-threshold-count" style="font-size:10px;color:#7a7;min-width:60px"></span>
     </div>
 
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Census / Economics</div>
 
     <div class="ov-row">
-      <button onclick="Overlays.togglePopDensity(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-pop_density"
+      <button onclick="Overlays.togglePopDensity(event.shiftKey); OverlayPanel.refresh()" class="ov-btn ov-disabled" id="ov-btn-pop_density"
               style="background:#6a1b9a">Population Density</button>
+      <button onclick="OverlayPanel.signalMissing('population_density')" class="ov-signal" style="display:none" title="Signal missing data">!</button>
       <button onclick="OverlayPanel.toggleDetail('pop_density')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-pop_density" style="display:none">
@@ -616,8 +661,9 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.togglePropertyValues(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-property_values"
+      <button onclick="Overlays.togglePropertyValues(event.shiftKey); OverlayPanel.refresh()" class="ov-btn ov-disabled" id="ov-btn-property_values"
               style="background:#2e7d32">Property Values</button>
+      <button onclick="OverlayPanel.signalMissing('property_values')" class="ov-signal" style="display:none" title="Signal missing data">!</button>
       <button onclick="OverlayPanel.toggleDetail('property_values')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-property_values" style="display:none">
@@ -629,8 +675,9 @@
     </div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleJobs(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-jobs"
+      <button onclick="Overlays.toggleJobs(event.shiftKey); OverlayPanel.refresh()" class="ov-btn ov-disabled" id="ov-btn-jobs"
               style="background:#1565c0">Jobs</button>
+      <button onclick="OverlayPanel.signalMissing('jobs')" class="ov-signal" style="display:none" title="Signal missing data">!</button>
       <button onclick="OverlayPanel.toggleDetail('jobs')" class="ov-info">?</button>
     </div>
     <div class="ov-detail" id="ov-detail-jobs" style="display:none">
@@ -658,7 +705,7 @@
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Other</div>
 
     <div class="ov-row">
-      <button onclick="Overlays.toggleMobility(event.shiftKey); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-mobility"
+      <button onclick="Overlays.toggleMobility(event.shiftKey); OverlayPanel.refresh()" class="ov-btn ov-disabled" id="ov-btn-mobility"
               style="background:#555">Pedestrian</button>
       <button onclick="OverlayPanel.toggleDetail('mobility')" class="ov-info">?</button>
     </div>
@@ -666,6 +713,15 @@
       Cell phone mobility data showing pedestrian travel patterns.
       Data pending — will show where people actually walk, revealing
       last-mile demand that JPods stations should serve.
+    </div>
+
+    <!-- Morgantown comparison -->
+    <div id="ov-morgantown" style="display:none;margin-top:12px;padding:8px;background:#1a1a2a;border:1px solid #334;border-radius:4px;font-size:11px;color:#9ab;line-height:1.6">
+      <em style="color:#aac">"Unwavering faith that we will prevail while facing the most brutal facts of our current reality."</em> — Stockdale Paradox<br><br>
+      Morgantown's PRT was opened by President Nixon's daughter on Oct 24, 1972.
+      Her statement, <em>"More fun than Disneyland."</em>
+      Since 1972 there has been 1 in-service crash with minor injuries.<br>
+      <span style="color:#f66" id="ov-morgantown-compare">Highway policies in <strong id="ov-mort-city">this city</strong> roadkilled <strong id="ov-mort-fatal">—</strong> with an additional <strong id="ov-mort-crashes">—</strong> total crashes.</span>
     </div>
 
   </div>
@@ -1207,12 +1263,30 @@ const CityMesh = (() => {
     }
 
     if (!fence) {
-      alert(
-        "City Mesh requires Find City first.\n\n" +
-        "Use Find City → Go to set the city boundary,\n" +
-        "then click City Mesh again."
-      );
-      return;
+      // Last resort: use current map bounds as a rectangular fence
+      const bounds = App.getMap().getBounds();
+      if (bounds) {
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        fence = {
+          type: "Polygon",
+          coordinates: [[
+            [sw.lng, sw.lat],
+            [ne.lng, sw.lat],
+            [ne.lng, ne.lat],
+            [sw.lng, ne.lat],
+            [sw.lng, sw.lat],
+          ]]
+        };
+        setStatus("City Mesh: using map view as boundary (no city fence found)");
+      } else {
+        alert(
+          "City Mesh requires Find City first.\n\n" +
+          "Use Find City → Go to set the city boundary,\n" +
+          "then click City Mesh again."
+        );
+        return;
+      }
     }
 
     _setWorking(true);
@@ -1264,6 +1338,493 @@ const CityMesh = (() => {
     }
   }
   return { generate };
+})();
+
+const CrashMesh = (() => {
+  async function generate() {
+    let fence = CitySearch.getFence();
+    if (!fence) {
+      try {
+        const r = await fetch("/api/overlays/active");
+        const ov = await r.json();
+        if (ov && ov.fence) fence = ov.fence;
+      } catch (_) {}
+    }
+    if (!fence) {
+      const bounds = App.getMap().getBounds();
+      if (bounds) {
+        const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+        fence = { type: "Polygon", coordinates: [[[sw.lng,sw.lat],[ne.lng,sw.lat],[ne.lng,ne.lat],[sw.lng,ne.lat],[sw.lng,sw.lat]]] };
+      } else {
+        alert("Crash Mesh requires Find City first.");
+        return;
+      }
+    }
+
+    const btn = document.getElementById("btn-crash-mesh");
+    if (btn) { btn.innerHTML = "&#9203; Building…"; btn.classList.add("working"); }
+    setStatus("Crash Mesh: extracting corridors from crash data…");
+    if (typeof App !== "undefined" && App.flash) App.flash("Building Crash Mesh from crash corridors…", 10000);
+
+    try {
+      const r = await fetch("/api/network/crash_mesh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fence: fence }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        alert("Crash Mesh: " + (data.error || "failed"));
+        return;
+      }
+      const msg = `Crash Mesh: ${data.stations} stations across ${data.corridors} corridors — ${data.total_miles || "?"} mi`;
+      setStatus(msg);
+      if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
+      const geojson = await api("GET", "/api/network");
+      App._render(geojson);
+    } catch (e) {
+      alert("Crash Mesh failed: " + e.message);
+    } finally {
+      if (btn) { btn.innerHTML = "&#128165; Crash Mesh"; btn.classList.remove("working"); }
+    }
+  }
+  return { generate };
+})();
+
+const DrawTool = (() => {
+  // Lines: [{polyline, dots: [L.circleMarker], points: [{lat,lon}]}]
+  let _lines = [];
+  let _currentLine = null;  // line being drawn (Cmd held)
+  let _cmdDown = false;
+  let _dragging = null;     // {lineIdx, pointIdx, marker} when Option-dragging
+
+  // Listen for modifier keys globally
+  document.addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey) _cmdDown = true;
+  });
+  document.addEventListener("keyup", e => {
+    if (!e.metaKey && !e.ctrlKey) {
+      if (_cmdDown && _currentLine) {
+        _finishLine();
+      }
+      _cmdDown = false;
+    }
+  });
+
+  // Main click handler — always on, modifier keys decide action
+  function _init() {
+    const m = App.getMap();
+    m.on("click", _onClick);
+    m.on("dblclick", _onDblClick);
+    m.on("mousemove", _onMouseMove);
+    m.on("mouseup", _onMouseUp);
+  }
+  // Init after map is ready
+  setTimeout(_init, 500);
+
+  function _onClick(e) {
+    const ev = e.originalEvent;
+    if (!ev) return;
+
+    // Cmd/Ctrl + click = draw point on current line
+    if (ev.metaKey || ev.ctrlKey) {
+      ev.preventDefault();
+      _addPoint(e.latlng);
+      return;
+    }
+
+    // Shift + click = delete nearest point
+    if (ev.shiftKey) {
+      ev.preventDefault();
+      _deleteNearestPoint(e.latlng);
+      return;
+    }
+
+    // Option/Alt + click = start dragging nearest point (insert if on line segment)
+    if (ev.altKey) {
+      ev.preventDefault();
+      _startDrag(e.latlng);
+      return;
+    }
+  }
+
+  function _onDblClick(e) {
+    const ev = e.originalEvent;
+    if (!ev) return;
+
+    // Shift + double-click = delete entire nearest line
+    if (ev.shiftKey) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      _deleteNearestLine(e.latlng);
+      return;
+    }
+  }
+
+  function _onMouseMove(e) {
+    if (!_dragging) return;
+    const { lineIdx, pointIdx } = _dragging;
+    const line = _lines[lineIdx];
+    if (!line) return;
+    // Update point position
+    line.points[pointIdx] = { lat: e.latlng.lat, lon: e.latlng.lng };
+    // Update marker
+    _dragging.marker.setLatLng(e.latlng);
+    // Update polyline
+    line.polyline.setLatLngs(line.points.map(p => [p.lat, p.lon]));
+  }
+
+  function _onMouseUp(e) {
+    if (_dragging) {
+      _dragging = null;
+      _updateCount();
+    }
+  }
+
+  // ── Snap logic ──
+
+  const SNAP_DEG = 0.002; // ~200m snap radius
+
+  function _findSnap(latlng) {
+    // Check all existing line endpoints and points for snap
+    let best = null, bestDist = SNAP_DEG;
+    for (const line of _lines) {
+      for (const p of line.points) {
+        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
+        if (d < bestDist) {
+          bestDist = d;
+          best = { lat: p.lat, lon: p.lon };
+        }
+      }
+    }
+    // Also check current line points (for closing a loop)
+    if (_currentLine) {
+      for (const p of _currentLine.points) {
+        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
+        if (d < bestDist) {
+          bestDist = d;
+          best = { lat: p.lat, lon: p.lon };
+        }
+      }
+    }
+    return best;
+  }
+
+  // ── Drawing (Cmd+click) ──
+
+  function _addPoint(latlng) {
+    if (!_currentLine) {
+      _currentLine = {
+        polyline: L.polyline([], { color: "#fc0", weight: 3, dashArray: "8 4", opacity: 0.8 }).addTo(App.getMap()),
+        dots: [],
+        points: [],
+      };
+    }
+    // Snap to nearby existing point
+    const snap = _findSnap(latlng);
+    const pt = snap || { lat: latlng.lat, lon: latlng.lng };
+    const ll = L.latLng(pt.lat, pt.lon);
+
+    _currentLine.points.push(pt);
+    // Vertex dot — green if snapped, yellow if free
+    const dot = L.circleMarker(ll, {
+      radius: snap ? 7 : 5,
+      color: snap ? "#4f4" : "#fc0",
+      fillColor: snap ? "#4f4" : "#fc0",
+      fillOpacity: 1, weight: snap ? 2 : 1
+    }).addTo(App.getMap());
+    _currentLine.dots.push(dot);
+    // Update polyline
+    _currentLine.polyline.setLatLngs(_currentLine.points.map(p => [p.lat, p.lon]));
+    document.getElementById("draw-status").style.display = "block";
+    setStatus(`Drawing: ${_currentLine.points.length} points (release Cmd to finish line)`);
+  }
+
+  function _finishLine() {
+    if (!_currentLine) return;
+    if (_currentLine.points.length >= 2) {
+      // Solidify
+      _currentLine.polyline.setStyle({ color: "#f90", dashArray: null, weight: 3, opacity: 0.9 });
+      _lines.push(_currentLine);
+      _updateCount();
+      setStatus(`Line ${_lines.length} done (${_currentLine.points.length} points). ${_lines.length} total lines.`);
+    } else {
+      // Too short — remove
+      App.getMap().removeLayer(_currentLine.polyline);
+      _currentLine.dots.forEach(d => App.getMap().removeLayer(d));
+    }
+    _currentLine = null;
+  }
+
+  // ── Delete point (Shift+click) ──
+
+  function _deleteNearestPoint(latlng) {
+    let bestLine = -1, bestPt = -1, bestDist = 0.003; // ~300m threshold
+    for (let li = 0; li < _lines.length; li++) {
+      for (let pi = 0; pi < _lines[li].points.length; pi++) {
+        const p = _lines[li].points[pi];
+        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
+        if (d < bestDist) { bestDist = d; bestLine = li; bestPt = pi; }
+      }
+    }
+    if (bestLine < 0) return;
+    const line = _lines[bestLine];
+    // Remove the dot marker
+    App.getMap().removeLayer(line.dots[bestPt]);
+    line.dots.splice(bestPt, 1);
+    line.points.splice(bestPt, 1);
+    // If line has fewer than 2 points, remove it entirely
+    if (line.points.length < 2) {
+      App.getMap().removeLayer(line.polyline);
+      line.dots.forEach(d => App.getMap().removeLayer(d));
+      _lines.splice(bestLine, 1);
+      setStatus(`Line deleted. ${_lines.length} lines remaining.`);
+    } else {
+      line.polyline.setLatLngs(line.points.map(p => [p.lat, p.lon]));
+      setStatus(`Point deleted. Line now has ${line.points.length} points.`);
+    }
+    _updateCount();
+  }
+
+  // ── Delete line (Shift+double-click) ──
+
+  function _deleteNearestLine(latlng) {
+    let bestLine = -1, bestDist = 0.005;
+    for (let li = 0; li < _lines.length; li++) {
+      for (const p of _lines[li].points) {
+        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
+        if (d < bestDist) { bestDist = d; bestLine = li; }
+      }
+    }
+    if (bestLine < 0) return;
+    const line = _lines[bestLine];
+    App.getMap().removeLayer(line.polyline);
+    line.dots.forEach(d => App.getMap().removeLayer(d));
+    _lines.splice(bestLine, 1);
+    _updateCount();
+    setStatus(`Line deleted. ${_lines.length} lines remaining.`);
+  }
+
+  // ── Drag point (Option+click) ──
+
+  function _startDrag(latlng) {
+    // Find nearest point on any line
+    let bestLine = -1, bestPt = -1, bestDist = 0.003;
+    for (let li = 0; li < _lines.length; li++) {
+      for (let pi = 0; pi < _lines[li].points.length; pi++) {
+        const p = _lines[li].points[pi];
+        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
+        if (d < bestDist) { bestDist = d; bestLine = li; bestPt = pi; }
+      }
+    }
+    if (bestLine >= 0) {
+      // Drag existing point
+      _dragging = { lineIdx: bestLine, pointIdx: bestPt, marker: _lines[bestLine].dots[bestPt] };
+      setStatus(`Dragging point — release to place`);
+      return;
+    }
+    // No nearby point — try inserting on nearest line segment
+    let bestSegLine = -1, bestSegIdx = -1, bestSegDist = 0.003;
+    for (let li = 0; li < _lines.length; li++) {
+      const pts = _lines[li].points;
+      for (let si = 0; si < pts.length - 1; si++) {
+        // Distance from latlng to segment midpoint (rough)
+        const mx = (pts[si].lat + pts[si+1].lat) / 2;
+        const my = (pts[si].lon + pts[si+1].lon) / 2;
+        const d = Math.abs(mx - latlng.lat) + Math.abs(my - latlng.lng);
+        if (d < bestSegDist) { bestSegDist = d; bestSegLine = li; bestSegIdx = si + 1; }
+      }
+    }
+    if (bestSegLine >= 0) {
+      // Insert a new point on the segment
+      const line = _lines[bestSegLine];
+      const pt = { lat: latlng.lat, lon: latlng.lng };
+      line.points.splice(bestSegIdx, 0, pt);
+      const dot = L.circleMarker(latlng, {
+        radius: 5, color: "#fc0", fillColor: "#fc0", fillOpacity: 1, weight: 1
+      }).addTo(App.getMap());
+      line.dots.splice(bestSegIdx, 0, dot);
+      line.polyline.setLatLngs(line.points.map(p => [p.lat, p.lon]));
+      _dragging = { lineIdx: bestSegLine, pointIdx: bestSegIdx, marker: dot };
+      setStatus(`New point inserted — drag to position`);
+    }
+  }
+
+  function _updateCount() {
+    const el = document.getElementById("draw-count");
+    if (el) el.textContent = _lines.length;
+    const status = document.getElementById("draw-status");
+    if (status) status.style.display = _lines.length ? "block" : "none";
+  }
+
+  function getLines() { return _lines.map(l => l.points); }
+
+  function clearAll() {
+    _lines.forEach(l => {
+      App.getMap().removeLayer(l.polyline);
+      l.dots.forEach(d => App.getMap().removeLayer(d));
+    });
+    _lines = [];
+    if (_currentLine) {
+      App.getMap().removeLayer(_currentLine.polyline);
+      _currentLine.dots.forEach(d => App.getMap().removeLayer(d));
+      _currentLine = null;
+    }
+    _updateCount();
+  }
+
+  async function build() {
+    if (_lines.length === 0) {
+      alert("Draw corridor lines first (Cmd+click), then click Build on Lines.");
+      return;
+    }
+    // Save lines before building — iteration record
+    await saveLines();
+    const lines = getLines();
+    const btn = document.getElementById("btn-build-lines");
+    if (btn) { btn.textContent = "\u23F3 Building…"; btn.classList.add("working"); }
+    setStatus(`Building network on ${lines.length} corridor lines…`);
+
+    try {
+      const r = await fetch("/api/network/build_on_lines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines: lines }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        alert("Build on Lines: " + (data.error || "failed"));
+        return;
+      }
+      const msg = `Built: ${data.stations} stations, ${data.circles} circles on ${data.lines_used} lines — ${data.total_miles} mi`;
+      setStatus(msg);
+      if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
+      const geojson = await api("GET", "/api/network");
+      App._render(geojson);
+    } catch (e) {
+      alert("Build failed: " + e.message);
+    } finally {
+      if (btn) { btn.textContent = "\u25B6 Build on Lines"; btn.classList.remove("working"); }
+    }
+  }
+
+  // Save lines to server for retrospection
+  async function saveLines() {
+    const lines = getLines();
+    if (!lines.length) return;
+    try {
+      await fetch("/api/network/save_drawn_lines", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lines: lines }),
+      });
+      setStatus(`${lines.length} corridor lines saved`);
+    } catch (_) {}
+  }
+
+  // Load saved lines from server
+  async function loadLines() {
+    try {
+      const r = await fetch("/api/network/drawn_lines");
+      if (!r.ok) return;
+      const data = await r.json();
+      if (!data.lines || !data.lines.length) return;
+      clearAll();
+      for (const pts of data.lines) {
+        const polyline = L.polyline(pts.map(p => [p.lat, p.lon]), {
+          color: "#f90", weight: 3, opacity: 0.9
+        }).addTo(App.getMap());
+        const dots = pts.map(p => {
+          return L.circleMarker([p.lat, p.lon], {
+            radius: 5, color: "#fc0", fillColor: "#fc0", fillOpacity: 1, weight: 1
+          }).addTo(App.getMap());
+        });
+        _lines.push({ polyline, dots, points: pts });
+      }
+      _updateCount();
+      setStatus(`Loaded ${_lines.length} saved corridor lines`);
+    } catch (_) {}
+  }
+
+  // toggle button shows help
+  function toggle() {
+    if (typeof App !== "undefined" && App.flash)
+      App.flash("Cmd+click: draw. Option+click: move point. Shift+click: delete point. Shift+dblclick: delete line.", 5000);
+    const status = document.getElementById("draw-status");
+    if (status) status.style.display = "block";
+  }
+
+  return { toggle, build, getLines, clearAll, saveLines, loadLines };
+})();
+
+const LineTool = (() => {
+  let _active = false;
+  let _point1 = null;
+  let _marker1 = null;
+
+  function start() {
+    if (_active) { cancel(); return; }
+    _active = true;
+    _point1 = null;
+    if (_marker1) { App.getMap().removeLayer(_marker1); _marker1 = null; }
+    setStatus("Line tool: click the first point (e.g., airport)");
+    if (typeof App !== "undefined" && App.flash) App.flash("Click the first point on the map", 3000);
+    App.getMap().once("click", _onFirstClick);
+    // Visual feedback on button
+    const btn = document.querySelector('[onclick*="LineTool.start"]');
+    if (btn) btn.style.outline = "2px solid #f90";
+  }
+
+  function _onFirstClick(e) {
+    if (!_active) return;
+    _point1 = { lat: e.latlng.lat, lon: e.latlng.lng };
+    _marker1 = L.circleMarker(e.latlng, { radius: 8, color: "#f90", fillColor: "#f90", fillOpacity: 0.8 }).addTo(App.getMap());
+    setStatus(`Line tool: first point set (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}). Click the second point.`);
+    App.getMap().once("click", _onSecondClick);
+  }
+
+  async function _onSecondClick(e) {
+    if (!_active) return;
+    const point2 = { lat: e.latlng.lat, lon: e.latlng.lng };
+    _active = false;
+    const btn = document.querySelector('[onclick*="LineTool.start"]');
+    if (btn) btn.style.outline = "";
+    if (_marker1) { App.getMap().removeLayer(_marker1); _marker1 = null; }
+
+    setStatus("Line tool: building guideway…");
+    try {
+      const r = await fetch("/api/network/line", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ point1: _point1, point2: point2 }),
+      });
+      const data = await r.json();
+      if (!r.ok) {
+        alert("Line: " + (data.error || "failed"));
+        return;
+      }
+      const msg = `Line: ${data.stations} stations, ${data.line_miles} mi, heading ${data.heading_deg}°`;
+      setStatus(msg);
+      if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
+      const geojson = await api("GET", "/api/network");
+      App._render(geojson);
+    } catch (e) {
+      alert("Line failed: " + e.message);
+    }
+  }
+
+  function cancel() {
+    _active = false;
+    _point1 = null;
+    if (_marker1) { App.getMap().removeLayer(_marker1); _marker1 = null; }
+    App.getMap().off("click", _onFirstClick);
+    App.getMap().off("click", _onSecondClick);
+    const btn = document.querySelector('[onclick*="LineTool.start"]');
+    if (btn) btn.style.outline = "";
+    setStatus("Line tool cancelled");
+  }
+
+  return { start, cancel };
 })();
 </script>
 <script>
@@ -1390,12 +1951,73 @@ const OverlayPanel = (() => {
       btn.classList.toggle("ov-active", !!isOn);
     });
   }
+  /** Map from fetched layer names to button IDs */
+  const _layerToBtnId = {
+    aadt: "ov-btn-aadt",
+    accidents: "ov-btn-accident",
+    crash_density: "ov-btn-crash_density",
+    all_crashes: "ov-btn-crash_density",
+    population_density: "ov-btn-pop_density",
+    property_values: "ov-btn-property_values",
+    jobs: "ov-btn-jobs",
+  };
+
+  function _disableAllOverlayButtons() {
+    document.querySelectorAll(".ov-btn[id^='ov-btn-']").forEach(btn => {
+      if (btn.id === "ov-btn-fetch" || btn.id === "ov-btn-coverage") return;
+      btn.classList.add("ov-disabled");
+    });
+    document.querySelectorAll(".ov-signal").forEach(el => el.style.display = "none");
+  }
+
+  function _enableOverlayButtons(fetched) {
+    // Enable buttons that have data
+    if (!fetched || !fetched.length) {
+      // No list — enable all
+      document.querySelectorAll(".ov-btn.ov-disabled").forEach(btn => {
+        btn.classList.remove("ov-disabled");
+      });
+    } else {
+      for (const layer of fetched) {
+        const btnId = _layerToBtnId[layer];
+        if (btnId) {
+          const btn = document.getElementById(btnId);
+          if (btn) btn.classList.remove("ov-disabled");
+        }
+      }
+    }
+    // Show "!" signal button next to any data button that's still disabled
+    document.querySelectorAll(".ov-btn.ov-disabled[id^='ov-btn-']").forEach(btn => {
+      if (btn.id === "ov-btn-fetch" || btn.id === "ov-btn-coverage" || btn.id === "ov-btn-mobility") return;
+      const sigBtn = btn.parentElement.querySelector(".ov-signal");
+      if (sigBtn) sigBtn.style.display = "inline-block";
+    });
+  }
+
+  function _setFetchState(state, fetched) {
+    const btn = document.getElementById("ov-btn-fetch");
+    if (!btn) return;
+    btn.classList.remove("fetch-needed", "fetch-loading", "fetch-done");
+    if (state === "needed") {
+      btn.classList.add("fetch-needed");
+      btn.innerHTML = "&#8681; Fetch Data";
+    } else if (state === "loading") {
+      btn.classList.add("fetch-loading");
+      btn.innerHTML = "&#9203; Loading data…";
+      _disableAllOverlayButtons();
+    } else if (state === "done") {
+      btn.classList.add("fetch-done");
+      btn.innerHTML = "&#10003; Data Loaded";
+      _enableOverlayButtons(fetched);
+    }
+  }
+
   async function fetchData() {
     const status = document.getElementById("overlay-fetch-status");
+    _setFetchState("loading");
     status.textContent = "Fetching overlay data…";
     status.style.color = "#ff0";
     try {
-      // Send map center as fallback location when network has no stations
       const c = App.getMap().getCenter();
       const r = await fetch("/api/overlays/fetch", {
         method: "POST",
@@ -1406,19 +2028,57 @@ const OverlayPanel = (() => {
       if (!r.ok) {
         status.textContent = "Error: " + (data.error || "fetch failed");
         status.style.color = "#f44";
+        _setFetchState("needed");
         return;
       }
+      const fetched = data.fetched || [];
+      const missing = data.missing || [];
       const parts = [];
-      if (data.fetched.length) parts.push("Fetched: " + data.fetched.join(", "));
-      if (data.errors.length) parts.push("Errors: " + data.errors.join("; "));
+      if (fetched.length) parts.push("Available: " + fetched.join(", "));
+      if (missing.length) parts.push("Missing: " + missing.join(", "));
       status.textContent = parts.join(" | ") || "No data available for this location";
-      status.style.color = data.fetched.length ? "#4c4" : "#f90";
+      status.style.color = fetched.length ? "#4c4" : "#f90";
+      _setFetchState("done", fetched);
     } catch (e) {
       status.textContent = "Fetch failed: " + e.message;
       status.style.color = "#f44";
+      _setFetchState("needed");
     }
   }
-  return { toggle, toggleDetail, refresh, fetchData };
+
+  // If data was already loaded (e.g., from a saved .jpd), enable buttons
+  function checkExistingData() {
+    try {
+      fetch("/api/overlays/active").then(r => r.json()).then(data => {
+        if (data && data.files && data.files.length) {
+          _setFetchState("done", data.files);
+        } else if (data && (data.aadt || data.accidents || data.pop_density)) {
+          // Legacy format — enable all
+          _setFetchState("done", null);
+        }
+      });
+    } catch (_) {}
+  }
+  // Check on panel open
+  setTimeout(checkExistingData, 500);
+
+  async function signalMissing(layer) {
+    const c = App.getMap().getCenter();
+    try {
+      const r = await fetch("/api/overlays/signal_missing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layer, lat: c.lat, lon: c.lng }),
+      });
+      const data = await r.json();
+      if (typeof App !== "undefined" && App.flash)
+        App.flash(data.message || `Signaled: ${layer} missing`, 3000);
+    } catch (e) {
+      console.error("Signal missing failed:", e);
+    }
+  }
+
+  return { toggle, toggleDetail, refresh, fetchData, signalMissing };
 })();
 </script>
 <script src="app.js"></script>

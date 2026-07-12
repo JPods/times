@@ -701,6 +701,33 @@ body {
 }
 .btn-secondary:hover { background: #333; }
 
+/* Fetch Data button states */
+.fetch-needed {
+  animation: fetch-pulse 1.2s ease-in-out infinite;
+  border-color: #ff8800 !important;
+  box-shadow: 0 0 8px rgba(255,136,0,0.4);
+}
+@keyframes fetch-pulse {
+  0%, 100% { border-color: #ff8800; box-shadow: 0 0 8px rgba(255,136,0,0.4); }
+  50% { border-color: #ffaa44; box-shadow: 0 0 14px rgba(255,136,0,0.6); }
+}
+.fetch-loading {
+  animation: pulse-working 1.2s ease-in-out infinite;
+  background: #2a4a6a !important; border-color: #4488cc !important; color: #8cf !important;
+  cursor: wait; pointer-events: none;
+}
+.fetch-done {
+  border-color: #2a7a2a !important;
+  background: #1a4a1a !important;
+}
+
+/* Overlay buttons disabled until data loaded */
+.ov-btn.ov-disabled {
+  opacity: 0.35;
+  pointer-events: none;
+  filter: grayscale(0.8);
+}
+
 .sb-nav-btn.active {
   background: #2a5a3a !important;
   border-color: #4a8a5a !important;
@@ -815,6 +842,20 @@ body {
   line-height: 1;
 }
 .ov-info:hover { color: #ddd; border-color: #888; }
+.ov-signal {
+  width: 22px;
+  min-width: 22px;
+  padding: 0;
+  background: #4a2a00;
+  border: 1px solid #f90;
+  border-radius: 3px;
+  color: #f90;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+}
+.ov-signal:hover { background: #6a3a00; color: #fc0; }
 .ov-detail {
   font-size: 10px;
   color: #999;

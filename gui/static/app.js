@@ -274,6 +274,10 @@ const CitySearch = (() => {
     go() {
       const raw = document.getElementById("city-search").value.trim();
       if (!raw) return;
+      // Check for unsaved work before switching cities
+      if (App._dirty) {
+        if (!confirm("You have unsaved changes. Continue without saving?")) return;
+      }
       const errEl = document.getElementById("city-error");
       errEl.style.display = "none";
       setStatus(`Searching for "${raw}"…`);
@@ -337,6 +341,10 @@ const CitySearch = (() => {
               city_label: label,
             }),
           }).catch(() => {});
+          // Clear old network and overlays — new city = fresh start
+          App.newNetwork();
+          if (typeof Overlays !== "undefined") Overlays.clearAll();
+
           // Close the search panel
           const searchPanel = document.getElementById("panel-city-search");
           if (searchPanel) searchPanel.style.display = "none";
