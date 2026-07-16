@@ -14,7 +14,7 @@ import logging
 import math
 import os
 import urllib.parse
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 from flask import Blueprint, jsonify, request
 

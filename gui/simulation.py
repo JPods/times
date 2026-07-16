@@ -31,10 +31,8 @@ if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
 import subprocess as _subprocess
-import pathlib as _pathlib
 
 from mesh_mobility.engine import Network, Simulator
-from mesh_mobility.engine.physics import PhysicsModel
 
 # ---------------------------------------------------------------------------
 # Shared state imports

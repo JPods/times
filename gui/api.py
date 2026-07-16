@@ -35,16 +35,14 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 import os
 import tempfile
-import uuid
 from datetime import datetime, timezone
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 log = logging.getLogger(__name__)
 
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, jsonify, request
 
 # Import engine and IO
 import sys
@@ -57,17 +55,15 @@ if _parent not in sys.path:
 # ---------------------------------------------------------------------------
 # Shared state -- imported from state.py
 # ---------------------------------------------------------------------------
-import subprocess as _subprocess
 import pathlib as _pathlib
 
 from mesh_mobility.gui.state import (
-    _state, _net, _ALLIE_CAPTURE,
+    _state, _net,
     ensure_session, set_session_cookie, auto_push_undo,
     push_undo, clear_edit_state, next_sid, sync_counters,
-    reconstruct_structures_from_net, restore_structures,
-    new_id, footprint_m, check_overlap,
-    noelle_log, write_fault,
-    cp_by_heading,
+    restore_structures,
+    new_id, check_overlap,
+    noelle_log,
 )
 
 from mesh_mobility.engine import Network, Node, Line, Station
@@ -77,7 +73,6 @@ from mesh_mobility.engine.structures import (
     ConnectionPoint, Structure,
 )
 from mesh_mobility.io import load_jpd
-from mesh_mobility.io.jpd_writer import serialise_jpd
 
 api = Blueprint("api", __name__, url_prefix="/api")
 
