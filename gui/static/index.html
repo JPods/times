@@ -486,7 +486,7 @@
       <button id="btn-crash-mesh" onclick="CrashMesh.generate()" class="tool-btn" style="flex:1;background:#0b2f4a;border-color:#1a5276">&#128165; Crash Mesh</button>
     </div>
     <div class="ov-row">
-      <button onclick="LineTool.start()" class="tool-btn" style="flex:1;background:#3a2a1a;border-color:#5a4a3a">&#9135; Line</button>
+      <button onclick="LineTool.start()" class="tool-btn" style="flex:1;background:#3a2a1a;border-color:#5a4a3a">&#9135; Remote</button>
       <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Custom Mesh</button>
       <button onclick="ToolsPanel.toggleDetail('mesh')" class="ov-info">?</button>
     </div>
@@ -506,7 +506,7 @@
       <strong>Build on Lines:</strong> Places stations every 0.5-0.75 mi along drawn lines. Traffic circles at intersections.<br>
       <strong>City Mesh:</strong> Grid-based coverage.<br>
       <strong>Crash Mesh:</strong> Auto-extract corridors from crash data.<br>
-      <strong>Line:</strong> Click two points — airport-to-city connector.<br>
+      <strong>Remote:</strong> Click two points to connect a network to a remote location (airport, neighboring city).<br>
       <strong>Custom:</strong> Manual grid mesh.
     </div>
 
@@ -1803,8 +1803,8 @@ const LineTool = (() => {
     _active = true;
     _point1 = null;
     if (_marker1) { App.getMap().removeLayer(_marker1); _marker1 = null; }
-    setStatus("Line tool: click the first point (e.g., airport)");
-    if (typeof App !== "undefined" && App.flash) App.flash("Click the first point on the map", 3000);
+    setStatus("Remote: click the remote location (e.g., airport)");
+    if (typeof App !== "undefined" && App.flash) App.flash("Click the remote location on the map", 3000);
     App.getMap().once("click", _onFirstClick);
     // Visual feedback on button
     const btn = document.querySelector('[onclick*="LineTool.start"]');
@@ -1815,7 +1815,7 @@ const LineTool = (() => {
     if (!_active) return;
     _point1 = { lat: e.latlng.lat, lon: e.latlng.lng };
     _marker1 = L.circleMarker(e.latlng, { radius: 8, color: "#f90", fillColor: "#f90", fillOpacity: 0.8 }).addTo(App.getMap());
-    setStatus(`Line tool: first point set (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}). Click the second point.`);
+    setStatus(`Remote: first point set (${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}). Click the network connection point.`);
     App.getMap().once("click", _onSecondClick);
   }
 
@@ -1827,7 +1827,7 @@ const LineTool = (() => {
     if (btn) btn.style.outline = "";
     if (_marker1) { App.getMap().removeLayer(_marker1); _marker1 = null; }
 
-    setStatus("Line tool: building guideway…");
+    setStatus("Remote: building connector…");
     try {
       const r = await fetch("/api/network/line", {
         method: "POST",
@@ -1836,7 +1836,7 @@ const LineTool = (() => {
       });
       const data = await r.json();
       if (!r.ok) {
-        alert("Line: " + (data.error || "failed"));
+        alert("Remote: " + (data.error || "failed"));
         return;
       }
       const circles = data.circles_inserted ? `, ${data.circles_inserted} traffic circle(s) at crossings` : "";
@@ -1846,7 +1846,7 @@ const LineTool = (() => {
       const geojson = await api("GET", "/api/network");
       App._render(geojson);
     } catch (e) {
-      alert("Line failed: " + e.message);
+      alert("Remote failed: " + e.message);
     }
   }
 
@@ -1858,7 +1858,7 @@ const LineTool = (() => {
     App.getMap().off("click", _onSecondClick);
     const btn = document.querySelector('[onclick*="LineTool.start"]');
     if (btn) btn.style.outline = "";
-    setStatus("Line tool cancelled");
+    setStatus("Remote tool cancelled");
   }
 
   return { start, cancel };
