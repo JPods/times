@@ -161,7 +161,7 @@ const Editor = (() => {
         return;
       }
 
-      const r = await api("POST", "/api/network/line", {
+      const r = await api("POST", "/api/network/add_line", {
         start_node: _lineStart.node_id,
         end_node: nid,
       });

@@ -10,7 +10,8 @@ Endpoints:
   POST /api/network/node     → add a node (station or switch)
   POST /api/network/circle   → add a traffic circle (8-node structure)
   DELETE /api/network/node/<id>    → remove a node + its lines
-  POST /api/network/line     → add a directed line between two nodes
+  POST /api/network/add_line  → add a directed line between two nodes
+  POST /api/network/line     → Line tool: build guideway between two map clicks
   DELETE /api/network/line/<id>    → break a line (shift-click)
   POST /api/simulation/run   → run simulation, return results
   GET  /api/simulation/frame/<n>   → pod positions at tick n (for replay)
@@ -1229,7 +1230,7 @@ def add_station():
     })
 
 
-@api.post("/network/line")
+@api.post("/network/add_line")
 def add_line():
     """Add a directed line from start_node to end_node."""
     net = _net()
@@ -1952,11 +1953,56 @@ def network_city_mesh():
     })
 
 
+def _seg_intersect(p1, p2, p3, p4):
+    """Return (lat, lon) where segment p1-p2 crosses p3-p4, or None.
+    Each point is (lat, lon).  Uses 2D line-segment intersection."""
+    x1, y1 = p1; x2, y2 = p2; x3, y3 = p3; x4, y4 = p4
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if abs(denom) < 1e-12:
+        return None
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+    u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom
+    if 0 < t < 1 and 0 < u < 1:
+        return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+    return None
+
+
+def _find_crossings(lat1, lon1, lat2, lon2):
+    """Find existing connections that cross the line from (lat1,lon1) to (lat2,lon2).
+    Returns list of (intersection_lat, intersection_lon, cp_a, cp_b) where
+    cp_a and cp_b are the two CPs of the crossed connection."""
+    seen = set()
+    crossings = []
+    for cp in _state["cps"].values():
+        if cp.connected_to is None:
+            continue
+        pair = tuple(sorted([cp.cp_id, cp.connected_to]))
+        if pair in seen:
+            continue
+        seen.add(pair)
+        partner = _state["cps"].get(cp.connected_to)
+        if not partner:
+            continue
+        s_a = _state["structures"].get(cp.structure_id)
+        s_b = _state["structures"].get(partner.structure_id)
+        if not s_a or not s_b:
+            continue
+        pt = _seg_intersect(
+            (lat1, lon1), (lat2, lon2),
+            (s_a.center_lat, s_a.center_lon), (s_b.center_lat, s_b.center_lon),
+        )
+        if pt:
+            crossings.append((pt[0], pt[1], cp, partner))
+    return crossings
+
+
 @api.post("/network/line")
 def network_line():
     """Build a guideway between two user-clicked points.
     Stations every mile along the line, oriented along the line direction.
-    Airport-to-city connector. Adds to existing network (does not replace)."""
+    Airport-to-city connector. Adds to existing network (does not replace).
+    Where the new line crosses an existing connection, a traffic circle is
+    inserted and the old connection is re-routed through it."""
     from mesh_mobility.engine.network import vincenty_m
     data = request.json or {}
     p1 = data.get("point1")  # {lat, lon}
@@ -1986,24 +2032,96 @@ def network_line():
         _clear_edit_state()
     _sync_counters()
 
-    # Place stations along the line
-    placed = []
+    # Find where the new line crosses existing connections
+    crossings = _find_crossings(lat1, lon1, lat2, lon2)
+    # Express crossing positions as fraction along the line (0..1)
+    cross_fracs = []
+    for clat, clon, cp_a, cp_b in crossings:
+        if abs(lat2 - lat1) > abs(lon2 - lon1):
+            frac = (clat - lat1) / (lat2 - lat1)
+        else:
+            frac = (clon - lon1) / (lon2 - lon1)
+        cross_fracs.append((frac, clat, clon, cp_a, cp_b))
+    cross_fracs.sort(key=lambda x: x[0])
+
+    # Build the position list: evenly spaced stations + crossing insertions
+    # Each entry: (frac, lat, lon, is_crossing, crossing_data)
+    positions = []
     for i in range(n_stations):
         frac = i / max(1, n_stations - 1)
         slat = lat1 + (lat2 - lat1) * frac
         slon = lon1 + (lon2 - lon1) * frac
-        st, st_cps = build_station(net, slat, slon, heading_deg=heading,
-                                    structure_id=_next_sid("s"))
-        _state["structures"][st.structure_id] = st
-        _state["cps"].update(st_cps)
-        placed.append((st, st_cps))
+        positions.append((frac, slat, slon, False, None))
 
-    # Connect consecutive stations
+    # Insert crossing points, replacing the nearest station if within 0.3 mi
+    for cf, clat, clon, cp_a, cp_b in cross_fracs:
+        replace_idx = None
+        best_dist = float("inf")
+        for idx, (pf, plat, plon, is_cross, _) in enumerate(positions):
+            if is_cross:
+                continue
+            d = vincenty_m(clat, clon, plat, plon)
+            if d < best_dist:
+                best_dist = d
+                replace_idx = idx
+        if best_dist < 483:  # 0.3 mi in meters
+            positions[replace_idx] = (cf, clat, clon, True, (cp_a, cp_b))
+        else:
+            positions.append((cf, clat, clon, True, (cp_a, cp_b)))
+    positions.sort(key=lambda x: x[0])
+
+    # Place structures along the line
+    placed = []
+    circles_inserted = 0
+    for frac, slat, slon, is_crossing, cross_data in positions:
+        if is_crossing:
+            # Place a traffic circle at the crossing
+            # Arms aligned to both the new line heading and the crossed connection
+            cp_a, cp_b = cross_data
+            s_a = _state["structures"].get(cp_a.structure_id)
+            s_b = _state["structures"].get(cp_b.structure_id)
+            # Heading of the crossed connection
+            cdlat = s_b.center_lat - s_a.center_lat
+            cdlon = (s_b.center_lon - s_a.center_lon) * math.cos(math.radians(slat))
+            cross_heading = math.degrees(math.atan2(cdlon, cdlat)) % 360
+            arms = [
+                heading % 360,
+                cross_heading % 360,
+                (heading + 180) % 360,
+                (cross_heading + 180) % 360,
+            ]
+            tc, tc_cps = build_traffic_circle(net, slat, slon,
+                                               structure_id=_next_sid("c"),
+                                               arm_headings=arms)
+            _state["structures"][tc.structure_id] = tc
+            _state["cps"].update(tc_cps)
+            placed.append((tc, tc_cps))
+            circles_inserted += 1
+
+            # Disconnect the old crossed connection
+            disconnect_cp(net, cp_a, _state["cps"])
+
+            # Reconnect through the traffic circle
+            # cp_a's structure → TC arm closest to cp_a heading
+            # cp_b's structure → TC arm closest to cp_b heading
+            tc_to_a = _cp_by_heading(tc_cps, (cross_heading + 180) % 360)
+            tc_to_b = _cp_by_heading(tc_cps, cross_heading % 360)
+            if tc_to_a and cp_a.connected_to is None:
+                connect_cps(net, tc_to_a, cp_a, _state["cps"])
+            if tc_to_b and cp_b.connected_to is None:
+                connect_cps(net, tc_to_b, cp_b, _state["cps"])
+        else:
+            st, st_cps = build_station(net, slat, slon, heading_deg=heading,
+                                        structure_id=_next_sid("s"))
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            placed.append((st, st_cps))
+
+    # Connect consecutive structures along the line
     connected = 0
     for i in range(len(placed) - 1):
         st_a, cps_a = placed[i]
         st_b, cps_b = placed[i + 1]
-        # far_near = "back" CP, near_far = "front" CP
         cp_out = cps_a.get(f"{st_a.structure_id}.CP_near_far")
         cp_in = cps_b.get(f"{st_b.structure_id}.CP_far_near")
         if not cp_out:
@@ -2018,12 +2136,15 @@ def network_line():
     total_miles = round(net.total_length_m() / 1609.34, 1)
 
     _noelle_log("line_build", {
-        "stations": n_stations, "connected": connected,
+        "stations": len([p for p in placed if p[0].structure_type == "station"]),
+        "circles_inserted": circles_inserted,
+        "connected": connected,
         "heading": round(heading, 1), "length_mi": round(total_mi, 1),
     })
 
     return jsonify({
-        "stations": n_stations,
+        "stations": len([p for p in placed if p[0].structure_type == "station"]),
+        "circles_inserted": circles_inserted,
         "connected": connected,
         "heading_deg": round(heading, 1),
         "line_miles": round(total_mi, 1),

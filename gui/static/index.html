@@ -1803,7 +1803,8 @@ const LineTool = (() => {
         alert("Line: " + (data.error || "failed"));
         return;
       }
-      const msg = `Line: ${data.stations} stations, ${data.line_miles} mi, heading ${data.heading_deg}°`;
+      const circles = data.circles_inserted ? `, ${data.circles_inserted} traffic circle(s) at crossings` : "";
+      const msg = `Line: ${data.stations} stations${circles}, ${data.line_miles} mi, heading ${data.heading_deg}°`;
       setStatus(msg);
       if (typeof App !== "undefined" && App.flash) App.flash(msg, 5000);
       const geojson = await api("GET", "/api/network");
