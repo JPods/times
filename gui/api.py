@@ -42,6 +42,24 @@ import sys
 _gui_dir = os.path.dirname(os.path.abspath(__file__))
 _rt_dir  = os.path.dirname(_gui_dir)
 _parent  = os.path.dirname(_rt_dir)
+if _parent not in sys.path:
+    sys.path.insert(0, _parent)
+
+# ---------------------------------------------------------------------------
+# Shared state — imported from state.py
+# ---------------------------------------------------------------------------
+import subprocess as _subprocess
+import pathlib as _pathlib
+
+from mesh_mobility.gui.state import (
+    _state, _net, _ALLIE_CAPTURE,
+    ensure_session, set_session_cookie, auto_push_undo,
+    push_undo, clear_edit_state, next_sid, sync_counters,
+    reconstruct_structures_from_net, restore_structures,
+    new_id, footprint_m, check_overlap,
+    noelle_log, allie_capture_simulation, allie_capture_error, write_fault,
+    cp_by_heading,
+)
 
 # ---------------------------------------------------------------------------
 # Overlay data — reads from CrashHarvester library
@@ -49,6 +67,23 @@ _parent  = os.path.dirname(_rt_dir)
 # ---------------------------------------------------------------------------
 from CrashHarvester.reader import MobilityData
 _md = MobilityData()
+
+from mesh_mobility.engine import Network, Node, Line, Station, Simulator
+from mesh_mobility.engine.physics import PhysicsModel
+from mesh_mobility.engine.structures import (
+    build_traffic_circle, build_station, connect_cps, disconnect_cp,
+    rotate_station, rotate_traffic_circle,
+    ConnectionPoint, Structure,
+)
+from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
+from mesh_mobility.io.jpd_writer import save_jpd, serialise_jpd
+
+api = Blueprint("api", __name__, url_prefix="/api")
+
+# Register session lifecycle hooks from state module
+api.before_request(ensure_session)
+api.after_request(set_session_cookie)
+api.before_request(auto_push_undo)
 
 
 def _detect_state():
@@ -89,521 +124,6 @@ def _get_overlay_center_radius():
         if lats:
             return sum(lats) / len(lats), sum(lons) / len(lons), radius
     return None, None, radius
-if _parent not in sys.path:
-    sys.path.insert(0, _parent)
-
-from mesh_mobility.engine import Network, Node, Line, Station, Simulator
-from mesh_mobility.engine.physics import PhysicsModel
-from mesh_mobility.engine.structures import (
-    build_traffic_circle, build_station, connect_cps, disconnect_cp,
-    rotate_station, rotate_traffic_circle,
-    ConnectionPoint, Structure,
-)
-from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
-from mesh_mobility.io.jpd_writer import save_jpd, serialise_jpd
-
-api = Blueprint("api", __name__, url_prefix="/api")
-
-# ---------------------------------------------------------------------------
-# Noelle session log — every significant action saved to Allie
-# ---------------------------------------------------------------------------
-_NOELLE_LOG_DIR = "/Volumes/Allie/data/noelle_sessions"
-
-
-def _noelle_log(action, details=None):
-    """Log a MeshMobility session event to Allie's 5TB. Fire-and-forget."""
-    try:
-        os.makedirs(_NOELLE_LOG_DIR, exist_ok=True)
-        ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        entry = {
-            "timestamp": ts,
-            "action": action,
-            "remote_ip": request.headers.get("CF-Connecting-IP",
-                         request.headers.get("X-Forwarded-For",
-                         request.remote_addr)),
-            "user_agent": request.headers.get("User-Agent", "")[:120],
-        }
-        if details:
-            entry["details"] = details
-
-        # Append to daily log file
-        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        log_path = os.path.join(_NOELLE_LOG_DIR, f"{date_str}.jsonl")
-        with open(log_path, "a") as f:
-            f.write(json.dumps(entry) + "\n")
-    except Exception:
-        pass  # never break the request
-
-
-# ---------------------------------------------------------------------------
-# Allie capture helpers — fire-and-forget, never raise
-# ---------------------------------------------------------------------------
-import subprocess as _subprocess
-import pathlib as _pathlib
-
-_ALLIE_CAPTURE = _pathlib.Path.home() / "Allie" / "scripts" / "allie-capture.py"
-
-
-def _allie_capture_simulation(result, net):
-    """Log simulation completion to Allie's events.jsonl."""
-    if not _ALLIE_CAPTURE.exists():
-        return
-    try:
-        summary = result.summary if hasattr(result, "summary") else {}
-        stations = summary.get("station_count", len(getattr(net, "stations", {})))
-        lines = summary.get("line_count", len(getattr(net, "lines", {})))
-        network_id = getattr(result, "network_id", "") or ""
-        data = json.dumps({
-            "network_id": network_id,
-            "stations": stations,
-            "lines": lines,
-        })
-        _subprocess.Popen(
-            ["python3", str(_ALLIE_CAPTURE),
-             "--source", "route-time",
-             "--event",  "simulation_complete",
-             "--message", f"{stations} stations, {lines} lines",
-             "--data", data],
-            stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL
-        )
-    except Exception:
-        pass
-
-
-def _allie_capture_error(event: str, message: str):
-    """Log an error event to Allie's events.jsonl."""
-    if not _ALLIE_CAPTURE.exists():
-        return
-    try:
-        _subprocess.Popen(
-            ["python3", str(_ALLIE_CAPTURE),
-             "--source", "route-time",
-             "--event",  event,
-             "--message", message[:200]],
-            stdout=_subprocess.DEVNULL, stderr=_subprocess.DEVNULL
-        )
-    except Exception:
-        pass
-
-
-def _write_fault(fault_text: str, context: str = "", detected_by: str = "Claude") -> None:
-    """Write a FAULT file to ~/Allie/process/inbox/.
-
-    Called at the tool boundary when a simulation or network load fails.
-    Allie reads these nightly:
-      - Recurring unresolved faults → ouch-list candidates
-      - FAULT + TFTS pairs → Understanding candidates
-    """
-    from datetime import datetime, timezone
-    ts_str  = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    ts_file = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
-    inbox = _pathlib.Path.home() / "Allie" / "process" / "inbox"
-    if not inbox.parent.parent.exists():
-        return   # Allie drive not mounted — skip silently
-    inbox.mkdir(parents=True, exist_ok=True)
-    path = inbox / f"{ts_file}-fault.md"
-    path.write_text(
-        f"# FAULT — {ts_str}\n\n"
-        f"system:      RT\n"
-        f"detected_by: {detected_by}\n"
-        f"fault:       {fault_text}\n"
-        f"context:     {context}\n"
-        f"resolved_at: \n"
-    )
-    log.info("[fault] → %s", path.name)
-
-
-# ---------------------------------------------------------------------------
-# Settings helper (defined before _state so it can be called inline)
-# ---------------------------------------------------------------------------
-
-def _default_settings() -> dict:
-    settings_path = os.path.join(_rt_dir, "settings.json")
-    if os.path.exists(settings_path):
-        with open(settings_path) as f:
-            return json.load(f)
-    return {
-        "accInG": 1.0, "deccInG": 1.0, "maxVelocityInKMPH": 60,
-        "disembarkingTimeInSec": 20, "embarkingTimeInSec": 20,
-        "ticketingTimeInSec": 30, "stationEntryTimeInSec": 40,
-        "stationExitTimeInSec": 40, "timeResolutionPerSec": 9,
-        "podsPerStation": 8, "graceDistance": 0,
-    }
-
-
-# ---------------------------------------------------------------------------
-# ---------------------------------------------------------------------------
-# Session-keyed state — each user gets independent network state
-# ---------------------------------------------------------------------------
-
-_sessions: Dict[str, Dict] = {}
-_sessions_lock = threading.Lock()
-_SESSION_COOKIE = "mm_session"
-_SESSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
-_SESSION_MAX = 200  # max concurrent sessions before LRU cleanup
-
-
-def _new_state() -> Dict:
-    """Create a fresh state dict for a new session."""
-    return {
-        "network": None,
-        "network_path": None,
-        "settings": _default_settings(),
-        "sim_frames": [],
-        "sim_result": None,
-        "sim_active": False,
-        "sim_instance": None,
-        "sim_error": None,
-        "structures":   {},
-        "cps":          {},
-        "waypoints":    {},
-        "line_pairs":   {},
-        "line_roles":   {},
-        "_next_s":      1,
-        "_next_c":      1,
-        "overlays":     None,
-        "_undo_stack":  [],
-        "_last_access": time.time(),
-    }
-
-
-def _get_session_id() -> str:
-    """Get or create a session ID from the request cookie."""
-    sid = request.cookies.get(_SESSION_COOKIE)
-    if sid and sid in _sessions:
-        return sid
-    # Check query param (for API calls that can't send cookies)
-    sid = request.args.get("session")
-    if sid and sid in _sessions:
-        return sid
-    # New session
-    return None
-
-
-def _get_state() -> Dict:
-    """Return the state dict for the current session."""
-    if not has_request_context():
-        return None
-    sid = getattr(g, '_mm_session_id', None)
-    if sid and sid in _sessions:
-        return _sessions[sid]
-    # Fallback: try cookie/param directly
-    sid = _get_session_id()
-    if sid and sid in _sessions:
-        return _sessions[sid]
-    return None
-
-
-class _SessionStateProxy:
-    """Proxy object that makes _state[key] work by delegating to the current session.
-    Falls back to a default state for non-request contexts (startup, background tasks)."""
-
-    _default = _new_state()
-
-    def __getitem__(self, key):
-        s = _get_state()
-        return (s or self._default)[key]
-
-    def __setitem__(self, key, value):
-        s = _get_state()
-        if s:
-            s[key] = value
-        else:
-            self._default[key] = value
-
-    def __contains__(self, key):
-        s = _get_state()
-        return key in (s or self._default)
-
-    def get(self, key, default=None):
-        s = _get_state()
-        return (s or self._default).get(key, default)
-
-    def __repr__(self):
-        sid = _get_session_id() if has_request_context() else None
-        return f"<SessionState sid={sid}>"
-
-
-_state = _SessionStateProxy()
-
-
-_UNDO_MAX = 20  # max snapshots
-_UNDO_SKIP_PATHS = {"/api/network/undo", "/api/network/load", "/api/network/load_text",
-                     "/api/network/new", "/api/network/save", "/api/network/download",
-                     "/api/simulation/run", "/api/settings", "/api/demand"}
-
-
-@api.before_request
-def _ensure_session():
-    """Create or resume a session for every API request."""
-    sid = _get_session_id()
-    if not sid:
-        sid = str(uuid.uuid4())[:12]
-        with _sessions_lock:
-            # LRU cleanup if too many sessions
-            if len(_sessions) >= _SESSION_MAX:
-                oldest = sorted(_sessions.items(), key=lambda x: x[1].get("_last_access", 0))
-                for old_sid, _ in oldest[:len(_sessions) - _SESSION_MAX + 1]:
-                    del _sessions[old_sid]
-                    log.info(f"Session expired: {old_sid}")
-            _sessions[sid] = _new_state()
-        log.info(f"New session: {sid} (total: {len(_sessions)})")
-    else:
-        _sessions[sid]["_last_access"] = time.time()
-    g._mm_session_id = sid
-
-
-@api.after_request
-def _set_session_cookie(response):
-    """Set session cookie on every response."""
-    sid = getattr(g, '_mm_session_id', None)
-    if sid:
-        response.set_cookie(_SESSION_COOKIE, sid, max_age=_SESSION_MAX_AGE,
-                            httponly=True, samesite='Lax')
-    return response
-
-
-@api.before_request
-def _auto_push_undo():
-    """Snapshot before any network mutation for undo support.
-    Skips moves/rotates — those are high-frequency; browser pushes undo once on mousedown."""
-    if request.method in ("POST", "DELETE", "PUT"):
-        if request.path not in _UNDO_SKIP_PATHS and request.path.startswith("/api/network"):
-            if "/move" in request.path or "/rotate" in request.path:
-                return
-            _push_undo()
-
-
-def _push_undo():
-    """Snapshot the current network state for undo. Call before any mutation."""
-    net = _state.get("network")
-    if not net:
-        return
-    try:
-        snapshot = serialise_jpd(net, _state["structures"], _state["cps"],
-                                  _state["settings"], _state.get("overlays"))
-        _state["_undo_stack"].append(snapshot)
-        if len(_state["_undo_stack"]) > _UNDO_MAX:
-            _state["_undo_stack"].pop(0)
-    except Exception:
-        pass
-
-
-def _clear_edit_state():
-    """Reset editing state when a new network is loaded."""
-    _state["structures"] = {}
-    _state["cps"]        = {}
-    _state["waypoints"]  = {}
-    _state["line_pairs"] = {}
-    _state["line_roles"] = {}
-    _state["_next_s"]    = 1
-    _state["_next_c"]    = 1
-
-
-def _next_sid(stype: str) -> str:
-    """Return next sequential human-readable structure ID: s1,s2,… or c1,c2,…"""
-    key = "_next_s" if stype == "s" else "_next_c"
-    n = _state[key]
-    _state[key] += 1
-    return f"{stype}{n}"
-
-
-def _sync_counters():
-    """After loading a file, advance counters past any existing s#/c# IDs."""
-    import re as _re
-    max_s = max_c = 0
-    for sid in _state["structures"]:
-        m = _re.match(r'^s(\d+)$', sid)
-        if m:
-            max_s = max(max_s, int(m.group(1)))
-        m = _re.match(r'^c(\d+)$', sid)
-        if m:
-            max_c = max(max_c, int(m.group(1)))
-    if max_s:
-        _state["_next_s"] = max_s + 1
-    if max_c:
-        _state["_next_c"] = max_c + 1
-
-
-def _reconstruct_structures_from_net(net) -> tuple:
-    """
-    Derive Structure and ConnectionPoint objects from a legacy .jpd network
-    (one saved before <StructureMeta> was added) using node naming conventions.
-
-    Stations:  all nodes with IDs starting "ST_"  → {sid}.guideway_near_out_tip etc.
-    Circles:   all nodes with IDs starting "TC_"  → {sid}.A{i}_out / A{i}_in
-
-    Returns (structures_dict, cps_dict).
-    """
-    import math as _math
-
-    import re as _re
-    _is_st = lambda p: p.startswith('ST_') or bool(_re.match(r'^s\d+$', p))
-    _is_tc = lambda p: p.startswith('TC_') or bool(_re.match(r'^c\d+$', p))
-
-    # Group nodes by their structure prefix (text before the first '.')
-    prefix_nodes: dict = {}
-    for nid, node in net.nodes.items():
-        if '.' in nid:
-            prefix = nid.split('.')[0]
-            if _is_st(prefix) or _is_tc(prefix):
-                prefix_nodes.setdefault(prefix, {})[nid] = node
-
-    structures: dict = {}
-    cps: dict = {}
-
-    for sid, nodes in prefix_nodes.items():
-
-        # Internal line_ids = lines where BOTH endpoints belong to this structure
-        line_ids = [
-            lid for lid, ln in net.lines.items()
-            if ln.start_node.node_id in nodes and ln.end_node.node_id in nodes
-        ]
-
-        if _is_st(sid):
-            # ── Station ────────────────────────────────────────────────────
-            nb_n_tip = nodes.get(f"{sid}.guideway_near_out_tip")
-            sb_n_tip = nodes.get(f"{sid}.guideway_far_in_tip")
-            nb_s_tip = nodes.get(f"{sid}.guideway_near_in_tip")
-            sb_s_tip = nodes.get(f"{sid}.guideway_far_out_tip")
-            if not all([nb_n_tip, sb_n_tip, nb_s_tip, sb_s_tip]):
-                continue   # incomplete — skip
-
-            # Compute heading from guideway_near_in_end → guideway_near_out_end
-            nb_n = nodes.get(f"{sid}.guideway_near_out_end")
-            nb_s = nodes.get(f"{sid}.guideway_near_in_end")
-            heading_deg = 0.0
-            if nb_n and nb_s:
-                dlat = nb_n.lat - nb_s.lat
-                dlon = nb_n.lon - nb_s.lon
-                heading_deg = _math.degrees(
-                    _math.atan2(dlon * _math.cos(_math.radians(nb_n.lat)), dlat)
-                ) % 360
-
-            nb_h = heading_deg
-            sb_h = (nb_h + 180) % 360
-
-            cp_n = ConnectionPoint(
-                cp_id=f"{sid}.CP_near_far", structure_id=sid, heading_deg=nb_h,
-                inbound_node=sb_n_tip, outbound_node=nb_n_tip,
-                center_lat=(nb_n_tip.lat + sb_n_tip.lat) / 2,
-                center_lon=(nb_n_tip.lon + sb_n_tip.lon) / 2,
-            )
-            cp_s = ConnectionPoint(
-                cp_id=f"{sid}.CP_far_near", structure_id=sid, heading_deg=sb_h,
-                inbound_node=nb_s_tip, outbound_node=sb_s_tip,
-                center_lat=(nb_s_tip.lat + sb_s_tip.lat) / 2,
-                center_lon=(nb_s_tip.lon + sb_s_tip.lon) / 2,
-            )
-
-            platform = nodes.get(f"{sid}.PLATFORM")
-            clat = platform.lat if platform else sum(n.lat for n in nodes.values()) / len(nodes)
-            clon = platform.lon if platform else sum(n.lon for n in nodes.values()) / len(nodes)
-
-            structures[sid] = Structure(
-                structure_id=sid, structure_type="station",
-                cp_ids=[cp_n.cp_id, cp_s.cp_id],
-                node_ids=list(nodes.keys()), line_ids=line_ids,
-                center_lat=clat, center_lon=clon, heading_deg=heading_deg,
-            )
-            cps[cp_n.cp_id] = cp_n
-            cps[cp_s.cp_id] = cp_s
-
-        elif _is_tc(sid):
-            # ── Traffic circle ──────────────────────────────────────────────
-            cp_ids = []
-            tc_cps = {}
-            arm_headings = []
-
-            for arm_idx in range(4):
-                out_tip = nodes.get(f"{sid}.A{arm_idx}_out")
-                in_tip  = nodes.get(f"{sid}.A{arm_idx}_in")
-                div     = nodes.get(f"{sid}.A{arm_idx}_div")
-                if out_tip is None or in_tip is None:
-                    continue
-
-                # Heading = direction from div toward out_tip
-                hdg = 0.0
-                if div:
-                    dlat = out_tip.lat - div.lat
-                    dlon = out_tip.lon - div.lon
-                    hdg  = _math.degrees(
-                        _math.atan2(dlon * _math.cos(_math.radians(div.lat)), dlat)
-                    ) % 360
-
-                cp = ConnectionPoint(
-                    cp_id=f"{sid}.CP{arm_idx}", structure_id=sid, heading_deg=hdg,
-                    inbound_node=in_tip, outbound_node=out_tip,
-                    center_lat=(out_tip.lat + in_tip.lat) / 2,
-                    center_lon=(out_tip.lon + in_tip.lon) / 2,
-                )
-                tc_cps[cp.cp_id] = cp
-                cp_ids.append(cp.cp_id)
-                arm_headings.append(hdg)
-
-            if not cp_ids:
-                continue
-
-            all_lats = [n.lat for n in nodes.values()]
-            all_lons = [n.lon for n in nodes.values()]
-            structures[sid] = Structure(
-                structure_id=sid, structure_type="traffic_circle",
-                cp_ids=cp_ids, node_ids=list(nodes.keys()), line_ids=line_ids,
-                center_lat=sum(all_lats) / len(all_lats),
-                center_lon=sum(all_lons) / len(all_lons),
-                arm_headings=arm_headings,
-            )
-            cps.update(tc_cps)
-
-    # Resolve connected_to: a line from cp_a.outbound → cp_b.inbound
-    # that crosses structure boundaries marks both CPs as connected.
-    out_node_to_cp = {cp.outbound_node.node_id: cp for cp in cps.values()}
-    in_node_to_cp  = {cp.inbound_node.node_id:  cp for cp in cps.values()}
-    for ln in net.lines.values():
-        cp_a = out_node_to_cp.get(ln.start_node.node_id)
-        cp_b = in_node_to_cp.get(ln.end_node.node_id)
-        if cp_a and cp_b and cp_a.structure_id != cp_b.structure_id:
-            cp_a.connected_to = cp_b.cp_id
-            cp_b.connected_to = cp_a.cp_id
-
-    return structures, cps
-
-
-def _restore_structures(structures_data: list, cps_data: list, net) -> None:
-    """Rebuild _state["structures"] and _state["cps"] from saved metadata."""
-    for s in structures_data:
-        struct = Structure(
-            structure_id=s["structure_id"],
-            structure_type=s["structure_type"],
-            cp_ids=s["cp_ids"],
-            node_ids=s["node_ids"],
-            line_ids=s["line_ids"],
-            center_lat=s.get("center_lat", 0.0),
-            center_lon=s.get("center_lon", 0.0),
-            heading_deg=s.get("heading_deg", 0.0),
-            arm_headings=s.get("arm_headings", []),
-        )
-        _state["structures"][struct.structure_id] = struct
-    for c in cps_data:
-        in_node  = net.nodes.get(c["inbound_node"])
-        out_node = net.nodes.get(c["outbound_node"])
-        if in_node is None or out_node is None:
-            continue   # dangling reference — skip
-        cp = ConnectionPoint(
-            cp_id=c["cp_id"],
-            structure_id=c["structure_id"],
-            heading_deg=c["heading_deg"],
-            inbound_node=in_node,
-            outbound_node=out_node,
-            center_lat=c["center_lat"],
-            center_lon=c["center_lon"],
-            connected_to=c.get("connected_to"),
-        )
-        _state["cps"][cp.cp_id] = cp
-
-
-def _net() -> Optional[Network]:
-    return _state["network"]
 
 
 # ---------------------------------------------------------------------------
@@ -838,20 +358,20 @@ def load_network():
             file_overlays = None
             file_qa = None
     except Exception as e:
-        _write_fault(f"Network load failed: {e}", f"path={path}")
+        write_fault(f"Network load failed: {e}", f"path={path}")
         return jsonify({"error": str(e)}), 500
 
     _state["network"] = net
     _state["network_path"] = path
     _state["sim_frames"] = []
     _state["sim_result"] = None
-    _noelle_log("network_load", {"path": os.path.basename(path),
+    noelle_log("network_load", {"path": os.path.basename(path),
                                   "stations": len(net.stations), "nodes": len(net.nodes)})
-    _clear_edit_state()
+    clear_edit_state()
     if structs_data or cps_data:
-        _restore_structures(structs_data, cps_data, net)
+        restore_structures(structs_data, cps_data, net)
     else:
-        s, c = _reconstruct_structures_from_net(net)
+        s, c = reconstruct_structures_from_net(net)
         _state["structures"].update(s)
         _state["cps"].update(c)
     if file_settings:
@@ -862,7 +382,7 @@ def load_network():
         _state["qa"] = file_qa
 
     # Overlays auto-populate on save, not load — keeps load fast
-    _sync_counters()
+    sync_counters()
     return jsonify({**_network_to_geojson(net), "settings": _state["settings"]})
 
 
@@ -886,7 +406,7 @@ def save_network():
     _state["network_path"] = path
 
     # Save a copy to Allie for every public session
-    _noelle_log("network_save", {"path": os.path.basename(path),
+    noelle_log("network_save", {"path": os.path.basename(path),
                                   "stations": len(net.stations), "nodes": len(net.nodes)})
     # Archive the .jpd to Allie
     try:
@@ -945,7 +465,7 @@ def new_network():
     _state["sim_result"] = None
     _state["overlays"] = None
     _state["qa"] = None
-    _clear_edit_state()
+    clear_edit_state()
     _md.clear_cache()
     return jsonify({"network_id": nid})
 
@@ -977,23 +497,23 @@ def reload_network():
             else:
                 net = load_sketchup_map(path)
     except Exception as e:
-        _write_fault(f"Network reload failed: {e}", f"path={path}")
+        write_fault(f"Network reload failed: {e}", f"path={path}")
         return jsonify({"error": str(e)}), 500
 
     # Clear old simulation results — they are stale after a file change
     _state["network"]      = net
     _state["sim_frames"]   = []
     _state["sim_result"]   = None
-    _clear_edit_state()
+    clear_edit_state()
     if structs_data or cps_data:
-        _restore_structures(structs_data, cps_data, net)
+        restore_structures(structs_data, cps_data, net)
     else:
-        s, c = _reconstruct_structures_from_net(net)
+        s, c = reconstruct_structures_from_net(net)
         _state["structures"].update(s)
         _state["cps"].update(c)
     if file_settings:
         _state["settings"].update(file_settings)
-    _sync_counters()
+    sync_counters()
 
     # Capture the reload event — this is the tool boundary
     if _ALLIE_CAPTURE.exists():
@@ -1081,7 +601,7 @@ def add_node():
     lat   = float(data["lat"])
     lon   = float(data["lon"])
     ntype = data.get("type", "switch")   # "station" or "switch"
-    nid   = data.get("id") or _new_id(ntype)
+    nid   = data.get("id") or new_id(ntype)
 
     node = Node(nid, lat, lon, is_station=(ntype == "station"))
     net.nodes[nid] = node
@@ -1164,10 +684,10 @@ def add_circle():
     data = request.json or {}
     lat  = float(data["lat"])
     lon  = float(data["lon"])
-    cid  = data.get("id") or _next_sid("c")
+    cid  = data.get("id") or next_sid("c")
     arms = data.get("arm_headings")   # optional [h0, h1, h2, h3]
 
-    overlap_err = _check_overlap(lat, lon, "traffic_circle")
+    overlap_err = check_overlap(lat, lon, "traffic_circle")
     if overlap_err:
         return jsonify({"error": overlap_err}), 400
 
@@ -1199,9 +719,9 @@ def add_station():
     lat         = float(data["lat"])
     lon         = float(data["lon"])
     heading_deg = float(data.get("heading_deg", 0.0))
-    sid         = data.get("id") or _next_sid("s")
+    sid         = data.get("id") or next_sid("s")
 
-    overlap_err = _check_overlap(lat, lon, "station")
+    overlap_err = check_overlap(lat, lon, "station")
     if overlap_err:
         return jsonify({"error": overlap_err}), 400
 
@@ -1241,7 +761,7 @@ def add_line():
     end_id   = data["end_node"]
     if start_id not in net.nodes or end_id not in net.nodes:
         return jsonify({"error": "Node not found"}), 404
-    lid = data.get("id") or _new_id("L")
+    lid = data.get("id") or new_id("L")
     from mesh_mobility.engine.network import vincenty_m
     sn = net.nodes[start_id]
     en = net.nodes[end_id]
@@ -1521,7 +1041,7 @@ def move_structure(sid: str):
     new_lat = struct.center_lat + dlat
     new_lon = struct.center_lon + dlon
 
-    overlap_err = _check_overlap(new_lat, new_lon, struct.structure_type,
+    overlap_err = check_overlap(new_lat, new_lon, struct.structure_type,
                                  exclude_sid=sid)
     if overlap_err:
         return jsonify({"error": overlap_err}), 400
@@ -1537,7 +1057,7 @@ def move_structure(sid: str):
     # Log designer adjustment for Noelle learning
     from mesh_mobility.engine.network import vincenty_m as _vm
     move_dist = _vm(new_lat - dlat, new_lon - dlon, new_lat, new_lon)
-    _noelle_log("structure_move", {
+    noelle_log("structure_move", {
         "id": sid, "type": struct.structure_type,
         "from": [new_lat - dlat, new_lon - dlon],
         "to": [new_lat, new_lon],
@@ -1554,7 +1074,7 @@ def move_structure(sid: str):
 @api.post("/network/undo/push")
 def network_undo_push():
     """Manually push an undo snapshot — called by browser on drag start."""
-    _push_undo()
+    push_undo()
     return jsonify({"ok": True, "undos": len(_state.get("_undo_stack", []))})
 
 
@@ -1587,12 +1107,12 @@ def network_undo():
     _state["network"] = net
     _state["sim_frames"] = []
     _state["sim_result"] = None
-    _clear_edit_state()
+    clear_edit_state()
     if structs_data or cps_data:
-        _restore_structures(structs_data, cps_data, net)
+        restore_structures(structs_data, cps_data, net)
     if file_settings:
         _state["settings"].update(file_settings)
-    _sync_counters()
+    sync_counters()
 
     return jsonify({**_network_to_geojson(net), "settings": _state["settings"],
                     "undos_remaining": len(stack)})
@@ -1631,17 +1151,6 @@ def auto_connect():
 # ---------------------------------------------------------------------------
 
 _MI_TO_M = 1609.344
-
-
-def _cp_by_heading(cp_dict: dict, target_heading: float) -> Optional[ConnectionPoint]:
-    """Return the CP whose heading_deg is closest to target_heading."""
-    best, best_diff = None, float("inf")
-    for cp in cp_dict.values():
-        diff = abs((cp.heading_deg - target_heading + 180) % 360 - 180)
-        if diff < best_diff:
-            best_diff = diff
-            best = cp
-    return best
 
 
 @api.post("/network/city_mesh")
@@ -1820,14 +1329,14 @@ def network_city_mesh():
     # Build the network — new network
     net = Network(network_id="city_mesh")
     _state["network"] = net
-    _clear_edit_state()
+    clear_edit_state()
 
     # Place circles at snapped grid points
     grid_map = {}  # (r, c) → (struct, cp_dict)
     for lat, lon, r, c in snapped:
         struct, cp_dict = build_traffic_circle(
             net, lat, lon,
-            structure_id=_next_sid("c"),
+            structure_id=next_sid("c"),
             arm_headings=[0.0, 90.0, 180.0, 270.0],
         )
         _state["structures"][struct.structure_id] = struct
@@ -1861,14 +1370,14 @@ def network_city_mesh():
             slat = lat_n + (lat_s - lat_n) * frac
             slon = lon_n + (lon_s - lon_n) * frac
             st, st_cps = build_station(net, slat, slon, heading_deg=0.0,
-                                       structure_id=_next_sid("s"))
+                                       structure_id=next_sid("s"))
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             n_stations += 1
 
             if pi == 0:
                 _, cp_dict_north = s_north
-                tc_south = _cp_by_heading(cp_dict_north, 180.0)
+                tc_south = cp_by_heading(cp_dict_north, 180.0)
                 st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
                 if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
                     connect_cps(net, tc_south, st_north, _state["cps"])
@@ -1880,7 +1389,7 @@ def network_city_mesh():
 
             if pi == len(positions) - 1:
                 _, cp_dict_south = s_south
-                tc_north = _cp_by_heading(cp_dict_south, 0.0)
+                tc_north = cp_by_heading(cp_dict_south, 0.0)
                 st_south_cp = st_cps.get(f"{st.structure_id}.CP_far_near")
                 if tc_north and st_south_cp and tc_north.connected_to is None and st_south_cp.connected_to is None:
                     connect_cps(net, st_south_cp, tc_north, _state["cps"])
@@ -1904,14 +1413,14 @@ def network_city_mesh():
             slat = lat_w + (lat_e - lat_w) * frac
             slon = lon_w + (lon_e - lon_w) * frac
             st, st_cps = build_station(net, slat, slon, heading_deg=90.0,
-                                       structure_id=_next_sid("s"))
+                                       structure_id=next_sid("s"))
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             n_stations += 1
 
             if pi == 0:
                 _, cp_dict_west = s_west
-                tc_east = _cp_by_heading(cp_dict_west, 90.0)
+                tc_east = cp_by_heading(cp_dict_west, 90.0)
                 st_west_cp = st_cps.get(f"{st.structure_id}.CP_far_near")
                 if tc_east and st_west_cp and tc_east.connected_to is None and st_west_cp.connected_to is None:
                     connect_cps(net, tc_east, st_west_cp, _state["cps"])
@@ -1923,7 +1432,7 @@ def network_city_mesh():
 
             if pi == len(positions) - 1:
                 _, cp_dict_east = s_east
-                tc_west = _cp_by_heading(cp_dict_east, 270.0)
+                tc_west = cp_by_heading(cp_dict_east, 270.0)
                 st_east_cp = st_cps.get(f"{st.structure_id}.CP_near_far")
                 if tc_west and st_east_cp and tc_west.connected_to is None and st_east_cp.connected_to is None:
                     connect_cps(net, st_east_cp, tc_west, _state["cps"])
@@ -1934,7 +1443,7 @@ def network_city_mesh():
     net.build()
     total_miles = round(net.total_length_m() / 1609.34, 1)
 
-    _noelle_log("city_mesh", {
+    noelle_log("city_mesh", {
         "circles": len(grid_map),
         "stations": n_stations,
         "spacing": spacing_label,
@@ -2029,8 +1538,8 @@ def network_line():
     if not net:
         net = Network(network_id="line")
         _state["network"] = net
-        _clear_edit_state()
-    _sync_counters()
+        clear_edit_state()
+    sync_counters()
 
     # Find where the new line crosses existing connections
     crossings = _find_crossings(lat1, lon1, lat2, lon2)
@@ -2123,7 +1632,7 @@ def network_line():
                 (cross_heading + 180) % 360,
             ]
             tc, tc_cps = build_traffic_circle(net, slat, slon,
-                                               structure_id=_next_sid("c"),
+                                               structure_id=next_sid("c"),
                                                arm_headings=arms)
             _state["structures"][tc.structure_id] = tc
             _state["cps"].update(tc_cps)
@@ -2136,15 +1645,15 @@ def network_line():
             # Reconnect through the traffic circle
             # cp_a's structure → TC arm closest to cp_a heading
             # cp_b's structure → TC arm closest to cp_b heading
-            tc_to_a = _cp_by_heading(tc_cps, (cross_heading + 180) % 360)
-            tc_to_b = _cp_by_heading(tc_cps, cross_heading % 360)
+            tc_to_a = cp_by_heading(tc_cps, (cross_heading + 180) % 360)
+            tc_to_b = cp_by_heading(tc_cps, cross_heading % 360)
             if tc_to_a and cp_a.connected_to is None:
                 connect_cps(net, tc_to_a, cp_a, _state["cps"])
             if tc_to_b and cp_b.connected_to is None:
                 connect_cps(net, tc_to_b, cp_b, _state["cps"])
         else:
             st, st_cps = build_station(net, slat, slon, heading_deg=heading,
-                                        structure_id=_next_sid("s"))
+                                        structure_id=next_sid("s"))
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             placed.append((st, st_cps))
@@ -2157,9 +1666,9 @@ def network_line():
         cp_out = cps_a.get(f"{st_a.structure_id}.CP_near_far")
         cp_in = cps_b.get(f"{st_b.structure_id}.CP_far_near")
         if not cp_out:
-            cp_out = _cp_by_heading(cps_a, heading)
+            cp_out = cp_by_heading(cps_a, heading)
         if not cp_in:
-            cp_in = _cp_by_heading(cps_b, (heading + 180) % 360)
+            cp_in = cp_by_heading(cps_b, (heading + 180) % 360)
         if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
             connect_cps(net, cp_out, cp_in, _state["cps"])
             connected += 1
@@ -2167,7 +1676,7 @@ def network_line():
     net.build()
     total_miles = round(net.total_length_m() / 1609.34, 1)
 
-    _noelle_log("line_build", {
+    noelle_log("line_build", {
         "stations": len([p for p in placed if p[0].structure_type == "station"]),
         "circles_inserted": circles_inserted,
         "connected": connected,
@@ -2239,7 +1748,7 @@ def network_build_on_lines():
     # Build new network
     net = Network(network_id="drawn_corridors")
     _state["network"] = net
-    _clear_edit_state()
+    clear_edit_state()
 
     n_stations = 0
     n_circles = 0
@@ -2282,7 +1791,7 @@ def network_build_on_lines():
 
         struct, cp_dict = build_traffic_circle(
             net, clat, clon,
-            structure_id=_next_sid("c"),
+            structure_id=next_sid("c"),
             arm_headings=[float(h) for h in headings[:8]],
         )
         _state["structures"][struct.structure_id] = struct
@@ -2338,7 +1847,7 @@ def network_build_on_lines():
                     break
 
             st, st_cps = build_station(net, slat, slon, heading_deg=local_heading,
-                                        structure_id=_next_sid("s"))
+                                        structure_id=next_sid("s"))
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             placed.append((st, st_cps, slat, slon, local_heading))
@@ -2350,8 +1859,8 @@ def network_build_on_lines():
         for k in range(1, len(placed)):
             prev_st, prev_cps, _, _, prev_h = placed[k-1]
             cur_st, cur_cps, _, _, cur_h = placed[k]
-            cp_out = _cp_by_heading(prev_cps, prev_h)
-            cp_in = _cp_by_heading(cur_cps, (cur_h + 180) % 360)
+            cp_out = cp_by_heading(prev_cps, prev_h)
+            cp_in = cp_by_heading(cur_cps, (cur_h + 180) % 360)
             if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
                 connect_cps(net, cp_out, cp_in, _state["cps"])
 
@@ -2373,15 +1882,15 @@ def network_build_on_lines():
                 dl = clat - slat
                 dn = (clon - slon) * math.cos(math.radians(slat))
                 h_to = math.degrees(math.atan2(dn, dl)) % 360
-                cp_st = _cp_by_heading(st_cps, h_to)
-                cp_tc = _cp_by_heading(ccps, (h_to + 180) % 360)
+                cp_st = cp_by_heading(st_cps, h_to)
+                cp_tc = cp_by_heading(ccps, (h_to + 180) % 360)
                 if cp_st and cp_tc and cp_st.connected_to is None and cp_tc.connected_to is None:
                     connect_cps(net, cp_st, cp_tc, _state["cps"])
 
     net.build()
     total_miles = round(net.total_length_m() / 1609.34, 1)
 
-    _noelle_log("build_on_lines", {
+    noelle_log("build_on_lines", {
         "lines": len(lines), "circles": n_circles,
         "stations": n_stations, "total_miles": total_miles,
     })
@@ -2558,7 +2067,7 @@ def network_crash_mesh():
     # ── STAGE 4 & 5: Build network — circles, stations, connections ───────
     net = Network(network_id="crash_mesh")
     _state["network"] = net
-    _clear_edit_state()
+    clear_edit_state()
 
     n_stations = 0
     n_circles = 0
@@ -2585,7 +2094,7 @@ def network_crash_mesh():
 
         struct, cp_dict = build_traffic_circle(
             net, clat, clon,
-            structure_id=_next_sid("c"),
+            structure_id=next_sid("c"),
             arm_headings=[float(h) for h in headings[:8]],
         )
         _state["structures"][struct.structure_id] = struct
@@ -2646,7 +2155,7 @@ def network_crash_mesh():
                     break
 
             st, st_cps = build_station(net, slat, slon, heading_deg=local_heading,
-                                        structure_id=_next_sid("s"))
+                                        structure_id=next_sid("s"))
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             placed.append((st, st_cps, slat, slon, local_heading))
@@ -2658,8 +2167,8 @@ def network_crash_mesh():
         for k in range(1, len(placed)):
             prev_st, prev_cps, _, _, prev_h = placed[k-1]
             cur_st, cur_cps, _, _, cur_h = placed[k]
-            cp_out = _cp_by_heading(prev_cps, prev_h)
-            cp_in = _cp_by_heading(cur_cps, (cur_h + 180) % 360)
+            cp_out = cp_by_heading(prev_cps, prev_h)
+            cp_in = cp_by_heading(cur_cps, (cur_h + 180) % 360)
             if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
                 connect_cps(net, cp_out, cp_in, _state["cps"])
 
@@ -2683,15 +2192,15 @@ def network_crash_mesh():
                 dl = clat - slat
                 dn = (clon - slon) * math.cos(math.radians(slat))
                 h_to_circle = math.degrees(math.atan2(dn, dl)) % 360
-                cp_st = _cp_by_heading(st_cps, h_to_circle)
-                cp_tc = _cp_by_heading(ccps, (h_to_circle + 180) % 360)
+                cp_st = cp_by_heading(st_cps, h_to_circle)
+                cp_tc = cp_by_heading(ccps, (h_to_circle + 180) % 360)
                 if cp_st and cp_tc and cp_st.connected_to is None and cp_tc.connected_to is None:
                     connect_cps(net, cp_st, cp_tc, _state["cps"])
 
     net.build()
     total_miles = round(net.total_length_m() / 1609.34, 1)
 
-    _noelle_log("crash_mesh", {
+    noelle_log("crash_mesh", {
         "corridors": len(corridors),
         "circles": n_circles,
         "stations": n_stations,
@@ -2740,7 +2249,7 @@ def network_grid():
     if replace:
         net = Network(network_id="grid")
         _state["network"] = net
-        _clear_edit_state()
+        clear_edit_state()
     else:
         net = _net()
         if net is None:
@@ -2789,7 +2298,7 @@ def network_grid():
             lat, lon = _rotated(r, c)
             struct, cp_dict = build_traffic_circle(
                 net, lat, lon,
-                structure_id=_next_sid("c"),
+                structure_id=next_sid("c"),
                 arm_headings=arm_headings,
             )
             _state["structures"][struct.structure_id] = struct
@@ -2817,7 +2326,7 @@ def network_grid():
                 lat, lon = _rotated(r + frac, c)
                 st, st_cps = build_station(net, lat, lon,
                                            heading_deg=(0.0 + angle_deg) % 360,
-                                           structure_id=_next_sid("s"))
+                                           structure_id=next_sid("s"))
                 _state["structures"][st.structure_id] = st
                 _state["cps"].update(st_cps)
                 n_stations += 1
@@ -2829,7 +2338,7 @@ def network_grid():
                 if pi == 0:
                     # First station: connect to upper circle's down arm
                     _, cp_dict_north = grid[r][c]
-                    tc_south = _cp_by_heading(cp_dict_north, h_south)
+                    tc_south = cp_by_heading(cp_dict_north, h_south)
                     st_north = st_cps.get(f"{st.structure_id}.CP_near_far")
                     if tc_south and st_north and tc_south.connected_to is None and st_north.connected_to is None:
                         connect_cps(net, tc_south, st_north, _state["cps"])
@@ -2844,7 +2353,7 @@ def network_grid():
                 if pi == len(positions) - 1:
                     # Last station: connect to lower circle's up arm
                     _, cp_dict_south = grid[r + 1][c]
-                    tc_north = _cp_by_heading(cp_dict_south, h_north)
+                    tc_north = cp_by_heading(cp_dict_south, h_north)
                     st_south = st_cps.get(f"{st.structure_id}.CP_far_near")
                     if tc_north and st_south and tc_north.connected_to is None and st_south.connected_to is None:
                         connect_cps(net, st_south, tc_north, _state["cps"])
@@ -2861,7 +2370,7 @@ def network_grid():
                 lat, lon = _rotated(r, c + frac)
                 st, st_cps = build_station(net, lat, lon,
                                            heading_deg=(90.0 + angle_deg) % 360,
-                                           structure_id=_next_sid("s"))
+                                           structure_id=next_sid("s"))
                 _state["structures"][st.structure_id] = st
                 _state["cps"].update(st_cps)
                 n_stations += 1
@@ -2873,7 +2382,7 @@ def network_grid():
                 if pi == 0:
                     # First station: connect to left circle's right arm
                     _, cp_dict_west = grid[r][c]
-                    tc_east = _cp_by_heading(cp_dict_west, h_east)
+                    tc_east = cp_by_heading(cp_dict_west, h_east)
                     st_west = st_cps.get(f"{st.structure_id}.CP_far_near")
                     if tc_east and st_west and tc_east.connected_to is None and st_west.connected_to is None:
                         connect_cps(net, tc_east, st_west, _state["cps"])
@@ -2888,7 +2397,7 @@ def network_grid():
                 if pi == len(positions) - 1:
                     # Last station: connect to right circle's left arm
                     _, cp_dict_east = grid[r][c + 1]
-                    tc_west = _cp_by_heading(cp_dict_east, h_west)
+                    tc_west = cp_by_heading(cp_dict_east, h_west)
                     st_east = st_cps.get(f"{st.structure_id}.CP_near_far")
                     if tc_west and st_east and tc_west.connected_to is None and st_east.connected_to is None:
                         connect_cps(net, st_east, tc_west, _state["cps"])
@@ -3056,7 +2565,7 @@ def run_simulation():
     demand = LoadArray(station_ids, demand_config=demand_config)
     sim = Simulator(net, settings, demand=demand)
 
-    _noelle_log("simulation_run", {"stations": len(station_ids), "slots": slots,
+    noelle_log("simulation_run", {"stations": len(station_ids), "slots": slots,
                                     "network_id": getattr(net, "network_id", "")})
     _state["sim_active"]   = True
     _state["sim_instance"] = sim
@@ -3068,7 +2577,7 @@ def run_simulation():
     # something and is now testing it. If a fix was being tested, write a TF
     # or TFTS after the run (the browser will prompt).
     network_name = getattr(net, "network_id", "") or ""
-    _allie_capture_simulation.__func__ if hasattr(_allie_capture_simulation, "__func__") else None
+    allie_capture_simulation.__func__ if hasattr(allie_capture_simulation, "__func__") else None
     if _ALLIE_CAPTURE.exists():
         try:
             _subprocess.Popen(
@@ -3095,20 +2604,20 @@ def run_simulation():
                                     else result, "passengers_generated", None)
             if (pax_served is not None and pax_generated is not None
                     and pax_generated > 0 and pax_served == 0):
-                _write_fault(
+                write_fault(
                     "0 passengers served with non-zero demand",
                     f"network={network_name}, stations={len(station_ids)}, slots={slots}; "
                     f"check station connectivity and routing",
                 )
 
             _save_sweep_json(result)
-            _allie_capture_simulation(result, net)
+            allie_capture_simulation(result, net)
         except Exception as exc:
             import traceback
             _state["sim_error"] = str(exc)
             log.error("Simulation thread error: %s", traceback.format_exc())
-            _write_fault(f"Simulation exception: {exc}", f"network={network_name}")
-            _allie_capture_error("simulation_error", str(exc))
+            write_fault(f"Simulation exception: {exc}", f"network={network_name}")
+            allie_capture_error("simulation_error", str(exc))
         finally:
             _state["sim_active"]   = False
             _state["sim_instance"] = None
@@ -3549,11 +3058,11 @@ def load_network_text():
     _state["network_path"] = None
     _state["sim_frames"] = []
     _state["sim_result"] = None
-    _clear_edit_state()
+    clear_edit_state()
     if structs_data or cps_data:
-        _restore_structures(structs_data, cps_data, net)
+        restore_structures(structs_data, cps_data, net)
     else:
-        s, c = _reconstruct_structures_from_net(net)
+        s, c = reconstruct_structures_from_net(net)
         _state["structures"].update(s)
         _state["cps"].update(c)
     if file_settings:
@@ -3565,7 +3074,7 @@ def load_network_text():
         _state["overlays"] = file_overlays
 
     # Overlays auto-populate on save, not load
-    _sync_counters()
+    sync_counters()
     return jsonify({**_network_to_geojson(net), "settings": _state["settings"],
                     "overlays": _state.get("overlays")})
 
@@ -3593,7 +3102,7 @@ def merge_network_text():
     # Ensure we have a network to merge into
     if _state["network"] is None:
         _state["network"] = Network(network_id="merged")
-        _clear_edit_state()
+        clear_edit_state()
 
     # Parse the incoming network
     with tempfile.NamedTemporaryFile(mode="w", suffix=".jpd", delete=False) as tmp:
@@ -3733,10 +3242,10 @@ def merge_network_text():
 
     # Rebuild network graph
     dst_net.build()
-    _sync_counters()
+    sync_counters()
 
     log.info(f"Merged: {merged_structs} structures, {merged_cps} CPs, mode={mode}")
-    _noelle_log("merge_network", {
+    noelle_log("merge_network", {
         "mode": mode,
         "structures": merged_structs,
         "cps": merged_cps,
@@ -3892,7 +3401,7 @@ def overlay_fetch_all():
     if center_lat is None:
         return jsonify({"error": "No location — place a station or search for a city first"}), 400
 
-    _noelle_log("overlay_fetch", {"lat": center_lat, "lon": center_lon})
+    noelle_log("overlay_fetch", {"lat": center_lat, "lon": center_lon})
 
     # Detect state from the coordinates we already resolved
     state_abbr = None
@@ -4316,49 +3825,6 @@ def describe_network():
 
 
 # ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-def _new_id(prefix: str) -> str:
-    return f"{prefix}_{uuid.uuid4().hex[:6].upper()}"
-
-
-# Approximate footprint radius in metres for each structure type.
-# Station: half-length (35 m) + stub extension (10 m) = 45 m
-# Circle:  ring radius (7.5 m) + stub length (15 m)   = 22.5 m
-_FOOTPRINT_M = {
-    "station":        45.0,
-    "traffic_circle": 22.5,
-}
-_FOOTPRINT_DEFAULT = 45.0   # conservative fallback
-
-
-def _footprint_m(struct_type: str) -> float:
-    return _FOOTPRINT_M.get(struct_type, _FOOTPRINT_DEFAULT)
-
-
-def _check_overlap(new_lat: float, new_lon: float, new_type: str,
-                   exclude_sid: str | None = None) -> str | None:
-    """
-    Return an error string if the proposed centre (new_lat, new_lon) would
-    land within one footprint of any existing structure, else return None.
-    Two structures overlap when the distance between their centres is less than
-    footprint(new) + footprint(existing).
-    """
-    from mesh_mobility.engine.network import vincenty_m
-    new_r = _footprint_m(new_type)
-    for sid, struct in _state["structures"].items():
-        if sid == exclude_sid:
-            continue
-        min_sep = new_r + _footprint_m(struct.structure_type)
-        dist = vincenty_m(new_lat, new_lon, struct.center_lat, struct.center_lon)
-        if dist < min_sep:
-            return (f"Too close to {sid} "
-                    f"({dist:.0f} m < {min_sep:.0f} m minimum separation)")
-    return None
-
-
-# ---------------------------------------------------------------------------
 # Noelle Draft — data-driven station proposal
 # ---------------------------------------------------------------------------
 
@@ -4688,7 +4154,7 @@ def noelle_draft():
             _state["network_path"] = None
             _state["sim_frames"] = []
             _state["sim_result"] = None
-            _clear_edit_state()
+            clear_edit_state()
             net = _state["network"]
 
         for s in result["stations"]:
@@ -4696,7 +4162,7 @@ def noelle_draft():
                 struct, cps = build_station(
                     net, s["lat"], s["lon"],
                     heading_deg=0,
-                    structure_id=_next_sid("s"))
+                    structure_id=next_sid("s"))
                 _state["structures"][struct.structure_id] = struct
                 _state["cps"].update(cps)
                 placed_ids.append(struct.structure_id)
@@ -4716,7 +4182,7 @@ def noelle_wild_guess():
     Call after Draft + Apply. Places circles at midpoints between nearby station pairs,
     then runs auto-connect. Produces a complete connected network from Noelle's stations.
     """
-    _push_undo()
+    push_undo()
     net = _net()
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
@@ -4778,7 +4244,7 @@ def noelle_wild_guess():
         circle_heading = 45 if (22.5 < bearing % 90 < 67.5) else 0
 
         try:
-            cid = _next_sid("c")
+            cid = next_sid("c")
             struct, new_cps = build_traffic_circle(
                 net, mid_lat, mid_lon,
                 heading_deg=circle_heading,
@@ -4795,7 +4261,7 @@ def noelle_wild_guess():
         _state["line_roles"][l.line_id] = "connector"
     net.build()
 
-    _noelle_log("wild_guess", {
+    noelle_log("wild_guess", {
         "stations": len(stations),
         "circles_added": len(placed_circles),
         "lines_added": len(added_lines),
@@ -5299,7 +4765,7 @@ def noelle_refine():
         try:
             struct, cps = build_station(
                 net, ns["lat"], ns["lon"],
-                heading_deg=0, structure_id=_next_sid("s"))
+                heading_deg=0, structure_id=next_sid("s"))
             _state["structures"][struct.structure_id] = struct
             _state["cps"].update(cps)
             existing_pts.append({"lat": ns["lat"], "lon": ns["lon"]})

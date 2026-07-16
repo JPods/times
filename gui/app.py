@@ -24,7 +24,9 @@ _parent  = os.path.dirname(_rt_dir)
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
-from mesh_mobility.gui.api import api, _state, load_jpd, load_podpresenter, load_sketchup_map
+from mesh_mobility.gui.api import api
+from mesh_mobility.gui.state import _state, restore_structures
+from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
 from mesh_mobility.engine.network import Network
 import json
 
@@ -158,8 +160,7 @@ def _preload(path: str):
     _state["network"] = net
     _state["network_path"] = path
     if structs_data or cps_data:
-        from mesh_mobility.gui.api import _restore_structures
-        _restore_structures(structs_data, cps_data, net)
+        restore_structures(structs_data, cps_data, net)
     if file_settings:
         _state["settings"].update(file_settings)
 
