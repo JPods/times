@@ -2720,6 +2720,32 @@ const Palette = (() => {
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
 
 (async () => {
+  // Check for ?load= or ?clone= from the library page
+  const params = new URLSearchParams(window.location.search);
+  const libFile = params.get("load") || params.get("clone");
+  if (libFile) {
+    try {
+      const r = await api("POST", "/api/network/load_library", { filename: libFile });
+      if (r && r.features) {
+        App._render(r);
+        if (r.settings) Object.assign(window._settings || {}, r.settings);
+        const mode = params.get("clone") ? "clone" : "open";
+        if (mode === "clone") {
+          // Clone mode: clear the save path so user saves to a new file
+          App._saveHandle = null;
+          App._dirty = true;
+          setStatus(`Cloned: ${libFile.replace('.jpd', '')} — save to keep your copy`);
+        } else {
+          setStatus(`Loaded: ${libFile.replace('.jpd', '')}`);
+        }
+        // Clean the URL so reload doesn't re-trigger the load
+        window.history.replaceState({}, "", "/app");
+        return;
+      }
+    } catch (e) {
+      setStatus(`Library load failed: ${e.message}`);
+    }
+  }
   const geojson = await api("GET", "/api/network");
   App._render(geojson);
 })();

@@ -77,11 +77,19 @@ network_io_bp.before_request(auto_push_undo)
 # Library
 # ---------------------------------------------------------------------------
 
+def _maps_dir() -> str:
+    """Resolve the maps directory: 5TB primary, code-relative fallback."""
+    allie_maps = "/Volumes/Allie/MeshMobility/mesh_mobility_maps"
+    if os.path.isdir(allie_maps):
+        return allie_maps
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "..", "mesh_mobility_maps")
+
+
 @network_io_bp.get("/library")
 def get_library():
     """Return the network library index."""
-    maps_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                            "..", "mesh_mobility_maps")
+    maps_dir = _maps_dir()
     lib_path = os.path.join(maps_dir, "library.json")
     if os.path.isfile(lib_path):
         with open(lib_path) as f:
@@ -115,17 +123,28 @@ def get_library():
     return jsonify({"networks": networks})
 
 
+@network_io_bp.post("/network/load_library")
+def load_library_file():
+    """Load a .jpd file from the library by filename.
+    Called when the app opens with ?load=filename.jpd or ?clone=filename.jpd."""
+    data = request.json or {}
+    filename = data.get("filename", "")
+    if not filename:
+        return jsonify({"error": "filename required"}), 400
+    if "/" in filename or "\\" in filename or ".." in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    path = os.path.join(_maps_dir(), filename)
+    if not os.path.isfile(path):
+        return jsonify({"error": f"Not found in library: {filename}"}), 404
+    return _load_from_path(path)
+
+
 # ---------------------------------------------------------------------------
 # Load / Save / Download / New / Reload
 # ---------------------------------------------------------------------------
 
-@network_io_bp.post("/network/load")
-def load_network():
-    data = request.json or {}
-    path = data.get("path", "")
-    if not os.path.exists(path):
-        return jsonify({"error": f"File not found: {path}"}), 400
-
+def _load_from_path(path: str):
+    """Core load logic — used by both load_network and load_library_file."""
     ext = os.path.splitext(path)[1].lower()
     structs_data, cps_data, file_settings = [], [], {}
     try:
@@ -170,9 +189,17 @@ def load_network():
     if file_qa:
         _state["qa"] = file_qa
 
-    # Overlays auto-populate on save, not load -- keeps load fast
     sync_counters()
     return jsonify({**_network_to_geojson(net), "settings": _state["settings"]})
+
+
+@network_io_bp.post("/network/load")
+def load_network():
+    data = request.json or {}
+    path = data.get("path", "")
+    if not os.path.exists(path):
+        return jsonify({"error": f"File not found: {path}"}), 400
+    return _load_from_path(path)
 
 
 @network_io_bp.post("/network/save")

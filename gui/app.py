@@ -100,7 +100,8 @@ def library():
 @app.route("/examples/<path:filename>")
 def serve_example(filename):
     """Serve example .jpd and .pdf files from mesh_mobility_maps."""
-    maps_dir = os.path.join(os.path.dirname(_rt_dir), "mesh_mobility_maps")
+    from mesh_mobility.gui.network_io import _maps_dir
+    maps_dir = _maps_dir()
     path = os.path.join(maps_dir, filename)
     if not os.path.isfile(path):
         return "Not found", 404
