@@ -25,6 +25,7 @@ if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
 from mesh_mobility.gui.api import api
+from mesh_mobility.gui.builders import builders
 from mesh_mobility.gui.state import _state, restore_structures
 from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
 from mesh_mobility.engine.network import Network
@@ -32,6 +33,7 @@ import json
 
 app = Flask(__name__, static_folder=os.path.join(_gui_dir, "static"))
 app.register_blueprint(api)
+app.register_blueprint(builders)
 
 
 _MIME = {
