@@ -494,7 +494,9 @@
       <span id="draw-count">0</span> lines drawn.
     </div>
     <table style="font-size:10px;color:#9ab;margin:6px 8px;border-collapse:collapse;width:calc(100% - 16px)">
-      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Cmd + click</td><td>Draw corridor points (release Cmd to finish line)</td></tr>
+      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Click</td><td>Add point (when Draw is active)</td></tr>
+      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Double-click</td><td>Finish line, stay in draw mode</td></tr>
+      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Escape</td><td>Exit draw mode</td></tr>
       <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Option + click</td><td>Insert or drag a point on a line</td></tr>
       <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Shift + click</td><td>Delete nearest point</td></tr>
       <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Shift + dblclick</td><td>Delete entire line</td></tr>
@@ -1394,22 +1396,45 @@ const CrashMesh = (() => {
 const DrawTool = (() => {
   // Lines: [{polyline, dots: [L.circleMarker], points: [{lat,lon}]}]
   let _lines = [];
-  let _currentLine = null;  // line being drawn (Cmd held)
+  let _currentLine = null;  // line being drawn
   let _cmdDown = false;
+  let _latched = false;     // true when Draw button is active (latched mode)
   let _dragging = null;     // {lineIdx, pointIdx, marker} when Option-dragging
 
   // Listen for modifier keys globally
   document.addEventListener("keydown", e => {
     if (e.metaKey || e.ctrlKey) _cmdDown = true;
+    // Escape exits draw mode
+    if (e.key === "Escape" && _latched) {
+      if (_currentLine) _finishLine();
+      _setLatched(false);
+    }
   });
   document.addEventListener("keyup", e => {
     if (!e.metaKey && !e.ctrlKey) {
-      if (_cmdDown && _currentLine) {
+      // Only auto-finish on Cmd release if NOT latched
+      if (_cmdDown && _currentLine && !_latched) {
         _finishLine();
       }
       _cmdDown = false;
     }
   });
+
+  function _setLatched(on) {
+    _latched = on;
+    const btn = document.getElementById("btn-draw");
+    if (btn) {
+      btn.style.outline = on ? "2px solid #fc0" : "";
+      btn.style.background = on ? "#6a5a2a" : "#4a3a1a";
+    }
+    App.getMap().getContainer().style.cursor = on ? "crosshair" : "";
+    if (on) {
+      setStatus("Draw mode: click to add points, double-click to finish line, Escape to exit");
+    } else {
+      if (_currentLine) _finishLine();
+      setStatus("Draw mode off");
+    }
+  }
 
   // Main click handler — always on, modifier keys decide action
   function _init() {
@@ -1426,8 +1451,8 @@ const DrawTool = (() => {
     const ev = e.originalEvent;
     if (!ev) return;
 
-    // Cmd/Ctrl + click = draw point on current line
-    if (ev.metaKey || ev.ctrlKey) {
+    // Latched mode OR Cmd/Ctrl + click = draw point
+    if (_latched || ev.metaKey || ev.ctrlKey) {
       ev.preventDefault();
       _addPoint(e.latlng);
       return;
@@ -1451,6 +1476,15 @@ const DrawTool = (() => {
   function _onDblClick(e) {
     const ev = e.originalEvent;
     if (!ev) return;
+
+    // In latched mode, double-click finishes current line (stays in draw mode)
+    if (_latched && _currentLine) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      _finishLine();
+      setStatus(`Line ${_lines.length} done. Click to start next line, Escape to exit.`);
+      return;
+    }
 
     // Shift + double-click = delete entire nearest line
     if (ev.shiftKey) {
@@ -1537,7 +1571,8 @@ const DrawTool = (() => {
     // Update polyline
     _currentLine.polyline.setLatLngs(_currentLine.points.map(p => [p.lat, p.lon]));
     document.getElementById("draw-status").style.display = "block";
-    setStatus(`Drawing: ${_currentLine.points.length} points (release Cmd to finish line)`);
+    const hint = _latched ? "double-click to finish line" : "release Cmd to finish line";
+    setStatus(`Drawing: ${_currentLine.points.length} points (${hint})`);
   }
 
   function _finishLine() {
@@ -1748,8 +1783,9 @@ const DrawTool = (() => {
 
   // toggle button shows help
   function toggle() {
-    if (typeof App !== "undefined" && App.flash)
-      App.flash("Cmd+click: draw. Option+click: move point. Shift+click: delete point. Shift+dblclick: delete line.", 5000);
+    _setLatched(!_latched);
+    if (_latched && typeof App !== "undefined" && App.flash)
+      App.flash("Click to draw. Double-click finishes line. Escape exits.", 5000);
     const status = document.getElementById("draw-status");
     if (status) status.style.display = "block";
   }
