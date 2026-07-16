@@ -547,8 +547,20 @@ def connect_cps(
       cp_a.outbound_tip ──→ cp_b.inbound_tip
       cp_b.outbound_tip ──→ cp_a.inbound_tip
 
-    Returns the two new lines added.
+    Returns the two new lines added, or [] if these structures
+    are already connected via another CP pair.
     """
+    # Guard: only one connection allowed between any two structures
+    sid_a, sid_b = cp_a.structure_id, cp_b.structure_id
+    for cp in cps.values():
+        if cp.connected_to is None:
+            continue
+        partner = cps.get(cp.connected_to)
+        if partner is None:
+            continue
+        if ({cp.structure_id, partner.structure_id} == {sid_a, sid_b}):
+            return []
+
     lid_ab = _uid("CX")
     lid_ba = _uid("CX")
 
