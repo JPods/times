@@ -28,6 +28,8 @@ from mesh_mobility.gui.api import api
 from mesh_mobility.gui.builders import builders
 from mesh_mobility.gui.noelle_api import noelle
 from mesh_mobility.gui.overlays import overlays_bp
+from mesh_mobility.gui.simulation import sim_bp
+from mesh_mobility.gui.network_io import network_io_bp
 from mesh_mobility.gui.state import _state, restore_structures
 from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
 from mesh_mobility.engine.network import Network
@@ -38,6 +40,8 @@ app.register_blueprint(api)
 app.register_blueprint(builders)
 app.register_blueprint(noelle)
 app.register_blueprint(overlays_bp)
+app.register_blueprint(sim_bp)
+app.register_blueprint(network_io_bp)
 
 
 _MIME = {

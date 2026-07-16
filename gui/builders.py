@@ -38,6 +38,12 @@ from mesh_mobility.engine.structures import (
 )
 
 # ---------------------------------------------------------------------------
+# Overlay data -- reads from CrashHarvester library
+# ---------------------------------------------------------------------------
+from CrashHarvester.reader import MobilityData
+_md = MobilityData()
+
+# ---------------------------------------------------------------------------
 # Shared state imports
 # ---------------------------------------------------------------------------
 from mesh_mobility.gui.state import (
@@ -424,7 +430,7 @@ def network_city_mesh():
     """
     import urllib.request
     # Lazy import to avoid circular dependency
-    from mesh_mobility.gui.api import _detect_state
+    from mesh_mobility.gui.overlays import _detect_state
     from CrashHarvester.reader import MobilityData
     _md = MobilityData()
 
@@ -1117,4 +1123,502 @@ def network_grid():
         "spacing_ns_mi": spacing_ns,
         "spacing_ew_mi": spacing_ew,
         "angle_deg": angle_deg,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Build on drawn lines endpoint
+# ---------------------------------------------------------------------------
+
+@builders.post("/network/build_on_lines")
+def network_build_on_lines():
+    """Build a network on designer-drawn corridor lines.
+
+    Input: {lines: [[{lat, lon}, ...], ...]}
+    Each line is a polyline the designer drew on the map.
+    Places stations every ~0.6 mi along each line, oriented to local heading.
+    Places traffic circles where lines cross within 400m.
+    Connects stations along their line and to circles at intersections.
+    """
+    data = request.json or {}
+    lines = data.get("lines", [])
+    if not lines:
+        return jsonify({"error": "No lines provided. Draw corridor lines first."}), 400
+
+    STATION_SPACING_M = 1000  # ~0.6 miles
+
+    # Build new network
+    net = Network(network_id="drawn_corridors")
+    _state["network"] = net
+    clear_edit_state()
+
+    n_stations = 0
+    n_circles = 0
+
+    # -- Find where lines cross -> traffic circles --
+    circle_points = []
+    cross_threshold_m = 400
+
+    for i in range(len(lines)):
+        for j in range(i + 1, len(lines)):
+            for pi in lines[i]:
+                for pj in lines[j]:
+                    dist = vincenty_m(pi["lat"], pi["lon"], pj["lat"], pj["lon"])
+                    if dist < cross_threshold_m:
+                        mlat = (pi["lat"] + pj["lat"]) / 2
+                        mlon = (pi["lon"] + pj["lon"]) / 2
+                        too_close = any(vincenty_m(mlat, mlon, c[0], c[1]) < 800
+                                        for c in circle_points)
+                        if not too_close:
+                            circle_points.append((mlat, mlon, [i, j]))
+                            break
+                else:
+                    continue
+                break
+
+    # Place traffic circles
+    circle_structs = {}
+    for clat, clon, line_idxs in circle_points:
+        headings = []
+        for li in line_idxs:
+            pts = lines[li]
+            if len(pts) >= 2:
+                dlat = pts[-1]["lat"] - pts[0]["lat"]
+                dlon = (pts[-1]["lon"] - pts[0]["lon"]) * math.cos(math.radians(pts[0]["lat"]))
+                h = math.degrees(math.atan2(dlon, dlat)) % 360
+                headings.extend([h, (h + 180) % 360])
+        headings = sorted(set(round(h / 10) * 10 for h in headings))
+        if len(headings) < 4:
+            headings = [0.0, 90.0, 180.0, 270.0]
+
+        struct, cp_dict = build_traffic_circle(
+            net, clat, clon,
+            structure_id=next_sid("c"),
+            arm_headings=[float(h) for h in headings[:8]],
+        )
+        _state["structures"][struct.structure_id] = struct
+        _state["cps"].update(cp_dict)
+        circle_structs[(round(clat, 5), round(clon, 5))] = (struct, cp_dict)
+        n_circles += 1
+
+    # -- Place stations along each line --
+    all_placed = {}  # line_idx -> [(struct, cps, lat, lon, heading)]
+
+    for li, line_pts in enumerate(lines):
+        if len(line_pts) < 2:
+            continue
+
+        # Cumulative distance along the polyline
+        cum_dist = [0.0]
+        for k in range(1, len(line_pts)):
+            d = vincenty_m(line_pts[k-1]["lat"], line_pts[k-1]["lon"],
+                           line_pts[k]["lat"], line_pts[k]["lon"])
+            cum_dist.append(cum_dist[-1] + d)
+        total_len = cum_dist[-1]
+        if total_len < 200:
+            continue
+
+        n_seg = max(1, round(total_len / STATION_SPACING_M))
+        station_dists = [total_len * i / n_seg for i in range(n_seg + 1)]
+
+        placed = []
+        for target_d in station_dists:
+            # Interpolate position
+            slat, slon = line_pts[-1]["lat"], line_pts[-1]["lon"]
+            for k in range(1, len(cum_dist)):
+                if cum_dist[k] >= target_d:
+                    frac = (target_d - cum_dist[k-1]) / max(1, cum_dist[k] - cum_dist[k-1])
+                    slat = line_pts[k-1]["lat"] + (line_pts[k]["lat"] - line_pts[k-1]["lat"]) * frac
+                    slon = line_pts[k-1]["lon"] + (line_pts[k]["lon"] - line_pts[k-1]["lon"]) * frac
+                    break
+
+            # Skip if too close to a traffic circle
+            near_circle = any(vincenty_m(slat, slon, cl, cn) < 300
+                              for (cl, cn) in circle_structs)
+            if near_circle:
+                continue
+
+            # Local heading
+            local_heading = 0
+            for k in range(1, len(line_pts)):
+                if cum_dist[k] >= target_d:
+                    dl = line_pts[k]["lat"] - line_pts[k-1]["lat"]
+                    dn = (line_pts[k]["lon"] - line_pts[k-1]["lon"]) * math.cos(math.radians(line_pts[k]["lat"]))
+                    if abs(dl) + abs(dn) > 0.0001:
+                        local_heading = math.degrees(math.atan2(dn, dl)) % 360
+                    break
+
+            st, st_cps = build_station(net, slat, slon, heading_deg=local_heading,
+                                        structure_id=next_sid("s"))
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            placed.append((st, st_cps, slat, slon, local_heading))
+            n_stations += 1
+
+        all_placed[li] = placed
+
+        # Connect consecutive stations along this line
+        for k in range(1, len(placed)):
+            prev_st, prev_cps, _, _, prev_h = placed[k-1]
+            cur_st, cur_cps, _, _, cur_h = placed[k]
+            cp_out = cp_by_heading(prev_cps, prev_h)
+            cp_in = cp_by_heading(cur_cps, (cur_h + 180) % 360)
+            if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
+                connect_cps(net, cp_out, cp_in, _state["cps"])
+
+    # Connect line endpoints to nearest traffic circles
+    for li, placed in all_placed.items():
+        if not placed:
+            continue
+        for endpoint in [placed[0], placed[-1]]:
+            st, st_cps, slat, slon, sh = endpoint
+            best_dist = 2000
+            best_circle = None
+            for (clat, clon), (cstruct, ccps) in circle_structs.items():
+                d = vincenty_m(slat, slon, clat, clon)
+                if d < best_dist:
+                    best_dist = d
+                    best_circle = (cstruct, ccps, clat, clon)
+            if best_circle:
+                cstruct, ccps, clat, clon = best_circle
+                dl = clat - slat
+                dn = (clon - slon) * math.cos(math.radians(slat))
+                h_to = math.degrees(math.atan2(dn, dl)) % 360
+                cp_st = cp_by_heading(st_cps, h_to)
+                cp_tc = cp_by_heading(ccps, (h_to + 180) % 360)
+                if cp_st and cp_tc and cp_st.connected_to is None and cp_tc.connected_to is None:
+                    connect_cps(net, cp_st, cp_tc, _state["cps"])
+
+    net.build()
+    total_miles = round(net.total_length_m() / 1609.34, 1)
+
+    noelle_log("build_on_lines", {
+        "lines": len(lines), "circles": n_circles,
+        "stations": n_stations, "total_miles": total_miles,
+    })
+
+    return jsonify({
+        "lines_used": len(lines),
+        "circles": n_circles,
+        "stations": n_stations,
+        "total_miles": total_miles,
+    })
+
+
+# ---------------------------------------------------------------------------
+# Crash mesh endpoint
+# ---------------------------------------------------------------------------
+
+@builders.post("/network/crash_mesh")
+def network_crash_mesh():
+    """Build a network from crash corridor lines.
+
+    5-stage algorithm:
+    1. Extract corridor LINES from crash density data (top 10% cells -> polylines)
+    2. (Future: Option-drag to adjust lines)
+    3. Place traffic circles where corridors cross
+    4. Place stations along each line, 0.5-0.75 mi apart, oriented to line heading
+    5. Connect along lines and between lines at circles
+    """
+    data = request.json or {}
+    fence = data.get("fence")
+    threshold_pct = data.get("threshold_pct", 10)
+
+    if not fence:
+        return jsonify({"error": "No city boundary provided"}), 400
+
+    coords = []
+    if fence.get("type") == "Polygon":
+        coords = fence["coordinates"][0]
+    elif fence.get("type") == "MultiPolygon":
+        for poly in fence["coordinates"]:
+            coords.extend(poly[0])
+    if not coords:
+        return jsonify({"error": "Invalid boundary polygon"}), 400
+
+    lons_f = [c[0] for c in coords]
+    lats_f = [c[1] for c in coords]
+    center_lat = (min(lats_f) + max(lats_f)) / 2
+    center_lon = (min(lons_f) + max(lons_f)) / 2
+
+    # Detect state
+    state_abbr = None
+    try:
+        from mesh_mobility.scripts.census_overlays import fips_from_latlon, STATE_FIPS_TO_ABBR
+        state_fips, _ = fips_from_latlon(center_lat, center_lon)
+        if state_fips:
+            state_abbr = STATE_FIPS_TO_ABBR.get(state_fips)
+    except Exception:
+        pass
+    if not state_abbr:
+        return jsonify({"error": "Cannot determine state for crash data"}), 400
+
+    # Get crash data from library
+    span_mi = vincenty_m(min(lats_f), center_lon, max(lats_f), center_lon) / 1609.34
+    crash_data = _md.get_crashes(state_abbr, center_lat, center_lon, radius_miles=max(20, span_mi))
+    if not crash_data or not crash_data.get("features"):
+        return jsonify({"error": f"No crash data for {state_abbr.upper()}. Run CrashHarvester first."}), 404
+
+    # Point-in-polygon filter
+    def _pip(px, py, poly):
+        n = len(poly)
+        inside = False
+        j = n - 1
+        for i in range(n):
+            xi, yi = poly[i]
+            xj, yj = poly[j]
+            if ((yi > py) != (yj > py)) and (px < (xj - xi) * (py - yi) / (yj - yi) + xi):
+                inside = not inside
+            j = i
+        return inside
+
+    poly_coords = coords
+
+    # Filter crash cells to boundary
+    in_boundary = []
+    for f in crash_data["features"]:
+        lon, lat = f["geometry"]["coordinates"]
+        if _pip(lon, lat, poly_coords):
+            in_boundary.append(f)
+
+    if not in_boundary:
+        return jsonify({"error": "No crash data within boundary"}), 400
+
+    # -- STAGE 1: Extract corridor lines from top crash cells --
+    all_counts = sorted([f["properties"]["crashes"] for f in in_boundary], reverse=True)
+    cutoff_idx = max(1, int(len(all_counts) * threshold_pct / 100))
+    threshold = all_counts[min(cutoff_idx, len(all_counts) - 1)]
+    hot_cells = [(f["geometry"]["coordinates"][1], f["geometry"]["coordinates"][0],
+                  f["properties"]["crashes"])
+                 for f in in_boundary if f["properties"]["crashes"] >= threshold]
+    log.info(f"Crash Mesh Stage 1: {len(hot_cells)} hot cells (threshold={threshold})")
+
+    # Cluster into corridors: cells within ~500m are same corridor
+    cluster_deg = 0.005  # ~500m
+    corridors = []  # each corridor = ordered list of (lat, lon)
+    used = [False] * len(hot_cells)
+
+    # Sort hottest first -- seed corridors from biggest concentrations
+    indices = sorted(range(len(hot_cells)), key=lambda i: hot_cells[i][2], reverse=True)
+
+    for seed_idx in indices:
+        if used[seed_idx]:
+            continue
+        corridor = [seed_idx]
+        used[seed_idx] = True
+        # Grow by adding nearest unused neighbor repeatedly
+        grew = True
+        while grew:
+            grew = False
+            tail_lat, tail_lon, _ = hot_cells[corridor[-1]]
+            head_lat, head_lon, _ = hot_cells[corridor[0]]
+            best_tail = (-1, float("inf"))
+            best_head = (-1, float("inf"))
+            for j in range(len(hot_cells)):
+                if used[j]:
+                    continue
+                jlat, jlon, _ = hot_cells[j]
+                dt = abs(jlat - tail_lat) + abs(jlon - tail_lon)
+                dh = abs(jlat - head_lat) + abs(jlon - head_lon)
+                if dt < cluster_deg and dt < best_tail[1]:
+                    best_tail = (j, dt)
+                if dh < cluster_deg and dh < best_head[1]:
+                    best_head = (j, dh)
+            if best_tail[0] >= 0:
+                corridor.append(best_tail[0])
+                used[best_tail[0]] = True
+                grew = True
+            if best_head[0] >= 0 and best_head[0] != best_tail[0]:
+                corridor.insert(0, best_head[0])
+                used[best_head[0]] = True
+                grew = True
+
+        if len(corridor) >= 3:
+            # Convert to (lat, lon) list -- already ordered by growth
+            line = [(hot_cells[i][0], hot_cells[i][1]) for i in corridor]
+            corridors.append(line)
+
+    log.info(f"Crash Mesh Stage 1: {len(corridors)} corridor lines extracted")
+
+    # -- STAGE 3: Find where corridors cross -> traffic circles --
+    circle_points = []  # (lat, lon, [corridor_indices])
+    cross_threshold_m = 400  # corridors within 400m of each other = intersection
+
+    for i in range(len(corridors)):
+        for j in range(i + 1, len(corridors)):
+            # Check each point on corridor i against corridor j
+            for plat, plon in corridors[i]:
+                for qlat, qlon in corridors[j]:
+                    dist = vincenty_m(plat, plon, qlat, qlon)
+                    if dist < cross_threshold_m:
+                        # Intersection found -- use midpoint
+                        mlat = (plat + qlat) / 2
+                        mlon = (plon + qlon) / 2
+                        # Check not too close to existing circle
+                        too_close = False
+                        for clat, clon, _ in circle_points:
+                            if vincenty_m(mlat, mlon, clat, clon) < 800:
+                                too_close = True
+                                break
+                        if not too_close:
+                            circle_points.append((mlat, mlon, [i, j]))
+                            break  # one intersection per corridor pair is enough
+                else:
+                    continue
+                break
+
+    log.info(f"Crash Mesh Stage 3: {len(circle_points)} intersection circles")
+
+    # -- STAGE 4 & 5: Build network -- circles, stations, connections --
+    net = Network(network_id="crash_mesh")
+    _state["network"] = net
+    clear_edit_state()
+
+    n_stations = 0
+    n_circles = 0
+    STATION_SPACING_M = 1000  # ~0.6 miles
+
+    # Place traffic circles at intersections
+    circle_structs = {}  # (lat,lon) -> (struct, cp_dict)
+    for clat, clon, corridor_idxs in circle_points:
+        # Determine arm headings from the corridors that cross here
+        headings = []
+        for ci in corridor_idxs:
+            corr = corridors[ci]
+            lat_s, lon_s = corr[0]
+            lat_e, lon_e = corr[-1]
+            dlat = lat_e - lat_s
+            dlon = (lon_e - lon_s) * math.cos(math.radians((lat_s + lat_e) / 2))
+            h = math.degrees(math.atan2(dlon, dlat)) % 360
+            headings.append(h)
+            headings.append((h + 180) % 360)
+        # Deduplicate headings that are too close
+        headings = sorted(set(round(h / 10) * 10 for h in headings))
+        if len(headings) < 4:
+            headings = [0.0, 90.0, 180.0, 270.0]
+
+        struct, cp_dict = build_traffic_circle(
+            net, clat, clon,
+            structure_id=next_sid("c"),
+            arm_headings=[float(h) for h in headings[:8]],
+        )
+        _state["structures"][struct.structure_id] = struct
+        _state["cps"].update(cp_dict)
+        circle_structs[(round(clat, 5), round(clon, 5))] = (struct, cp_dict)
+        n_circles += 1
+
+    # Place stations along each corridor line
+    corridor_stations = {}  # corridor_idx -> [(struct, cps, lat, lon)]
+    for ci, line in enumerate(corridors):
+        # Compute cumulative distance along the line
+        cum_dist = [0.0]
+        for k in range(1, len(line)):
+            d = vincenty_m(line[k-1][0], line[k-1][1], line[k][0], line[k][1])
+            cum_dist.append(cum_dist[-1] + d)
+        total_len = cum_dist[-1]
+        if total_len < 200:
+            continue
+
+        # Compute corridor heading
+        dlat = line[-1][0] - line[0][0]
+        dlon = (line[-1][1] - line[0][1]) * math.cos(math.radians((line[0][0] + line[-1][0]) / 2))
+        heading = math.degrees(math.atan2(dlon, dlat)) % 360
+
+        # Generate station positions at regular intervals
+        n_seg = max(1, round(total_len / STATION_SPACING_M))
+        station_dists = [total_len * i / n_seg for i in range(n_seg + 1)]
+
+        placed = []
+        for target_d in station_dists:
+            # Interpolate position along the polyline
+            for k in range(1, len(cum_dist)):
+                if cum_dist[k] >= target_d:
+                    frac = (target_d - cum_dist[k-1]) / max(1, cum_dist[k] - cum_dist[k-1])
+                    slat = line[k-1][0] + (line[k][0] - line[k-1][0]) * frac
+                    slon = line[k-1][1] + (line[k][1] - line[k-1][1]) * frac
+                    break
+            else:
+                slat, slon = line[-1]
+
+            # Check if a traffic circle is already close -- skip station
+            is_circle = False
+            for (clat, clon), _ in circle_structs.items():
+                if vincenty_m(slat, slon, clat, clon) < 300:
+                    is_circle = True
+                    break
+            if is_circle:
+                continue
+
+            # Local heading between neighboring line points
+            local_heading = heading
+            for k in range(1, len(line)):
+                if cum_dist[k] >= target_d:
+                    dl = line[k][0] - line[k-1][0]
+                    dn = (line[k][1] - line[k-1][1]) * math.cos(math.radians(line[k][0]))
+                    if abs(dl) + abs(dn) > 0.0001:
+                        local_heading = math.degrees(math.atan2(dn, dl)) % 360
+                    break
+
+            st, st_cps = build_station(net, slat, slon, heading_deg=local_heading,
+                                        structure_id=next_sid("s"))
+            _state["structures"][st.structure_id] = st
+            _state["cps"].update(st_cps)
+            placed.append((st, st_cps, slat, slon, local_heading))
+            n_stations += 1
+
+        corridor_stations[ci] = placed
+
+        # Connect consecutive stations along this corridor
+        for k in range(1, len(placed)):
+            prev_st, prev_cps, _, _, prev_h = placed[k-1]
+            cur_st, cur_cps, _, _, cur_h = placed[k]
+            cp_out = cp_by_heading(prev_cps, prev_h)
+            cp_in = cp_by_heading(cur_cps, (cur_h + 180) % 360)
+            if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
+                connect_cps(net, cp_out, cp_in, _state["cps"])
+
+    # Connect corridor endpoints to nearest traffic circles
+    for ci, placed in corridor_stations.items():
+        if not placed:
+            continue
+        for endpoint in [placed[0], placed[-1]]:
+            st, st_cps, slat, slon, sh = endpoint
+            best_dist = 2000  # max 2km to connect
+            best_circle = None
+            best_heading = None
+            for (clat, clon), (cstruct, ccps) in circle_structs.items():
+                d = vincenty_m(slat, slon, clat, clon)
+                if d < best_dist:
+                    best_dist = d
+                    best_circle = (cstruct, ccps, clat, clon)
+            if best_circle:
+                cstruct, ccps, clat, clon = best_circle
+                # heading from station to circle
+                dl = clat - slat
+                dn = (clon - slon) * math.cos(math.radians(slat))
+                h_to_circle = math.degrees(math.atan2(dn, dl)) % 360
+                cp_st = cp_by_heading(st_cps, h_to_circle)
+                cp_tc = cp_by_heading(ccps, (h_to_circle + 180) % 360)
+                if cp_st and cp_tc and cp_st.connected_to is None and cp_tc.connected_to is None:
+                    connect_cps(net, cp_st, cp_tc, _state["cps"])
+
+    net.build()
+    total_miles = round(net.total_length_m() / 1609.34, 1)
+
+    noelle_log("crash_mesh", {
+        "corridors": len(corridors),
+        "circles": n_circles,
+        "stations": n_stations,
+        "threshold": threshold,
+        "hot_cells": len(hot_cells),
+        "total_miles": total_miles,
+    })
+
+    return jsonify({
+        "corridors": len(corridors),
+        "circles": n_circles,
+        "stations": n_stations,
+        "hot_cells": len(hot_cells),
+        "threshold": threshold,
+        "total_miles": total_miles,
     })
