@@ -2053,9 +2053,12 @@ def network_line():
         slon = lon1 + (lon2 - lon1) * frac
         positions.append((frac, slat, slon, False, None))
 
-    # Insert crossing points, replacing the nearest station if within 0.3 mi
+    # Insert crossing points — if a station is too close, shift it along the
+    # line (halfway toward its nearest neighbor) so no station is lost.
+    min_sep_m = 483  # 0.3 mi — minimum separation before shifting
     for cf, clat, clon, cp_a, cp_b in cross_fracs:
-        replace_idx = None
+        # Find the nearest non-crossing station
+        nearest_idx = None
         best_dist = float("inf")
         for idx, (pf, plat, plon, is_cross, _) in enumerate(positions):
             if is_cross:
@@ -2063,11 +2066,40 @@ def network_line():
             d = vincenty_m(clat, clon, plat, plon)
             if d < best_dist:
                 best_dist = d
-                replace_idx = idx
-        if best_dist < 483:  # 0.3 mi in meters
-            positions[replace_idx] = (cf, clat, clon, True, (cp_a, cp_b))
-        else:
-            positions.append((cf, clat, clon, True, (cp_a, cp_b)))
+                nearest_idx = idx
+
+        if best_dist < min_sep_m and nearest_idx is not None:
+            # Shift the displaced station halfway toward its nearest neighbor
+            old_frac = positions[nearest_idx][0]
+            # Find the neighbor on the opposite side from the crossing
+            neighbor_frac = None
+            for idx, (pf, _, _, is_cross, _) in enumerate(positions):
+                if idx == nearest_idx or is_cross:
+                    continue
+                # Pick the neighbor on the far side from the crossing
+                if (old_frac <= cf and pf < old_frac) or (old_frac >= cf and pf > old_frac):
+                    if neighbor_frac is None or abs(pf - old_frac) < abs(neighbor_frac - old_frac):
+                        neighbor_frac = pf
+            if neighbor_frac is None:
+                # No neighbor on the far side — try the other direction
+                for idx, (pf, _, _, is_cross, _) in enumerate(positions):
+                    if idx == nearest_idx or is_cross:
+                        continue
+                    if neighbor_frac is None or abs(pf - old_frac) < abs(neighbor_frac - old_frac):
+                        neighbor_frac = pf
+            if neighbor_frac is not None:
+                shift_frac = (old_frac + neighbor_frac) / 2.0
+                shift_lat = lat1 + (lat2 - lat1) * shift_frac
+                shift_lon = lon1 + (lon2 - lon1) * shift_frac
+                # Only shift if the new position has enough room from the crossing
+                if vincenty_m(clat, clon, shift_lat, shift_lon) >= min_sep_m:
+                    positions[nearest_idx] = (shift_frac, shift_lat, shift_lon, False, None)
+                else:
+                    # Not enough room — designer can remove the station if unwanted
+                    pass
+
+        # Insert the crossing traffic circle
+        positions.append((cf, clat, clon, True, (cp_a, cp_b)))
     positions.sort(key=lambda x: x[0])
 
     # Place structures along the line
