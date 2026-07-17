@@ -131,6 +131,7 @@
 
 </div>
 
+<script src="auth.js"></script>
 <script>
 const Library = (() => {
   let _data = [];
@@ -251,6 +252,8 @@ const Library = (() => {
     },
 
     clone(filename) {
+      // Auth check — clone creates an editable copy
+      if (typeof Auth !== "undefined" && !Auth.requireAuth("clone networks")) return;
       window.location.href = `/app?clone=${encodeURIComponent(filename)}`;
     },
   };

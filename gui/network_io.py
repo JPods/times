@@ -236,6 +236,22 @@ def save_network():
     except Exception:
         pass  # never break the save
 
+    # Register with WC3 as a Document (never break the save)
+    try:
+        from mesh_mobility.gui.auth import register_network_save
+        settings = _state.get("settings") or {}
+        register_network_save(os.path.basename(path), {
+            "city": settings.get("city", net.network_id),
+            "state": settings.get("state", ""),
+            "country": settings.get("country", ""),
+            "stations": len(net.stations),
+            "circles": sum(1 for s in _state["structures"].values()
+                           if getattr(s, "structure_type", "") == "traffic_circle"),
+            "total_miles": round(net.total_length_m() / 1609.34, 1),
+        })
+    except Exception:
+        pass
+
     return jsonify({"saved": path})
 
 

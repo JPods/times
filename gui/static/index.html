@@ -28,7 +28,7 @@
 
   <!-- Persistent toolbar — always visible -->
   <div id="sidebar-toolbar" style="padding:6px 10px;border-bottom:1px solid #2a3a2a;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
-    <button onclick="SidebarNav.toggle('panel-city-search')" class="tool-btn sb-nav-btn" data-panel="panel-city-search">&#128269; Find City</button>
+    <button onclick="(() => { const p = document.getElementById('panel-city-search'); const inp = document.getElementById('city-search'); if (p && p.style.display !== 'none' && inp && inp.value.trim()) { CitySearch.go(); } else { SidebarNav.toggle('panel-city-search'); if (inp) inp.focus(); } })()" class="tool-btn sb-nav-btn" data-panel="panel-city-search">&#128269; Find City</button>
     <button onclick="SidebarNav.toggle('panel-tools')" class="tool-btn sb-nav-btn" data-panel="panel-tools">&#9881; Tools</button>
     <button onclick="SidebarNav.toggle('panel-overlays')" class="tool-btn sb-nav-btn" data-panel="panel-overlays">&#127760; Overlays</button>
     <button onclick="SidebarNav.toggle('panel-settings')" class="tool-btn sb-nav-btn" data-panel="panel-settings">&#9881; Settings</button>
@@ -782,6 +782,7 @@
   <span id="status-mode">Ready</span>
   <span id="status-coord"></span>
   <span id="status-net"></span>
+  <span id="auth-badge" style="margin-left:8px;font-size:10px;color:#fc0;cursor:pointer" onclick="Auth.showProfileForm()" title="Guest">Guest</span>
   <span id="status-oss" style="margin-left:auto;font-size:9px;color:#666;white-space:nowrap">Open Source · <a href="https://www.5x5FreeMarket.com" target="_blank" style="color:#9dc">5×5 Standard</a> · <a href="https://library.jpods.com/congressionalstudy/" target="_blank" style="color:#666">Studies</a></span>
 </div>
 
@@ -1401,6 +1402,7 @@ const DrawTool = (() => {
   let _cmdDown = false;
   let _latched = false;     // true when Draw button is active (latched mode)
   let _dragging = null;     // {lineIdx, pointIdx, marker} when Option-dragging
+  let _visible = true;      // false when lines are hidden via toggle
 
   // Listen for modifier keys globally
   document.addEventListener("keydown", e => {
@@ -1519,62 +1521,81 @@ const DrawTool = (() => {
     }
   }
 
-  // ── Snap logic ──
+  // ── Constants ──
 
-  const SNAP_DEG = 0.002; // ~200m snap radius
+  const SNAP_DEG      = 0.002;  // ~200m snap radius
+  const EDIT_DEG      = 0.003;  // ~300m threshold for delete/drag/insert
+  const COLOR_ACTIVE  = "#ff00ff";
+  const COLOR_DONE    = "#cc00cc";
+  const COLOR_SNAP    = "#4f4";
 
-  function _findSnap(latlng) {
-    // Check all existing line endpoints and points for snap
-    let best = null, bestDist = SNAP_DEG;
-    for (const line of _lines) {
-      for (const p of line.points) {
-        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
-        if (d < bestDist) {
-          bestDist = d;
-          best = { lat: p.lat, lon: p.lon };
-        }
+  // ── Helpers ──
+
+  function _dist(latlng, p) {
+    const dlat = p.lat - latlng.lat, dlon = p.lon - latlng.lng;
+    return Math.sqrt(dlat * dlat + dlon * dlon);
+  }
+
+  function _findNearestPoint(latlng, threshold) {
+    let bestLine = -1, bestPt = -1, bestDist = threshold;
+    for (let li = 0; li < _lines.length; li++) {
+      for (let pi = 0; pi < _lines[li].points.length; pi++) {
+        const d = _dist(latlng, _lines[li].points[pi]);
+        if (d < bestDist) { bestDist = d; bestLine = li; bestPt = pi; }
       }
     }
-    // Also check current line points (for closing a loop)
-    if (_currentLine) {
-      for (const p of _currentLine.points) {
-        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
-        if (d < bestDist) {
-          bestDist = d;
-          best = { lat: p.lat, lon: p.lon };
-        }
+    return bestLine >= 0 ? { lineIdx: bestLine, pointIdx: bestPt, dist: bestDist } : null;
+  }
+
+  function _createDot(ll, isSnapped) {
+    return L.circleMarker(ll, {
+      radius: isSnapped ? 7 : 5,
+      color: isSnapped ? COLOR_SNAP : COLOR_ACTIVE,
+      fillColor: isSnapped ? COLOR_SNAP : COLOR_ACTIVE,
+      fillOpacity: 1, weight: isSnapped ? 2 : 1,
+    }).addTo(App.getMap());
+  }
+
+  function _removeLine(lineIdx) {
+    const line = _lines[lineIdx];
+    App.getMap().removeLayer(line.polyline);
+    line.dots.forEach(d => App.getMap().removeLayer(d));
+    _lines.splice(lineIdx, 1);
+    _updateCount();
+  }
+
+  // ── Snap ──
+
+  function _findSnap(latlng) {
+    let best = null, bestDist = SNAP_DEG;
+    const sources = _currentLine ? _lines.concat([_currentLine]) : _lines;
+    for (const line of sources) {
+      for (const p of line.points) {
+        const d = _dist(latlng, p);
+        if (d < bestDist) { bestDist = d; best = { lat: p.lat, lon: p.lon }; }
       }
     }
     return best;
   }
 
-  // ── Drawing (Cmd+click) ──
+  // ── Drawing ──
 
   function _addPoint(latlng) {
+    if (!_visible) return;
     if (!_currentLine) {
       _currentLine = {
-        polyline: L.polyline([], { color: "#ff00ff", weight: 3, dashArray: "8 4", opacity: 0.8 }).addTo(App.getMap()),
+        polyline: L.polyline([], { color: COLOR_ACTIVE, weight: 3, dashArray: "8 4", opacity: 0.8 }).addTo(App.getMap()),
         dots: [],
         points: [],
       };
     }
-    // Snap to nearby existing point
     const snap = _findSnap(latlng);
     const pt = snap || { lat: latlng.lat, lon: latlng.lng };
-    const ll = L.latLng(pt.lat, pt.lon);
-
     _currentLine.points.push(pt);
-    // Vertex dot — green if snapped, yellow if free
-    const dot = L.circleMarker(ll, {
-      radius: snap ? 7 : 5,
-      color: snap ? "#4f4" : "#ff00ff",
-      fillColor: snap ? "#4f4" : "#ff00ff",
-      fillOpacity: 1, weight: snap ? 2 : 1
-    }).addTo(App.getMap());
-    _currentLine.dots.push(dot);
-    // Update polyline
+    _currentLine.dots.push(_createDot(L.latLng(pt.lat, pt.lon), !!snap));
     _currentLine.polyline.setLatLngs(_currentLine.points.map(p => [p.lat, p.lon]));
-    document.getElementById("draw-status").style.display = "block";
+    const el = document.getElementById("draw-status");
+    if (el) el.style.display = "block";
     const hint = _latched ? "double-click to finish line" : "release Cmd to finish line";
     setStatus(`Drawing: ${_currentLine.points.length} points (${hint})`);
   }
@@ -1592,14 +1613,12 @@ const DrawTool = (() => {
       } else break;
     }
     _currentLine.polyline.setLatLngs(pts.map(p => [p.lat, p.lon]));
-    if (_currentLine.points.length >= 2) {
-      // Solidify
-      _currentLine.polyline.setStyle({ color: "#cc00cc", dashArray: null, weight: 3, opacity: 0.9 });
+    if (pts.length >= 2) {
+      _currentLine.polyline.setStyle({ color: COLOR_DONE, dashArray: null, weight: 3, opacity: 0.9 });
       _lines.push(_currentLine);
       _updateCount();
-      setStatus(`Line ${_lines.length} done (${_currentLine.points.length} points). ${_lines.length} total lines.`);
+      setStatus(`Line ${_lines.length} done (${pts.length} points). ${_lines.length} total lines.`);
     } else {
-      // Too short — remove
       App.getMap().removeLayer(_currentLine.polyline);
       _currentLine.dots.forEach(d => App.getMap().removeLayer(d));
     }
@@ -1609,25 +1628,15 @@ const DrawTool = (() => {
   // ── Delete point (Shift+click) ──
 
   function _deleteNearestPoint(latlng) {
-    let bestLine = -1, bestPt = -1, bestDist = 0.003; // ~300m threshold
-    for (let li = 0; li < _lines.length; li++) {
-      for (let pi = 0; pi < _lines[li].points.length; pi++) {
-        const p = _lines[li].points[pi];
-        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
-        if (d < bestDist) { bestDist = d; bestLine = li; bestPt = pi; }
-      }
-    }
-    if (bestLine < 0) return;
-    const line = _lines[bestLine];
-    // Remove the dot marker
-    App.getMap().removeLayer(line.dots[bestPt]);
-    line.dots.splice(bestPt, 1);
-    line.points.splice(bestPt, 1);
-    // If line has fewer than 2 points, remove it entirely
+    if (!_visible) return;
+    const hit = _findNearestPoint(latlng, EDIT_DEG);
+    if (!hit) return;
+    const line = _lines[hit.lineIdx];
+    App.getMap().removeLayer(line.dots[hit.pointIdx]);
+    line.dots.splice(hit.pointIdx, 1);
+    line.points.splice(hit.pointIdx, 1);
     if (line.points.length < 2) {
-      App.getMap().removeLayer(line.polyline);
-      line.dots.forEach(d => App.getMap().removeLayer(d));
-      _lines.splice(bestLine, 1);
+      _removeLine(hit.lineIdx);
       setStatus(`Line deleted. ${_lines.length} lines remaining.`);
     } else {
       line.polyline.setLatLngs(line.points.map(p => [p.lat, p.lon]));
@@ -1639,64 +1648,44 @@ const DrawTool = (() => {
   // ── Delete line (Shift+double-click) ──
 
   function _deleteNearestLine(latlng) {
-    let bestLine = -1, bestDist = 0.005;
-    for (let li = 0; li < _lines.length; li++) {
-      for (const p of _lines[li].points) {
-        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
-        if (d < bestDist) { bestDist = d; bestLine = li; }
-      }
-    }
-    if (bestLine < 0) return;
-    const line = _lines[bestLine];
-    App.getMap().removeLayer(line.polyline);
-    line.dots.forEach(d => App.getMap().removeLayer(d));
-    _lines.splice(bestLine, 1);
-    _updateCount();
+    if (!_visible) return;
+    const hit = _findNearestPoint(latlng, EDIT_DEG);
+    if (!hit) return;
+    _removeLine(hit.lineIdx);
     setStatus(`Line deleted. ${_lines.length} lines remaining.`);
   }
 
   // ── Drag point (Option+click) ──
 
   function _startDrag(latlng) {
-    // Find nearest point on any line
-    let bestLine = -1, bestPt = -1, bestDist = 0.003;
-    for (let li = 0; li < _lines.length; li++) {
-      for (let pi = 0; pi < _lines[li].points.length; pi++) {
-        const p = _lines[li].points[pi];
-        const d = Math.abs(p.lat - latlng.lat) + Math.abs(p.lon - latlng.lng);
-        if (d < bestDist) { bestDist = d; bestLine = li; bestPt = pi; }
-      }
-    }
-    if (bestLine >= 0) {
-      // Drag existing point
-      _dragging = { lineIdx: bestLine, pointIdx: bestPt, marker: _lines[bestLine].dots[bestPt] };
-      setStatus(`Dragging point — release to place`);
+    if (!_visible) return;
+    // Try existing point first
+    const hit = _findNearestPoint(latlng, EDIT_DEG);
+    if (hit) {
+      _dragging = { lineIdx: hit.lineIdx, pointIdx: hit.pointIdx, marker: _lines[hit.lineIdx].dots[hit.pointIdx] };
+      setStatus("Dragging point — release to place");
       return;
     }
     // No nearby point — try inserting on nearest line segment
-    let bestSegLine = -1, bestSegIdx = -1, bestSegDist = 0.003;
+    let bestSegLine = -1, bestSegIdx = -1, bestSegDist = EDIT_DEG;
     for (let li = 0; li < _lines.length; li++) {
       const pts = _lines[li].points;
       for (let si = 0; si < pts.length - 1; si++) {
-        // Distance from latlng to segment midpoint (rough)
         const mx = (pts[si].lat + pts[si+1].lat) / 2;
         const my = (pts[si].lon + pts[si+1].lon) / 2;
-        const d = Math.abs(mx - latlng.lat) + Math.abs(my - latlng.lng);
+        const d = _dist(latlng, { lat: mx, lon: my });
         if (d < bestSegDist) { bestSegDist = d; bestSegLine = li; bestSegIdx = si + 1; }
       }
     }
     if (bestSegLine >= 0) {
-      // Insert a new point on the segment
       const line = _lines[bestSegLine];
       const pt = { lat: latlng.lat, lon: latlng.lng };
       line.points.splice(bestSegIdx, 0, pt);
-      const dot = L.circleMarker(latlng, {
-        radius: 5, color: "#ff00ff", fillColor: "#ff00ff", fillOpacity: 1, weight: 1
-      }).addTo(App.getMap());
+      const dot = _createDot(latlng, false);
       line.dots.splice(bestSegIdx, 0, dot);
       line.polyline.setLatLngs(line.points.map(p => [p.lat, p.lon]));
       _dragging = { lineIdx: bestSegLine, pointIdx: bestSegIdx, marker: dot };
-      setStatus(`New point inserted — drag to position`);
+      setStatus("New point inserted — drag to position");
     }
   }
 
@@ -1760,6 +1749,7 @@ const DrawTool = (() => {
 
   // Save lines to server for retrospection
   async function saveLines() {
+    if (typeof Auth !== "undefined" && !Auth.requireAuth("save lines")) return;
     const lines = getLines();
     if (!lines.length) return;
     try {
@@ -1782,13 +1772,9 @@ const DrawTool = (() => {
       clearAll();
       for (const pts of data.lines) {
         const polyline = L.polyline(pts.map(p => [p.lat, p.lon]), {
-          color: "#cc00cc", weight: 3, opacity: 0.9
+          color: COLOR_DONE, weight: 3, opacity: 0.9
         }).addTo(App.getMap());
-        const dots = pts.map(p => {
-          return L.circleMarker([p.lat, p.lon], {
-            radius: 5, color: "#ff00ff", fillColor: "#ff00ff", fillOpacity: 1, weight: 1
-          }).addTo(App.getMap());
-        });
+        const dots = pts.map(p => _createDot(L.latLng(p.lat, p.lon), false));
         _lines.push({ polyline, dots, points: pts });
       }
       _updateCount();
@@ -1805,7 +1791,6 @@ const DrawTool = (() => {
     if (status) status.style.display = "block";
   }
 
-  let _visible = true;
   function toggleVisibility() {
     _visible = !_visible;
     const map = App.getMap();
@@ -2169,6 +2154,7 @@ const OverlayPanel = (() => {
 <script src="overlays.js"></script>
 <script src="ai.js"></script>
 <script src="noelle.js"></script>
+<script src="auth.js"></script>
 <script>
 const NoelleQA = (() => {
   let _el = null;

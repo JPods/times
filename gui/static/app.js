@@ -35,8 +35,8 @@ const _savedView = (() => {
   try { return JSON.parse(localStorage.getItem("rt_map_view")); } catch { return null; }
 })();
 const map = L.map("map", { zoomControl: true, keyboard: false }).setView(
-  _savedView ? [_savedView.lat, _savedView.lng] : [37.31, -121.87],
-  _savedView ? _savedView.zoom : 13
+  _savedView ? [_savedView.lat, _savedView.lng] : [36.154, -95.993],
+  _savedView ? _savedView.zoom : 12
 );
 // Walk radius circle — 0.75 mi (15-min walk) follows cursor. Toggle with key 9.
 // Walk (0.75 mi) + Bike (1.5 mi) radius circles
@@ -1388,6 +1388,7 @@ const App = {
   },
 
   async saveFile() {
+    // Downloads .jpd to user's local drive — no auth needed
     // Fetch the .jpd content from the server as a blob
     let blob, filename;
     try {
@@ -2383,7 +2384,7 @@ function _autoSaveDebounced() {
   if (!saved || !ts) return;
 
   const age = (Date.now() - new Date(ts).getTime()) / 1000 / 60;
-  if (age > 1440) {  // older than 24 hours — discard
+  if (age > 120) {  // older than 2 hours — discard
     localStorage.removeItem("rt_autosave");
     localStorage.removeItem("rt_autosave_ts");
     return;
