@@ -1457,15 +1457,18 @@ const DrawTool = (() => {
     const ev = e.originalEvent;
     if (!ev) return;
 
-    // Shift + click = delete nearest point (even in draw mode)
-    if (ev.shiftKey) {
+    // Shift/Alt only apply to drawn lines — don't steal from region select
+    const hasLines = _lines.length > 0 || _currentLine;
+
+    // Shift + click = delete nearest point (only when Draw active or lines exist)
+    if (ev.shiftKey && (_latched || hasLines)) {
       ev.preventDefault();
       _deleteNearestPoint(e.latlng);
       return;
     }
 
-    // Option/Alt + click = start dragging nearest point (insert if on line segment)
-    if (ev.altKey) {
+    // Option/Alt + click = start dragging nearest point
+    if (ev.altKey && (_latched || hasLines)) {
       ev.preventDefault();
       _startDrag(e.latlng);
       return;
@@ -1483,8 +1486,8 @@ const DrawTool = (() => {
     const ev = e.originalEvent;
     if (!ev) return;
 
-    // Shift + double-click = delete entire nearest line (even in draw mode)
-    if (ev.shiftKey) {
+    // Shift + double-click = delete entire nearest line (only when lines exist)
+    if (ev.shiftKey && _lines.length > 0) {
       ev.preventDefault();
       ev.stopPropagation();
       _deleteNearestLine(e.latlng);

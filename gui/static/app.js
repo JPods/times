@@ -301,16 +301,6 @@ const CitySearch = (() => {
               (r.geojson.type === "Polygon" || r.geojson.type === "MultiPolygon")) {
             _fenceGeojson = r.geojson;
             _drawFence(r.geojson);
-            // Save fence to server so City Mesh works after page reload
-            fetch("/api/overlays/active", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                ...(App._lastOverlays || {}),
-                city_label: r.display_name.split(",").slice(0, 3).join(",").trim(),
-                fence: r.geojson,
-              }),
-            }).catch(() => {});
           } else {
             _clearFence();   // point result — no boundary available
           }
@@ -332,14 +322,13 @@ const CitySearch = (() => {
           if (sidebarCity) sidebarCity.textContent = label;
           const cityLabel = document.getElementById("overlay-city-label");
           if (cityLabel) cityLabel.textContent = label;
-          // Save city name to server state (persists in .jpd)
+          // Save city label + fence to server in one POST (fence persists in .jpd)
+          const overlayUpdate = { ...(App._lastOverlays || {}), city_label: label };
+          if (_fenceGeojson) overlayUpdate.fence = _fenceGeojson;
           fetch("/api/overlays/active", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              ...(App._lastOverlays || {}),
-              city_label: label,
-            }),
+            body: JSON.stringify(overlayUpdate),
           }).catch(() => {});
           // Clear old network and overlays — new city = fresh start
           App.newNetwork();
