@@ -6,12 +6,21 @@ generates walk-ride-walk isochrone coverage maps.
 
 ## Quick Start
 
+**Important:** Run from `00_working_code/`, not from inside `mesh_mobility/`.
+Python needs `mesh_mobility/` to be a package below the current directory.
+
 ```bash
-cd /Users/williamjames/Documents/08_JPods/03_Technology/00_working_code
-python3 -m mesh_mobility.gui          # opens http://localhost:5050
-python3 -m mesh_mobility.gui file.jpd # preload a network
-bash mesh_mobility/runserver.sh       # kill old server + restart
+cd ~/Documents/08_JPods/03_Technology/00_working_code
+source mesh_mobility/venv/bin/activate
+python -m mesh_mobility.gui          # opens http://localhost:5050
+python -m mesh_mobility.gui file.jpd # preload a network
 ```
+
+**Dependencies:**
+- `CrashHarvester` — symlink in `00_working_code/` points `CrashHarvester → crash_harvester`
+- venv is inside `mesh_mobility/venv/` (Python 3.13.3)
+
+**Python:** Always use the project venv. See `~/Allie/readmes/57-python-setup.md`.
 
 ## Documentation
 
