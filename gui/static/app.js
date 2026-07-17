@@ -2407,6 +2407,10 @@ function _autoSaveDebounced() {
           if (typeof App !== "undefined" && App.flash) App.flash("Network recovered from auto-save", 3000);
         }
       });
+    } else {
+      // User declined — clear auto-save so it doesn't ask again
+      localStorage.removeItem("rt_autosave");
+      localStorage.removeItem("rt_autosave_ts");
     }
   });
 })();

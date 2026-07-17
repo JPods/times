@@ -480,6 +480,7 @@
       <button id="btn-build-lines" onclick="DrawTool.build()" class="tool-btn" style="flex:1;background:#1a3a4a;border-color:#2a5a6a">&#9654; Build on Lines</button>
       <button onclick="DrawTool.loadLines()" class="tool-btn" style="flex:0;padding:5px 6px" title="Load saved lines">&#8634;</button>
       <button onclick="DrawTool.saveLines()" class="tool-btn" style="flex:0;padding:5px 6px" title="Save lines">&#128190;</button>
+      <button id="btn-toggle-lines" onclick="DrawTool.toggleVisibility()" class="tool-btn" style="flex:0;padding:5px 6px" title="Hide/show lines">&#128065;</button>
     </div>
     <div class="ov-row">
       <button id="btn-city-mesh" onclick="CityMesh.generate()" class="tool-btn" style="flex:1;background:#1a4a3a;border-color:#2a6a5a">&#127961; City Mesh</button>
@@ -490,16 +491,16 @@
       <button onclick="Grid.openDialog()" class="tool-btn" style="flex:1">&#9783; Custom Mesh</button>
       <button onclick="ToolsPanel.toggleDetail('mesh')" class="ov-info">?</button>
     </div>
-    <div id="draw-status" style="display:none;font-size:10px;color:#fc0;padding:2px 8px">
+    <div id="draw-status" style="display:none;font-size:10px;color:#ff00ff;padding:2px 8px">
       <span id="draw-count">0</span> lines drawn.
     </div>
     <table style="font-size:10px;color:#9ab;margin:6px 8px;border-collapse:collapse;width:calc(100% - 16px)">
-      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Click</td><td>Add point (when Draw is active)</td></tr>
-      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Double-click</td><td>Finish line, stay in draw mode</td></tr>
-      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Escape</td><td>Exit draw mode</td></tr>
-      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Option + click</td><td>Insert or drag a point on a line</td></tr>
-      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Shift + click</td><td>Delete nearest point</td></tr>
-      <tr><td style="color:#fc0;padding:1px 6px 1px 0;white-space:nowrap">Shift + dblclick</td><td>Delete entire line</td></tr>
+      <tr><td style="color:#ff00ff;padding:1px 6px 1px 0;white-space:nowrap">Click</td><td>Add point (when Draw is active)</td></tr>
+      <tr><td style="color:#ff00ff;padding:1px 6px 1px 0;white-space:nowrap">Double-click</td><td>Finish line, stay in draw mode</td></tr>
+      <tr><td style="color:#ff00ff;padding:1px 6px 1px 0;white-space:nowrap">Escape</td><td>Exit draw mode</td></tr>
+      <tr><td style="color:#ff00ff;padding:1px 6px 1px 0;white-space:nowrap">Option + click</td><td>Insert or drag a point on a line</td></tr>
+      <tr><td style="color:#ff00ff;padding:1px 6px 1px 0;white-space:nowrap">Shift + click</td><td>Delete nearest point</td></tr>
+      <tr><td style="color:#ff00ff;padding:1px 6px 1px 0;white-space:nowrap">Shift + dblclick</td><td>Delete entire line</td></tr>
     </table>
     <div class="ov-detail" id="tool-detail-mesh" style="display:none">
       <strong>Draw:</strong> Click to draw corridor lines on the map. Double-click ends each line. Draw over crash data. Then Build on Lines places stations.<br>
@@ -1424,13 +1425,16 @@ const DrawTool = (() => {
     _latched = on;
     const btn = document.getElementById("btn-draw");
     if (btn) {
-      btn.style.outline = on ? "2px solid #fc0" : "";
+      btn.style.outline = on ? "2px solid #ff00ff" : "";
       btn.style.background = on ? "#6a5a2a" : "#4a3a1a";
     }
-    App.getMap().getContainer().style.cursor = on ? "crosshair" : "";
+    const map = App.getMap();
+    map.getContainer().style.cursor = on ? "crosshair" : "";
     if (on) {
+      map.doubleClickZoom.disable();
       setStatus("Draw mode: click to add points, double-click to finish line, Escape to exit");
     } else {
+      map.doubleClickZoom.enable();
       if (_currentLine) _finishLine();
       setStatus("Draw mode off");
     }
@@ -1451,14 +1455,7 @@ const DrawTool = (() => {
     const ev = e.originalEvent;
     if (!ev) return;
 
-    // Latched mode OR Cmd/Ctrl + click = draw point
-    if (_latched || ev.metaKey || ev.ctrlKey) {
-      ev.preventDefault();
-      _addPoint(e.latlng);
-      return;
-    }
-
-    // Shift + click = delete nearest point
+    // Shift + click = delete nearest point (even in draw mode)
     if (ev.shiftKey) {
       ev.preventDefault();
       _deleteNearestPoint(e.latlng);
@@ -1471,11 +1468,26 @@ const DrawTool = (() => {
       _startDrag(e.latlng);
       return;
     }
+
+    // Latched mode OR Cmd/Ctrl + click = draw point
+    if (_latched || ev.metaKey || ev.ctrlKey) {
+      ev.preventDefault();
+      _addPoint(e.latlng);
+      return;
+    }
   }
 
   function _onDblClick(e) {
     const ev = e.originalEvent;
     if (!ev) return;
+
+    // Shift + double-click = delete entire nearest line (even in draw mode)
+    if (ev.shiftKey) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      _deleteNearestLine(e.latlng);
+      return;
+    }
 
     // In latched mode, double-click finishes current line (stays in draw mode)
     if (_latched && _currentLine) {
@@ -1483,14 +1495,6 @@ const DrawTool = (() => {
       ev.stopPropagation();
       _finishLine();
       setStatus(`Line ${_lines.length} done. Click to start next line, Escape to exit.`);
-      return;
-    }
-
-    // Shift + double-click = delete entire nearest line
-    if (ev.shiftKey) {
-      ev.preventDefault();
-      ev.stopPropagation();
-      _deleteNearestLine(e.latlng);
       return;
     }
   }
@@ -1549,7 +1553,7 @@ const DrawTool = (() => {
   function _addPoint(latlng) {
     if (!_currentLine) {
       _currentLine = {
-        polyline: L.polyline([], { color: "#fc0", weight: 3, dashArray: "8 4", opacity: 0.8 }).addTo(App.getMap()),
+        polyline: L.polyline([], { color: "#ff00ff", weight: 3, dashArray: "8 4", opacity: 0.8 }).addTo(App.getMap()),
         dots: [],
         points: [],
       };
@@ -1563,8 +1567,8 @@ const DrawTool = (() => {
     // Vertex dot — green if snapped, yellow if free
     const dot = L.circleMarker(ll, {
       radius: snap ? 7 : 5,
-      color: snap ? "#4f4" : "#fc0",
-      fillColor: snap ? "#4f4" : "#fc0",
+      color: snap ? "#4f4" : "#ff00ff",
+      fillColor: snap ? "#4f4" : "#ff00ff",
       fillOpacity: 1, weight: snap ? 2 : 1
     }).addTo(App.getMap());
     _currentLine.dots.push(dot);
@@ -1577,9 +1581,20 @@ const DrawTool = (() => {
 
   function _finishLine() {
     if (!_currentLine) return;
+    // Remove duplicate trailing point (double-click adds one before finishing)
+    const pts = _currentLine.points;
+    while (pts.length > 1) {
+      const last = pts[pts.length - 1], prev = pts[pts.length - 2];
+      if (last.lat === prev.lat && last.lon === prev.lon) {
+        pts.pop();
+        const dot = _currentLine.dots.pop();
+        if (dot) App.getMap().removeLayer(dot);
+      } else break;
+    }
+    _currentLine.polyline.setLatLngs(pts.map(p => [p.lat, p.lon]));
     if (_currentLine.points.length >= 2) {
       // Solidify
-      _currentLine.polyline.setStyle({ color: "#f90", dashArray: null, weight: 3, opacity: 0.9 });
+      _currentLine.polyline.setStyle({ color: "#cc00cc", dashArray: null, weight: 3, opacity: 0.9 });
       _lines.push(_currentLine);
       _updateCount();
       setStatus(`Line ${_lines.length} done (${_currentLine.points.length} points). ${_lines.length} total lines.`);
@@ -1676,7 +1691,7 @@ const DrawTool = (() => {
       const pt = { lat: latlng.lat, lon: latlng.lng };
       line.points.splice(bestSegIdx, 0, pt);
       const dot = L.circleMarker(latlng, {
-        radius: 5, color: "#fc0", fillColor: "#fc0", fillOpacity: 1, weight: 1
+        radius: 5, color: "#ff00ff", fillColor: "#ff00ff", fillOpacity: 1, weight: 1
       }).addTo(App.getMap());
       line.dots.splice(bestSegIdx, 0, dot);
       line.polyline.setLatLngs(line.points.map(p => [p.lat, p.lon]));
@@ -1767,11 +1782,11 @@ const DrawTool = (() => {
       clearAll();
       for (const pts of data.lines) {
         const polyline = L.polyline(pts.map(p => [p.lat, p.lon]), {
-          color: "#f90", weight: 3, opacity: 0.9
+          color: "#cc00cc", weight: 3, opacity: 0.9
         }).addTo(App.getMap());
         const dots = pts.map(p => {
           return L.circleMarker([p.lat, p.lon], {
-            radius: 5, color: "#fc0", fillColor: "#fc0", fillOpacity: 1, weight: 1
+            radius: 5, color: "#ff00ff", fillColor: "#ff00ff", fillOpacity: 1, weight: 1
           }).addTo(App.getMap());
         });
         _lines.push({ polyline, dots, points: pts });
@@ -1790,7 +1805,34 @@ const DrawTool = (() => {
     if (status) status.style.display = "block";
   }
 
-  return { toggle, build, getLines, clearAll, saveLines, loadLines };
+  let _visible = true;
+  function toggleVisibility() {
+    _visible = !_visible;
+    const map = App.getMap();
+    _lines.forEach(l => {
+      if (_visible) {
+        l.polyline.addTo(map);
+        l.dots.forEach(d => d.addTo(map));
+      } else {
+        map.removeLayer(l.polyline);
+        l.dots.forEach(d => map.removeLayer(d));
+      }
+    });
+    if (_currentLine) {
+      if (_visible) {
+        _currentLine.polyline.addTo(map);
+        _currentLine.dots.forEach(d => d.addTo(map));
+      } else {
+        map.removeLayer(_currentLine.polyline);
+        _currentLine.dots.forEach(d => map.removeLayer(d));
+      }
+    }
+    const btn = document.getElementById("btn-toggle-lines");
+    if (btn) btn.style.opacity = _visible ? "1" : "0.4";
+    setStatus(_visible ? "Lines visible" : "Lines hidden");
+  }
+
+  return { toggle, build, getLines, clearAll, saveLines, loadLines, toggleVisibility };
 })();
 
 const LineTool = (() => {

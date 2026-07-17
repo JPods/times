@@ -1156,26 +1156,41 @@ def network_build_on_lines():
     n_circles = 0
 
     # -- Find where lines cross -> traffic circles --
+    # True segment-segment intersection, not just vertex proximity.
     circle_points = []
-    cross_threshold_m = 400
+    print(f"[build_on_lines] checking {len(lines)} lines for crossings")
+
+    def _seg_intersect(a1, a2, b1, b2):
+        """Return (lat, lon) where segments a1-a2 and b1-b2 cross, or None."""
+        ax, ay = a1["lat"], a1["lon"]
+        bx, by = a2["lat"] - ax, a2["lon"] - ay
+        cx, cy = b1["lat"], b1["lon"]
+        dx, dy = b2["lat"] - cx, b2["lon"] - cy
+        denom = bx * dy - by * dx
+        if abs(denom) < 1e-12:
+            return None  # parallel
+        t = ((cx - ax) * dy - (cy - ay) * dx) / denom
+        u = ((cx - ax) * by - (cy - ay) * bx) / denom
+        if 0 < t < 1 and 0 < u < 1:  # strict interior crossing
+            return (ax + t * bx, ay + t * by)
+        return None
 
     for i in range(len(lines)):
         for j in range(i + 1, len(lines)):
-            for pi in lines[i]:
-                for pj in lines[j]:
-                    dist = vincenty_m(pi["lat"], pi["lon"], pj["lat"], pj["lon"])
-                    if dist < cross_threshold_m:
-                        mlat = (pi["lat"] + pj["lat"]) / 2
-                        mlon = (pi["lon"] + pj["lon"]) / 2
+            li_pts, lj_pts = lines[i], lines[j]
+            for si in range(len(li_pts) - 1):
+                for sj in range(len(lj_pts) - 1):
+                    pt = _seg_intersect(li_pts[si], li_pts[si+1],
+                                        lj_pts[sj], lj_pts[sj+1])
+                    if pt:
+                        mlat, mlon = pt
                         too_close = any(vincenty_m(mlat, mlon, c[0], c[1]) < 800
                                         for c in circle_points)
                         if not too_close:
                             circle_points.append((mlat, mlon, [i, j]))
-                            break
-                else:
-                    continue
-                break
+                            print(f"  CROSSING at ({mlat:.5f}, {mlon:.5f}) lines {i} x {j}")
 
+    print(f"[build_on_lines] {len(circle_points)} crossings detected")
     # Place traffic circles
     circle_structs = {}
     for clat, clon, line_idxs in circle_points:
@@ -1191,15 +1206,23 @@ def network_build_on_lines():
         if len(headings) < 4:
             headings = [0.0, 90.0, 180.0, 270.0]
 
-        struct, cp_dict = build_traffic_circle(
-            net, clat, clon,
-            structure_id=next_sid("c"),
-            arm_headings=[float(h) for h in headings[:8]],
-        )
-        _state["structures"][struct.structure_id] = struct
-        _state["cps"].update(cp_dict)
-        circle_structs[(round(clat, 5), round(clon, 5))] = (struct, cp_dict)
-        n_circles += 1
+        sid = next_sid("c")
+        arm_h = [float(h) for h in headings[:4]]
+        print(f"  Placing circle {sid} at ({clat:.5f}, {clon:.5f}) arms={arm_h}")
+        try:
+            struct, cp_dict = build_traffic_circle(
+                net, clat, clon,
+                structure_id=sid,
+                arm_headings=arm_h,
+            )
+            _state["structures"][struct.structure_id] = struct
+            _state["cps"].update(cp_dict)
+            circle_structs[(round(clat, 5), round(clon, 5))] = (struct, cp_dict)
+            n_circles += 1
+            print(f"  Circle {sid} OK — {len(cp_dict)} CPs")
+        except Exception as exc:
+            print(f"  Circle {sid} FAILED: {exc}")
+            import traceback; traceback.print_exc()
 
     # -- Place stations along each line --
     all_placed = {}  # line_idx -> [(struct, cps, lat, lon, heading)]
@@ -1257,14 +1280,50 @@ def network_build_on_lines():
 
         all_placed[li] = placed
 
-        # Connect consecutive stations along this line
+        # Connect consecutive stations along this line, routing through
+        # any traffic circle that sits between them.
         for k in range(1, len(placed)):
-            prev_st, prev_cps, _, _, prev_h = placed[k-1]
-            cur_st, cur_cps, _, _, cur_h = placed[k]
-            cp_out = cp_by_heading(prev_cps, prev_h)
-            cp_in = cp_by_heading(cur_cps, (cur_h + 180) % 360)
-            if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
-                connect_cps(net, cp_out, cp_in, _state["cps"])
+            prev_st, prev_cps, plat, plon, prev_h = placed[k-1]
+            cur_st, cur_cps, clat_s, clon_s, cur_h = placed[k]
+
+            # Check if a traffic circle lies between these two stations
+            mid_lat = (plat + clat_s) / 2
+            mid_lon = (plon + clon_s) / 2
+            seg_len = vincenty_m(plat, plon, clat_s, clon_s)
+            interposed_circle = None
+            for (tc_lat, tc_lon), (tc_struct, tc_cps) in circle_structs.items():
+                d = vincenty_m(mid_lat, mid_lon, tc_lat, tc_lon)
+                if d < seg_len / 2:
+                    interposed_circle = (tc_struct, tc_cps, tc_lat, tc_lon)
+                    break
+
+            if interposed_circle:
+                # Connect prev_station → circle → cur_station
+                tc_struct, tc_cps, tc_lat, tc_lon = interposed_circle
+
+                # prev station → circle
+                dl = tc_lat - plat
+                dn = (tc_lon - plon) * math.cos(math.radians(plat))
+                h_to_tc = math.degrees(math.atan2(dn, dl)) % 360
+                cp_out = cp_by_heading(prev_cps, h_to_tc)
+                cp_tc_in = cp_by_heading(tc_cps, (h_to_tc + 180) % 360)
+                if cp_out and cp_tc_in and cp_out.connected_to is None and cp_tc_in.connected_to is None:
+                    connect_cps(net, cp_out, cp_tc_in, _state["cps"])
+
+                # circle → cur station
+                dl = clat_s - tc_lat
+                dn = (clon_s - tc_lon) * math.cos(math.radians(tc_lat))
+                h_from_tc = math.degrees(math.atan2(dn, dl)) % 360
+                cp_tc_out = cp_by_heading(tc_cps, h_from_tc)
+                cp_in = cp_by_heading(cur_cps, (h_from_tc + 180) % 360)
+                if cp_tc_out and cp_in and cp_tc_out.connected_to is None and cp_in.connected_to is None:
+                    connect_cps(net, cp_tc_out, cp_in, _state["cps"])
+            else:
+                # Direct station-to-station connection
+                cp_out = cp_by_heading(prev_cps, prev_h)
+                cp_in = cp_by_heading(cur_cps, (cur_h + 180) % 360)
+                if cp_out and cp_in and cp_out.connected_to is None and cp_in.connected_to is None:
+                    connect_cps(net, cp_out, cp_in, _state["cps"])
 
     # Connect line endpoints to nearest traffic circles
     for li, placed in all_placed.items():
