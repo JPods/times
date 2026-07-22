@@ -322,6 +322,25 @@
     </div>
 
     <button onclick="Settings.save()" style="margin-top:8px;width:100%">Save Settings</button>
+
+    <!-- Demand (moved from left panel) -->
+    <div class="cfg-group" style="margin-top:12px">
+      <div class="cfg-group-label">Passenger Demand</div>
+      <div class="cfg-row">
+        <label class="cfg-lbl">Slots</label>
+        <input id="sim-slots" type="number" value="360" min="1" max="3600" class="cfg-sel" style="width:80px">
+      </div>
+      <button onclick="Demand.togglePanel()" style="width:100%;margin-top:4px">&#128100; Edit Demand</button>
+    </div>
+
+    <!-- External links (moved from left panel) -->
+    <div class="cfg-group" style="margin-top:12px">
+      <div class="cfg-group-label">Resources</div>
+      <button onclick="window.open('https://www.5x5FreeMarket.com','_blank')" style="width:100%"
+              title="5X5 Standard — performance-based regulations">&#9878; Regulations</button>
+      <button onclick="window.open('https://www.ClimateChangeRootCause.com','_blank')" style="width:100%"
+              title="Climate Change Root Cause">&#127793; Root Cause</button>
+    </div>
   </div>
 
   <!-- ── Passenger Demand ── -->
@@ -718,6 +737,33 @@
       last-mile demand that JPods stations should serve.
     </div>
 
+    <div class="ov-row">
+      <button onclick="Overlays.toggleCustomPoints(); OverlayPanel.refresh()" class="ov-btn" id="ov-btn-custom_points"
+              style="background:#8a5a0a">Custom Points</button>
+      <button onclick="OverlayPanel.toggleDetail('custom_points')" class="ov-info">?</button>
+    </div>
+    <div class="ov-detail" id="ov-detail-custom_points" style="display:none">
+      Load external point data (transit stations, landmarks, infrastructure).<br>
+      Accepts JSON array: <code>[{"lat":32.7,"lon":-96.8,"label":"Name"},...]</code><br>
+      Or CSV with lat,lon,label columns. Paste or load from file.
+    </div>
+    <div id="ov-custom-input" style="display:none;padding:4px 8px;margin-bottom:6px">
+      <div style="display:flex;gap:4px;margin-bottom:4px;flex-wrap:wrap">
+        <select id="ov-custom-presets" onchange="CustomPoints.loadPreset(this.value)"
+                style="flex:1;min-width:100px;background:#1a1a1a;border:1px solid #3a5a3a;color:#e0e0e0;border-radius:3px;padding:3px 6px;font-size:11px">
+          <option value="">— Presets —</option>
+        </select>
+        <button onclick="CustomPoints.loadFile()" class="tool-btn" style="font-size:10px;padding:3px 8px">File</button>
+        <button onclick="CustomPoints.clear()" class="tool-btn" style="font-size:10px;padding:3px 8px;background:#4a1a1a">Clear</button>
+        <input type="file" id="ov-custom-file" accept=".json,.csv,.geojson" style="display:none"
+               onchange="CustomPoints.handleFile(this.files[0])">
+      </div>
+      <textarea id="ov-custom-paste" rows="3" placeholder='Paste JSON or CSV here...'
+                style="width:100%;background:#1a1a1a;border:1px solid #3a5a3a;color:#e0e0e0;border-radius:3px;padding:4px;font-size:10px;font-family:monospace;resize:vertical"></textarea>
+      <button onclick="CustomPoints.fromPaste()" class="tool-btn" style="font-size:10px;padding:3px 8px;margin-top:4px;background:#1a4a3a">Apply Paste</button>
+      <div id="ov-custom-status" style="font-size:10px;color:#7a7;min-height:14px;margin-top:2px"></div>
+    </div>
+
     <!-- Morgantown comparison -->
     <div id="ov-morgantown" style="display:none;margin-top:12px;padding:8px;background:#1a1a2a;border:1px solid #334;border-radius:4px;font-size:11px;color:#9ab;line-height:1.6">
       <em style="color:#aac">"Unwavering faith that we will prevail while facing the most brutal facts of our current reality."</em> — Stockdale Paradox<br><br>
@@ -757,17 +803,6 @@
         &#9654; JPods MeshMobility Demo</a>
     </div>
 
-    <!-- CityTool -->
-    <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">City Assessment</div>
-    <div class="ov-row">
-      <a href="/citytool" target="_blank" class="tool-btn"
-         style="text-decoration:none;text-align:center;background:#2a4a2a;border-color:#3a6a3a">
-        City Assessment Tool</a>
-      <a href="/examples/Tulsa_CityTool.pdf" target="_blank" class="tool-btn"
-         style="text-decoration:none;text-align:center;background:#5a3a1a;border-color:#7a5a3a;flex:0 0 auto;padding:5px 10px">
-        PDF</a>
-    </div>
-
     <!-- Example Networks -->
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Example Networks</div>
     <div style="font-size:10px;color:#888;margin-bottom:6px">Click to download a .jpd file, then use Open to load it.</div>
@@ -786,6 +821,40 @@
   <span id="status-oss" style="margin-left:auto;font-size:9px;color:#666;white-space:nowrap">Open Source · <a href="https://www.5x5FreeMarket.com" target="_blank" style="color:#9dc">5×5 Standard</a> · <a href="https://library.jpods.com/congressionalstudy/" target="_blank" style="color:#666">Studies</a></span>
 </div>
 
+<!-- ===== Mobile hamburger + sidebar toggle ===== -->
+<button id="hamburger-btn" onclick="document.getElementById('palette').classList.toggle('palette-open')"
+        title="Toggle tool palette"
+        style="display:none;position:fixed;top:8px;left:8px;z-index:1100;
+               width:40px;height:40px;border-radius:6px;border:1px solid #3a5a3a;
+               background:#1a2a1a;color:#9dc;font-size:22px;cursor:pointer;
+               align-items:center;justify-content:center">&#9776;</button>
+<button id="sidebar-toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('sidebar-hidden')"
+        title="Toggle right panel"
+        style="position:fixed;top:8px;right:8px;z-index:1100;
+               width:32px;height:32px;border-radius:6px;border:1px solid #3a5a3a;
+               background:#1a2a1a;color:#9dc;font-size:16px;cursor:pointer;
+               display:flex;align-items:center;justify-content:center">&#9776;</button>
+
+<style>
+  /* Mobile: left palette becomes hamburger menu */
+  @media (max-width: 768px) {
+    #palette { display: none !important; }
+    #palette.palette-open {
+      display: block !important;
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 220px; z-index: 1050;
+      overflow-y: auto;
+    }
+    #hamburger-btn { display: flex !important; }
+    #sidebar { width: 100% !important; right: 0 !important; }
+    #sidebar.sidebar-hidden { display: none !important; }
+  }
+  /* Desktop: right panel toggle */
+  @media (min-width: 769px) {
+    #sidebar.sidebar-hidden { display: none !important; }
+  }
+</style>
+
 <!-- ===== Floating tool palette ===== -->
 <div id="palette">
 
@@ -803,13 +872,9 @@
       <button onclick="App.newNetwork()">New</button>
       <button onclick="App.openFile(event)" title="Open .jpd file. Shift-click = open + download Noelle's draft for comparison">Open</button>
       <button onclick="App.saveFile()">Save</button>
-      <button onclick="App.refresh()" title="Re-fetch network from server and redraw all lines">&#8635; Refresh</button>
-      <button onclick="NetClipboard.open()" title="Copy network to clipboard or load from pasted text">&#128203; Clipboard…</button>
-      <!-- Capture hidden — html2canvas misaligns lines. Use Cmd+Shift+4 (Mac) or Win+Shift+S -->
-      <!-- <button onclick="App.captureMap()" title="Capture map as PNG image">&#128247; Capture</button> -->
-      <button onclick="App.printReport()" title="Printable network summary — stations, miles, economics">&#128196; Report</button>
+      <button onclick="App.compete()" title="Save network and submit to Alice for evaluation">&#127942; Compete</button>
       <button onclick="Guide.open()" title="User guide — how to build and simulate a JPods network">? Guide</button>
-      <button onclick="ExamplesPanel.toggle()" title="Example networks, videos, and resources">&#128218; Examples</button>
+      <button onclick="ExamplesPanel.toggle()" title="Approved examples and training videos">&#128218; Examples</button>
     </div>
 
     <!-- LOCK -->
@@ -818,29 +883,16 @@
               title="Network is editable — click to lock" style="width:100%">&#128275; Edit</button>
     </div>
 
-    <!-- EXTERNAL LINKS + CITYTOOL -->
-    <div class="pal-section">
-      <button onclick="(function(){var c=document.getElementById('sidebar-city');var q=c&&c.textContent.trim();var url='/citytool'+(q?'?city='+encodeURIComponent(q):'');window.open(url,'_blank')})()" style="width:100%"
-              title="Open City Assessment Tool — economic analysis for capital presentations">&#128200; CityTool</button>
-      <button onclick="window.open('https://www.5x5FreeMarket.com','_blank')" style="width:100%"
-              title="5X5 Standard — performance-based regulations for solar-powered mobility networks">&#9878; Regulations</button>
-      <button onclick="window.open('https://www.ClimateChangeRootCause.com','_blank')" style="width:100%"
-              title="Climate Change Root Cause — why Federal monopolies created the crisis">&#127793; Root Cause</button>
-    </div>
+    <!-- External links moved to right sidebar under Settings -->
 
     <!-- SIMULATE -->
     <div class="pal-section">
       <div class="pal-label">Simulate</div>
       <button onclick="Sim.run()"           title="Run simulation">&#9654; Run</button>
-      <button onclick="Sim.reloadNetwork()" title="Re-read network file from disk without restarting server">&#8635; Reload</button>
       <button id="btn-replay" onclick="Sim.replay()" title="Replay animation" disabled>&#9654;&#9654; Replay</button>
+      <button onclick="App.printReport()" title="Printable network summary — stations, miles, economics">&#128196; Report</button>
       <button id="btn-timemap" onclick="TimeMap.toggle()"
               title="Isochrone: click a point to see walk-ride-walk travel-time zones (5/10/20/30 min)">&#9711; Isochrone</button>
-      <button onclick="Demand.togglePanel()"   title="Set passenger demand per station">&#128100; Demand</button>
-      <div class="pal-row">
-        <label>Slots</label>
-        <input id="sim-slots" type="number" value="360" min="1" max="3600">
-      </div>
     </div>
 
     <!-- MAP TILES -->
@@ -2000,10 +2052,17 @@ const ToolsPanel = (() => {
 </script>
 <script>
 const OverlayPanel = (() => {
+  let _presetsLoaded = false;
   function toggle() {
     SidebarNav.toggle("panel-overlays");
     const el = document.getElementById("panel-overlays");
-    if (el.style.display !== "none") refresh();
+    if (el.style.display !== "none") {
+      refresh();
+      if (!_presetsLoaded && typeof CustomPoints !== "undefined") {
+        CustomPoints.loadPresets();
+        _presetsLoaded = true;
+      }
+    }
   }
   function toggleDetail(key) {
     const el = document.getElementById("ov-detail-" + key);

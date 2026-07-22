@@ -1453,6 +1453,42 @@ const App = {
     flashSuccess(`Saved: ${filename}`);
   },
 
+  async compete() {
+    // Save the current network, then submit to Alice as an action
+    try {
+      // 1. Save first
+      await App.saveFile();
+
+      // 2. Gather network stats for the action
+      const cityEl = document.getElementById("sidebar-city");
+      const city = cityEl ? cityEl.textContent.trim() : "Unknown";
+      const stats = typeof Sim !== "undefined" && Sim.lastResults ? Sim.lastResults : {};
+      const structCount = document.querySelectorAll(".station-marker").length || "?";
+
+      // 3. Submit to Alice via API (creates or updates an action)
+      const resp = await fetch("/api/network/compete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          city: city,
+          stations: structCount,
+          simulation: stats,
+        }),
+      });
+
+      if (resp.ok) {
+        const result = await resp.json();
+        flashSuccess(`Submitted: ${city} — ${result.message || "Action created"}`);
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        alert(err.error || "Submit failed — is Alice running?");
+      }
+    } catch (e) {
+      console.error("Compete failed:", e);
+      alert("Could not submit. Save completed but Alice submission failed.");
+    }
+  },
+
   async captureMap() {
     setStatus("Capturing map…");
     try {
