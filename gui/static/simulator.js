@@ -917,6 +917,8 @@ const Sim = (() => {
 
       document.getElementById("btn-replay").disabled = false;
       document.getElementById("btn-replay").textContent = "⏹ Stop";
+      document.getElementById("btn-report").disabled = false;
+      document.getElementById("btn-timemap").disabled = false;
       _startReplay();   // auto-start animation immediately after build
       const pax = result.simulation.passengers_served;
       setStatus(`Simulation complete — ${pax} passengers served`);
@@ -942,6 +944,8 @@ const Sim = (() => {
       document.getElementById("panel-sim").style.display = "none";
       document.getElementById("btn-replay").textContent = "▶▶ Replay";
       document.getElementById("btn-replay").disabled = true;
+      document.getElementById("btn-report").disabled = true;
+      document.getElementById("btn-timemap").disabled = true;
       setStatus("Ready");
     },
 
