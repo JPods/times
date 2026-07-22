@@ -1377,80 +1377,42 @@ const App = {
   },
 
   async saveFile() {
-    // Downloads .jpd to user's local drive — no auth needed
-    // Fetch the .jpd content from the server as a blob
-    let blob, filename;
+    // Save to server — blessed library folder only. No file picker, no navigation.
+    // Smart filename: ST_City_YYYY-MM-DD.jpd from city label
+    const cityEl = document.getElementById("sidebar-city");
+    const cityText = cityEl ? cityEl.textContent.trim() : "";
+    let filename = "network.jpd";
+    if (cityText) {
+      const parts = cityText.split(",").map(s => s.trim());
+      const city = (parts[0] || "network").replace(/\s+/g, "_");
+      const stateMap = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC","United States":"US"};
+      let st = "";
+      for (const p of parts) {
+        if (stateMap[p]) { st = stateMap[p]; break; }
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      filename = st ? `${st}_${city}_${today}.jpd` : `${city}_${today}.jpd`;
+    }
+
     try {
-      const resp = await fetch("/api/network/download");
+      const resp = await fetch("/api/network/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: filename }),
+      });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
         alert(err.error || "Save failed");
         return;
       }
-      blob = await resp.blob();
-      // Smart filename: ST_City_YYYY-MM-DD.jpd from city label
-      const cityEl = document.getElementById("sidebar-city");
-      const cityText = cityEl ? cityEl.textContent.trim() : "";
-      if (cityText && !App._saveHandle) {
-        // Parse "Asheville, Buncombe County, North Carolina" → NC_Asheville
-        const parts = cityText.split(",").map(s => s.trim());
-        const city = (parts[0] || "network").replace(/\s+/g, "_");
-        // Try to get state abbreviation from last part
-        const stateMap = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC","United States":"US"};
-        let st = "";
-        for (const p of parts) {
-          if (stateMap[p]) { st = stateMap[p]; break; }
-        }
-        const today = new Date().toISOString().slice(0, 10);
-        filename = st ? `${st}_${city}_${today}.jpd` : `${city}_${today}.jpd`;
-      } else {
-        const cd = resp.headers.get("Content-Disposition") || "";
-        const m  = cd.match(/filename="?([^"]+)"?/);
-        filename = m ? m[1] : "network.jpd";
-      }
+      const result = await resp.json();
+      App._dirty = false;
+      _updateFilename(filename);
+      _updateDirtyFlag();
+      flashSuccess(`Saved: ${result.path || filename}`);
     } catch (e) {
       alert("Save failed: " + e.message);
-      return;
     }
-
-    // Native OS save dialog via File System Access API (Chrome 86+, Safari 15.2+, Edge 86+)
-    if (window.showSaveFilePicker) {
-      try {
-        // Reuse the remembered handle if we have one — no dialog
-        let handle = App._saveHandle;
-        if (!handle) {
-          handle = await window.showSaveFilePicker({
-            suggestedName: filename,
-            types: [{ description: "JPods network file", accept: { "application/xml": [".jpd"] } }],
-          });
-          App._saveHandle = handle;
-        }
-        const writable = await handle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        App._dirty = false;
-        _updateFilename(handle.name);
-        _updateDirtyFlag();
-        flashSuccess(`Saved: ${handle.name}`);
-        return;
-      } catch (e) {
-        if (e.name === "AbortError") return;  // user cancelled — do nothing
-        App._saveHandle = null;  // handle may be stale — clear it
-        // Fall through to blob-download fallback on other errors
-      }
-    }
-
-    // Fallback: trigger browser download (goes to Downloads or prompts, per browser prefs)
-    const url = URL.createObjectURL(blob);
-    const a   = document.createElement("a");
-    a.href     = url;
-    a.download = filename;
-    a.click();
-    URL.revokeObjectURL(url);
-    App._dirty = false;
-    _updateFilename(filename);
-    _updateDirtyFlag();
-    flashSuccess(`Saved: ${filename}`);
   },
 
   async compete() {

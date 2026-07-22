@@ -345,15 +345,22 @@ def save_network():
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
     data = request.json or {}
-    path = data.get("path") or _state.get("network_path")
-    if not path:
-        return jsonify({"error": "No save path provided"}), 400
-    if not path.endswith(".jpd"):
-        path = path + ".jpd"
-    try:
-        path = _validate_path(path, "write")
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 403
+
+    # Server-only save: filename goes to the blessed library folder.
+    # No user-supplied paths — only filenames accepted.
+    filename = data.get("filename") or data.get("path") or _state.get("network_path")
+    if not filename:
+        return jsonify({"error": "No filename provided"}), 400
+
+    # Strip any path components — only the basename is used
+    filename = os.path.basename(filename)
+    if not filename.endswith(".jpd"):
+        filename = filename + ".jpd"
+
+    # Always save to the blessed library folder
+    maps_dir = ALLOWED_PATHS[0]  # mesh_mobility_maps
+    os.makedirs(maps_dir, exist_ok=True)
+    path = os.path.join(maps_dir, filename)
 
     try:
         overlays = dict(_state.get("overlays") or {})
