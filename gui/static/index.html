@@ -823,14 +823,50 @@
                width:40px;height:40px;border-radius:6px;border:1px solid #3a5a3a;
                background:#1a2a1a;color:#9dc;font-size:22px;cursor:pointer;
                align-items:center;justify-content:center">&#9776;</button>
-<button id="sidebar-toggle-btn" onclick="document.getElementById('sidebar').classList.toggle('sidebar-hidden')"
+<button id="sidebar-toggle-btn" onclick="MeshLayout.toggleSidebar()"
         title="Toggle right panel"
         style="position:fixed;top:8px;right:8px;z-index:1100;
                width:32px;height:32px;border-radius:6px;border:1px solid #3a5a3a;
                background:#1a2a1a;color:#9dc;font-size:16px;cursor:pointer;
-               display:flex;align-items:center;justify-content:center">&#9776;</button>
+               display:flex;align-items:center;justify-content:center">◀</button>
+
+<script>
+  const MeshLayout = {
+    toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      const map = document.getElementById('map');
+      const btn = document.getElementById('sidebar-toggle-btn');
+      const hidden = sb.classList.toggle('sidebar-collapsed');
+      if (hidden) {
+        map.style.right = '0';
+        btn.textContent = '▶';
+        btn.style.right = '8px';
+      } else {
+        const w = window.innerWidth <= 768 ? '100%' : '560px';
+        map.style.right = w === '100%' ? '0' : w;
+        btn.textContent = '◀';
+        btn.style.right = (window.innerWidth <= 768 ? 8 : 568) + 'px';
+      }
+      // Let Leaflet know the map size changed
+      setTimeout(() => { if (window.L && window.map) window.map.invalidateSize(); }, 300);
+    }
+  };
+</script>
 
 <style>
+  /* Sidebar collapse — slides off right edge */
+  #sidebar {
+    transition: transform 0.25s ease;
+  }
+  #sidebar.sidebar-collapsed {
+    transform: translateX(100%);
+  }
+
+  /* Toggle button follows sidebar */
+  #sidebar-toggle-btn {
+    transition: right 0.25s ease;
+  }
+
   /* Mobile: left palette becomes hamburger menu */
   @media (max-width: 768px) {
     #palette { display: none !important; }
@@ -841,12 +877,9 @@
       overflow-y: auto;
     }
     #hamburger-btn { display: flex !important; }
-    #sidebar { width: 100% !important; right: 0 !important; }
-    #sidebar.sidebar-hidden { display: none !important; }
-  }
-  /* Desktop: right panel toggle */
-  @media (min-width: 769px) {
-    #sidebar.sidebar-hidden { display: none !important; }
+    /* Sidebar starts collapsed on mobile */
+    #sidebar { width: 85% !important; }
+    #map { right: 0 !important; }
   }
 </style>
 
