@@ -34,9 +34,13 @@
     <button onclick="SidebarNav.toggle('panel-settings')" class="tool-btn sb-nav-btn" data-panel="panel-settings">&#9881; Settings</button>
   </div>
   <div style="padding:2px 10px 6px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">
-    <button onclick="window.open('/citytool','_blank')" class="tool-btn sb-nav-btn" title="City Assessment Tool — AI payback calculator">&#128176; CityTool</button>
-    <button onclick="window.open('https://www.5x5FreeMarket.com','_blank')" class="tool-btn sb-nav-btn" title="5X5 Standard — performance-based regulations">&#9878; Regulations</button>
+    <button onclick="window.open('https://personalizetransit.com','_blank')" class="tool-btn sb-nav-btn" title="Personalize Transit — AI payback calculator">&#128176; Personalize Transit</button>
+    <button onclick="window.open('https://personalizetransit.com/ecosystem/','_blank')" class="tool-btn sb-nav-btn" title="JPods Ecosystem — interconnected projects">&#127760; Eco-System</button>
+    <button onclick="window.open('https://www.5x5FreeMarket.com','_blank')" class="tool-btn sb-nav-btn" title="5X5 Standard — performance-based regulations">&#9878; 5x5 FreeMarket</button>
     <button onclick="window.open('https://www.ClimateChangeRootCause.com','_blank')" class="tool-btn sb-nav-btn" title="Climate Change Root Cause">&#127793; Root Cause</button>
+    <button onclick="window.open('https://10xmakers.com','_blank')" class="tool-btn sb-nav-btn" title="10xMakers — build what matters">&#128736; 10xMakers</button>
+    <button onclick="window.open('https://personalizetransit.com/training.html','_blank')" class="tool-btn sb-nav-btn" title="Training videos">&#127909; Training</button>
+    <button onclick="window.open('https://jpods.substack.com','_blank')" class="tool-btn sb-nav-btn" title="JPods Substack — articles and updates">&#128220; Substack</button>
   </div>
 
   <!-- City search — toggled by Find City button -->
@@ -665,6 +669,14 @@
       <span id="ov-threshold-count" style="font-size:10px;color:#7a7;min-width:60px"></span>
     </div>
 
+    <div class="ov-row" style="margin-top:6px">
+      <button onclick="OverlayPanel.showCrashDataStatus()" class="ov-btn" id="ov-btn-crash-status"
+              style="background:#1a3a5c;font-size:10px;padding:3px 8px">All Crash Data (50 states)</button>
+    </div>
+    <div id="crash-data-status-panel" style="display:none;padding:4px 8px;font-size:10px;color:#bcd;max-height:300px;overflow-y:auto;border:1px solid #334;border-radius:4px;margin-bottom:6px">
+      <div id="crash-data-status-content">Loading...</div>
+    </div>
+
     <div class="ov-section-label" style="color:#8bc;font-weight:600;font-size:11px;margin:10px 0 4px">Census / Economics</div>
 
     <div class="ov-row">
@@ -815,7 +827,7 @@
   <span id="status-mode">Ready</span>
   <span id="status-coord"></span>
   <span id="status-net"></span>
-  <span id="auth-badge" style="margin-left:8px;font-size:10px;color:#fc0;cursor:pointer" onclick="Auth.showProfileForm()" title="Guest">Guest</span>
+  <span id="auth-badge" style="margin-left:8px;font-size:10px;color:#fc0;cursor:pointer" onclick="Auth.showSignIn()" title="Sign in to save">Sign In</span>
   <span id="status-oss" style="margin-left:auto;font-size:9px;color:#666;white-space:nowrap">Open Source · <a href="https://www.5x5FreeMarket.com" target="_blank" style="color:#9dc">5×5 Standard</a> · <a href="https://library.jpods.com/congressionalstudy/" target="_blank" style="color:#666">Studies</a></span>
 </div>
 
@@ -901,8 +913,10 @@
     <div class="pal-section">
       <div class="pal-label">File</div>
       <button onclick="App.newNetwork()">New</button>
-      <button onclick="App.openFile(event)" title="Open .jpd file. Shift-click = open + download Noelle's draft for comparison">Open</button>
-      <button onclick="App.saveFile()">Save</button>
+      <button onclick="App.openFile(event)" title="Open from server library or local file">Open</button>
+      <button id="btn-save-library" onclick="App.saveFile()" title="Save to library (superusers only)" style="display:none">Save</button>
+      <button onclick="App.downloadFile()" title="Save to your computer — pick a folder, no sign-in needed">Save Local</button>
+      <button onclick="CityKit.download()" title="Download letter, data, and maps as a zip for your city council" style="background:#dc2626;color:#fff;">&#9993; City Kit</button>
       <button onclick="App.compete()" title="Save network and submit to Alice for evaluation">&#127942; Compete</button>
       <button onclick="Guide.open()" title="User guide — how to build and simulate a JPods network">? Guide</button>
       <button onclick="ExamplesPanel.toggle()" title="Approved examples and training videos">&#128218; Examples</button>
@@ -919,7 +933,7 @@
     <!-- SIMULATE -->
     <div class="pal-section">
       <div class="pal-label">Simulate</div>
-      <button onclick="Sim.run()"           title="Run simulation">&#9654; Run</button>
+      <button id="btn-run" onclick="Sim.run()" title="Run simulation — click again to stop">&#9654; Run</button>
       <button id="btn-replay" onclick="Sim.replay()" title="Replay animation" disabled>&#9654;&#9654; Replay</button>
       <button id="btn-report" onclick="App.printReport()" title="Printable network summary — stations, miles, economics" disabled>&#128196; Report</button>
       <button id="btn-timemap" onclick="TimeMap.toggle()"
@@ -2235,7 +2249,39 @@ const OverlayPanel = (() => {
     }
   }
 
-  return { toggle, toggleDetail, refresh, fetchData, signalMissing };
+  async function showCrashDataStatus() {
+    const panel = document.getElementById("crash-data-status-panel");
+    if (panel.style.display !== "none") { panel.style.display = "none"; return; }
+    panel.style.display = "block";
+    const content = document.getElementById("crash-data-status-content");
+    content.innerHTML = "Loading...";
+    try {
+      const r = await fetch("/api/overlays/crash_data_status");
+      const data = await r.json();
+      let html = `<div style="margin-bottom:6px"><strong style="color:#8f8">${data.summary.harvested}</strong> harvested &nbsp; <strong style="color:#fc8">${data.summary.portal_required}</strong> need user &nbsp; <strong style="color:#f88">${data.summary.missing}</strong> missing</div>`;
+
+      if (data.portal_required.length > 0) {
+        html += `<div style="color:#fc8;font-weight:600;margin:6px 0 2px">Portal Required (user must visit site):</div>`;
+        for (const s of data.portal_required) {
+          const link = s.portal.startsWith("http") ? `<a href="${s.portal}" target="_blank" style="color:#6bf">${s.state}</a>` : s.state;
+          html += `<div style="margin:1px 0;padding:1px 4px">${link} — ${s.action}${s.has_fatal ? " <span style='color:#666'>(FARS fatal available)</span>" : ""}</div>`;
+        }
+      }
+      if (data.missing.length > 0) {
+        html += `<div style="color:#f88;font-weight:600;margin:6px 0 2px">No Source Identified:</div>`;
+        html += `<div>${data.missing.map(s => s.state).join(", ")}</div>`;
+      }
+      if (data.harvested.length > 0) {
+        html += `<div style="color:#8f8;font-weight:600;margin:6px 0 2px">Harvested (${data.harvested.length}):</div>`;
+        html += `<div>${data.harvested.map(s => s.state).join(", ")}</div>`;
+      }
+      content.innerHTML = html;
+    } catch (e) {
+      content.innerHTML = `<span style="color:#f88">Error loading status: ${e.message}</span>`;
+    }
+  }
+
+  return { toggle, toggleDetail, refresh, fetchData, signalMissing, showCrashDataStatus };
 })();
 </script>
 <script src="app.js"></script>
@@ -2248,6 +2294,8 @@ const OverlayPanel = (() => {
 <script src="ai.js"></script>
 <script src="noelle.js"></script>
 <script src="auth.js"></script>
+<script src="jszip.min.js"></script>
+<script src="citykit.js"></script>
 <script>
 const NoelleQA = (() => {
   let _el = null;
