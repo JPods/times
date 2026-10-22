@@ -1,0 +1,1771 @@
+{
+  "_meta": {
+    "description": "State crash data overlay registry \u2014 tracks what we have and what we need",
+    "generated": "2026-07-10T00:59:40Z",
+    "overlay_dir": "mesh_mobility/overlays/ (working copy) and /Volumes/Allie/data/overlays/ (5TB)",
+    "data_types": {
+      "accidents": "FARS fatal crashes (NHTSA) \u2014 all 51 states complete",
+      "crash_density": "Gridded crash density (200m cells) \u2014 currently FARS-only for most states",
+      "crashes_all": "All-severity state DOT data \u2014 the real signal for station placement",
+      "aadt": "Annual Average Daily Traffic counts",
+      "population_density": "Census population density",
+      "property_values": "Census property values",
+      "jobs": "Census job density"
+    },
+    "summary": {
+      "total_states": 51,
+      "all_severity_complete": 2,
+      "all_severity_harvestable_now": 7,
+      "hunt_with_bill": 39,
+      "fars_complete": 51
+    }
+  },
+  "states": {
+    "AK": {
+      "state": "AK",
+      "fars_fatal": {
+        "filename": "accidents_ak.geojson",
+        "size_mb": 0.08,
+        "features": 251,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ak.geojson",
+        "size_mb": 0.11,
+        "features": 576,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "AKDOT Statewide Crashes",
+          "url": "https://services3.arcgis.com/0i8WvfNdfTbWrPkh/arcgis/rest/services/AKDOT_Statewide_Crashes_2013_thru_2017/FeatureServer",
+          "type": "arcgis",
+          "note": "Old data (2013-2017)."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "AL": {
+      "state": "AL",
+      "fars_fatal": {
+        "filename": "accidents_al.geojson",
+        "size_mb": 1.1,
+        "features": 3505,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_al.geojson",
+        "size_mb": 0.1,
+        "features": 544,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "AR": {
+      "state": "AR",
+      "fars_fatal": {
+        "filename": "accidents_ar.geojson",
+        "size_mb": 0.71,
+        "features": 2277,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ar.geojson",
+        "size_mb": 0.09,
+        "features": 538,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "AZ": {
+      "state": "AZ",
+      "fars_fatal": {
+        "filename": "accidents_az.geojson",
+        "size_mb": 1.25,
+        "features": 3979,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_az.geojson",
+        "size_mb": 0.09,
+        "features": 450,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "CA": {
+      "state": "CA",
+      "fars_fatal": {
+        "filename": "accidents_ca.geojson",
+        "size_mb": 4.97,
+        "features": 15490,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ca.geojson",
+        "size_mb": 0.11,
+        "features": 588,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "CO": {
+      "state": "CO",
+      "fars_fatal": {
+        "filename": "accidents_co.geojson",
+        "size_mb": 0.78,
+        "features": 2456,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_co.geojson",
+        "size_mb": 0.09,
+        "features": 498,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "CT": {
+      "state": "CT",
+      "fars_fatal": {
+        "filename": "accidents_ct.geojson",
+        "size_mb": 0.36,
+        "features": 1137,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ct.geojson",
+        "size_mb": 0.07,
+        "features": 433,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "DC": {
+      "state": "DC",
+      "fars_fatal": {
+        "filename": "accidents_dc.geojson",
+        "size_mb": 0.04,
+        "features": 123,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_dc.geojson",
+        "size_mb": 0.05,
+        "features": 272,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "DE": {
+      "state": "DE",
+      "fars_fatal": {
+        "filename": "accidents_de.geojson",
+        "size_mb": 0.15,
+        "features": 498,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_de.geojson",
+        "size_mb": 0.08,
+        "features": 462,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "FL": {
+      "state": "FL",
+      "fars_fatal": {
+        "filename": "accidents_fl.geojson",
+        "size_mb": 3.98,
+        "features": 12802,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_fl.geojson",
+        "size_mb": 0.11,
+        "features": 604,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "FDOT Crashes_All",
+          "url": "https://gis.fdot.gov/arcgis/rest/services/Crashes_All/FeatureServer",
+          "type": "arcgis",
+          "note": "All severity statewide. INJSEVER field."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "GA": {
+      "state": "GA",
+      "fars_fatal": {
+        "filename": "accidents_ga.geojson",
+        "size_mb": 1.97,
+        "features": 6250,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ga.geojson",
+        "size_mb": 0.08,
+        "features": 456,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "HI": {
+      "state": "HI",
+      "fars_fatal": {
+        "filename": "accidents_hi.geojson",
+        "size_mb": 0.12,
+        "features": 388,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_hi.geojson",
+        "size_mb": 0.02,
+        "features": 99,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "IA": {
+      "state": "IA",
+      "fars_fatal": {
+        "filename": "accidents_ia.geojson",
+        "size_mb": 0.39,
+        "features": 1257,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ia.geojson",
+        "size_mb": 0.05,
+        "features": 298,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "IowaDOT Crash Data",
+          "url": "https://gis.iowadot.gov/agshost/rest/services/Traffic_Safety/Crash_Data/FeatureServer",
+          "type": "arcgis",
+          "note": "All severity, 10-year rolling, updated monthly. CSEV field."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "ID": {
+      "state": "ID",
+      "fars_fatal": {
+        "filename": "accidents_id.geojson",
+        "size_mb": 0.26,
+        "features": 829,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_id.geojson",
+        "size_mb": 0.09,
+        "features": 533,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "IL": {
+      "state": "IL",
+      "fars_fatal": {
+        "filename": "accidents_il.geojson",
+        "size_mb": 1.36,
+        "features": 4369,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_il.geojson",
+        "size_mb": 0.12,
+        "features": 657,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "IDOT Crashes (per year)",
+          "url": "https://services2.arcgis.com/aIrBD8yn1TDTEXoz/arcgis/rest/services/CRASHES__2024/FeatureServer",
+          "type": "arcgis",
+          "note": "Per-year services 2014-2024. Need to fetch each year separately."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "IN": {
+      "state": "IN",
+      "fars_fatal": {
+        "filename": "accidents_in.geojson",
+        "size_mb": 1.03,
+        "features": 3332,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "partial_source_only"
+      },
+      "aadt": {
+        "filename": "aadt_in.geojson",
+        "size_mb": 0.04,
+        "features": 225,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "Indiana Ped/Bike Only",
+          "url": "https://services2.arcgis.com/d0NFID1O0ng4wccB/arcgis/rest/services/FinalCrashes_ped/FeatureServer",
+          "type": "arcgis",
+          "note": "PARTIAL \u2014 pedestrian only 2018-2022."
+        }
+      ],
+      "hunt_with_bill": true,
+      "notes": "Only partial data available (fatal+serious or modal only). Need full all-severity source."
+    },
+    "KS": {
+      "state": "KS",
+      "fars_fatal": {
+        "filename": "accidents_ks.geojson",
+        "size_mb": 0.47,
+        "features": 1485,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ks.geojson",
+        "size_mb": 0.08,
+        "features": 427,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "KY": {
+      "state": "KY",
+      "fars_fatal": {
+        "filename": "accidents_ky.geojson",
+        "size_mb": 0.88,
+        "features": 2802,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ky.geojson",
+        "size_mb": 0.09,
+        "features": 498,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "LA": {
+      "state": "LA",
+      "fars_fatal": {
+        "filename": "accidents_la.geojson",
+        "size_mb": 1.01,
+        "features": 3177,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_la.geojson",
+        "size_mb": 0.08,
+        "features": 446,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "MA": {
+      "state": "MA",
+      "fars_fatal": {
+        "filename": "accidents_ma.geojson",
+        "size_mb": 0.46,
+        "features": 1456,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "crashes_all_ma.geojson",
+        "size_mb": 29.94,
+        "features": 121210,
+        "date": "2026-07-06",
+        "status": "complete",
+        "source": "",
+        "years": ""
+      },
+      "aadt": {
+        "filename": "aadt_ma.geojson",
+        "size_mb": 0.06,
+        "features": 356,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "MassDOT CrashClosedYears",
+          "url": "https://gis.massdot.state.ma.us/arcgis/rest/services/Roads/CrashClosedYears/FeatureServer",
+          "type": "arcgis",
+          "note": "Already harvested 121K. Per-year layers."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "MD": {
+      "state": "MD",
+      "fars_fatal": {
+        "filename": "accidents_md.geojson",
+        "size_mb": 0.66,
+        "features": 2098,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "partial_source_only"
+      },
+      "aadt": {
+        "filename": "aadt_md.geojson",
+        "size_mb": 0.1,
+        "features": 537,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "MDOT SHA Safety Crash Points",
+          "url": "https://services.arcgis.com/njFNhDsUCentVYJW/arcgis/rest/services/Safety_Crash_Points/FeatureServer",
+          "type": "arcgis",
+          "note": "PARTIAL \u2014 fatal + serious injury only. Dec 2018 - Jan 2024."
+        }
+      ],
+      "hunt_with_bill": true,
+      "notes": "Only partial data available (fatal+serious or modal only). Need full all-severity source."
+    },
+    "ME": {
+      "state": "ME",
+      "fars_fatal": {
+        "filename": "accidents_me.geojson",
+        "size_mb": 0.19,
+        "features": 594,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_me.geojson",
+        "size_mb": 0.04,
+        "features": 238,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "MI": {
+      "state": "MI",
+      "fars_fatal": {
+        "filename": "accidents_mi.geojson",
+        "size_mb": 1.27,
+        "features": 4043,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "partial_source_only"
+      },
+      "aadt": {
+        "filename": "aadt_mi.geojson",
+        "size_mb": 0.07,
+        "features": 414,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "MDOT Non-Motorized Only",
+          "url": "https://services2.arcgis.com/67lKNkQ2TO1I3lhR/arcgis/rest/services/Non_Motorized_Crashes__2011__2021/FeatureServer",
+          "type": "arcgis",
+          "note": "PARTIAL \u2014 ped+bike only. No all-vehicle."
+        }
+      ],
+      "hunt_with_bill": true,
+      "notes": "Only partial data available (fatal+serious or modal only). Need full all-severity source."
+    },
+    "MN": {
+      "state": "MN",
+      "fars_fatal": {
+        "filename": "accidents_mn.geojson",
+        "size_mb": 0.49,
+        "features": 1567,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "partial_source_only"
+      },
+      "aadt": {
+        "filename": "aadt_mn.geojson",
+        "size_mb": 0.11,
+        "features": 602,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [
+          "jobs_mn.geojson",
+          "population_density_mn.geojson",
+          "property_values_mn.geojson"
+        ],
+        "status": "complete"
+      },
+      "sources": [
+        {
+          "name": "MnDOT VRU Only",
+          "url": "https://services.arcgis.com/qWbGMYB49y8mLbRt/arcgis/rest/services/VRU_Crashes_2016_to_2021_2_view/FeatureServer",
+          "type": "arcgis",
+          "note": "PARTIAL \u2014 ped+bike only. Full DB via MnCMAT/mncrashstatistics.org \u2014 server was unreachable."
+        }
+      ],
+      "hunt_with_bill": true,
+      "notes": "Only partial data available (fatal+serious or modal only). Need full all-severity source."
+    },
+    "MO": {
+      "state": "MO",
+      "fars_fatal": {
+        "filename": "accidents_mo.geojson",
+        "size_mb": 1.14,
+        "features": 3625,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_mo.geojson",
+        "size_mb": 0.08,
+        "features": 459,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "MS": {
+      "state": "MS",
+      "fars_fatal": {
+        "filename": "accidents_ms.geojson",
+        "size_mb": 0.79,
+        "features": 2541,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ms.geojson",
+        "size_mb": 0.11,
+        "features": 590,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "MT": {
+      "state": "MT",
+      "fars_fatal": {
+        "filename": "accidents_mt.geojson",
+        "size_mb": 0.25,
+        "features": 762,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_mt.geojson",
+        "size_mb": 0.09,
+        "features": 538,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "Montana DOT Public Crash",
+          "url": "https://gis.mtmdt.us/server/rest/services/MDTGIS/Public_Crash_Information/MapServer/0",
+          "type": "arcgis_mapserver",
+          "note": "MapServer not FeatureServer \u2014 may need query adaptation. 2020-2024."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "NC": {
+      "state": "NC",
+      "fars_fatal": {
+        "filename": "accidents_nc.geojson",
+        "size_mb": 1.82,
+        "features": 5715,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "partial_source_only"
+      },
+      "aadt": {
+        "filename": "aadt_nc.geojson",
+        "size_mb": 0.06,
+        "features": 376,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [
+          "jobs_nc_021.geojson",
+          "population_density_nc_021.geojson",
+          "property_values_nc_021.geojson"
+        ],
+        "status": "complete"
+      },
+      "sources": [
+        {
+          "name": "NCDOT Fatal+Serious Only",
+          "url": "https://services.arcgis.com/NuWFvHYDMVmmxMeM/arcgis/rest/services/NC_FatalAndSeriousInjuryCrashes/FeatureServer",
+          "type": "arcgis",
+          "note": "PARTIAL \u2014 fatal + serious injury only. No minor/PDO."
+        }
+      ],
+      "hunt_with_bill": true,
+      "notes": "Only partial data available (fatal+serious or modal only). Need full all-severity source."
+    },
+    "ND": {
+      "state": "ND",
+      "fars_fatal": {
+        "filename": "accidents_nd.geojson",
+        "size_mb": 0.11,
+        "features": 365,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_nd.geojson",
+        "size_mb": 0.1,
+        "features": 547,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "NE": {
+      "state": "NE",
+      "fars_fatal": {
+        "filename": "accidents_ne.geojson",
+        "size_mb": 0.25,
+        "features": 835,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ne.geojson",
+        "size_mb": 0.06,
+        "features": 361,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "NH": {
+      "state": "NH",
+      "fars_fatal": {
+        "filename": "accidents_nh.geojson",
+        "size_mb": 0.14,
+        "features": 428,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_nh.geojson",
+        "size_mb": 0.09,
+        "features": 458,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "NJ": {
+      "state": "NJ",
+      "fars_fatal": {
+        "filename": "accidents_nj.geojson",
+        "size_mb": 0.75,
+        "features": 2376,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_nj.geojson",
+        "size_mb": 0.1,
+        "features": 573,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "NM": {
+      "state": "NM",
+      "fars_fatal": {
+        "filename": "accidents_nm.geojson",
+        "size_mb": 0.5,
+        "features": 1580,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_nm.geojson",
+        "size_mb": 0.08,
+        "features": 420,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "NV": {
+      "state": "NV",
+      "fars_fatal": {
+        "filename": "accidents_nv.geojson",
+        "size_mb": 0.42,
+        "features": 1338,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_nv.geojson",
+        "size_mb": 0.08,
+        "features": 454,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "NY": {
+      "state": "NY",
+      "fars_fatal": {
+        "filename": "accidents_ny.geojson",
+        "size_mb": 1.27,
+        "features": 3980,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ny.geojson",
+        "size_mb": 0.17,
+        "features": 925,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "data.ny.gov Motor Vehicle Crashes",
+          "url": "https://data.ny.gov/resource/e8ky-4vqe.json",
+          "type": "socrata",
+          "note": "All severity. No geometry \u2014 needs geocoding. Use $limit/$offset."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "OH": {
+      "state": "OH",
+      "fars_fatal": {
+        "filename": "accidents_oh.geojson",
+        "size_mb": 1.45,
+        "features": 4610,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_oh.geojson",
+        "size_mb": 0.08,
+        "features": 485,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "OK": {
+      "state": "OK",
+      "fars_fatal": {
+        "filename": "accidents_ok.geojson",
+        "size_mb": 0.77,
+        "features": 2505,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "crashes_all_ok.geojson",
+        "size_mb": 105.51,
+        "features": 49249,
+        "date": "2026-07-09",
+        "status": "complete",
+        "source": "",
+        "years": ""
+      },
+      "aadt": {
+        "filename": "aadt_ok.geojson",
+        "size_mb": 0.07,
+        "features": 396,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [
+          "jobs_ok.geojson",
+          "jobs_ok_027.geojson",
+          "jobs_ok_109.geojson",
+          "jobs_ok_143.geojson",
+          "population_density_ok.geojson",
+          "population_density_ok_027.geojson",
+          "population_density_ok_109.geojson",
+          "population_density_ok_143.geojson",
+          "property_values_ok.geojson",
+          "property_values_ok_027.geojson",
+          "property_values_ok_109.geojson",
+          "property_values_ok_143.geojson"
+        ],
+        "status": "complete"
+      },
+      "sources": [
+        {
+          "name": "ODOT ArcGIS",
+          "url": "https://services6.arcgis.com/RBsRUbYGBaRMUFn0/arcgis/rest/services",
+          "type": "arcgis",
+          "note": "Already harvested 49K crashes"
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "OR": {
+      "state": "OR",
+      "fars_fatal": {
+        "filename": "accidents_or.geojson",
+        "size_mb": 0.65,
+        "features": 2015,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_or.geojson",
+        "size_mb": 0.09,
+        "features": 485,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "ODOT Vehicle Crashes",
+          "url": "https://services.arcgis.com/gfpXnknjcY6QHKhU/arcgis/rest/services/Crash_ODOT/FeatureServer",
+          "type": "arcgis",
+          "note": "All severity, KABCO, 2017-2022."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "PA": {
+      "state": "PA",
+      "fars_fatal": {
+        "filename": "accidents_pa.geojson",
+        "size_mb": 1.39,
+        "features": 4294,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_pa.geojson",
+        "size_mb": 0.09,
+        "features": 511,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "PennDOT CrashGIS",
+          "url": "https://gis.penndot.pa.gov/arcgis/rest/services/crashgis/crashgis/MapServer",
+          "type": "arcgis_mapserver",
+          "note": "MapServer \u2014 verify severity coverage and geojson support."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "RI": {
+      "state": "RI",
+      "fars_fatal": {
+        "filename": "accidents_ri.geojson",
+        "size_mb": 0.07,
+        "features": 229,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ri.geojson",
+        "size_mb": 0.05,
+        "features": 313,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "SC": {
+      "state": "SC",
+      "fars_fatal": {
+        "filename": "accidents_sc.geojson",
+        "size_mb": 1.27,
+        "features": 4022,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_sc.geojson",
+        "size_mb": 0.11,
+        "features": 630,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [
+          "jobs_sc.geojson",
+          "jobs_sc_045.geojson",
+          "population_density_sc.geojson",
+          "population_density_sc_045.geojson",
+          "property_values_sc.geojson",
+          "property_values_sc_045.geojson"
+        ],
+        "status": "complete"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "SD": {
+      "state": "SD",
+      "fars_fatal": {
+        "filename": "accidents_sd.geojson",
+        "size_mb": 0.15,
+        "features": 472,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_sd.geojson",
+        "size_mb": 0.07,
+        "features": 400,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "TN": {
+      "state": "TN",
+      "fars_fatal": {
+        "filename": "accidents_tn.geojson",
+        "size_mb": 1.46,
+        "features": 4602,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_tn.geojson",
+        "size_mb": 0.08,
+        "features": 461,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "TDOT Tennessee Crashes",
+          "url": "https://services2.arcgis.com/nf3p7v7Zy4fTOh6M/arcgis/rest/services/Tennessee_Crashes_JAN_2021_JAN_2025/FeatureServer",
+          "type": "arcgis",
+          "note": "All severity. Jan 2021-Jan 2025."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "TX": {
+      "state": "TX",
+      "fars_fatal": {
+        "filename": "accidents_tx.geojson",
+        "size_mb": 4.66,
+        "features": 14838,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "source_manual_only"
+      },
+      "aadt": {
+        "filename": "aadt_tx.geojson",
+        "size_mb": 0.17,
+        "features": 993,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [
+          "jobs_tx_113.geojson",
+          "jobs_tx_453.geojson",
+          "population_density_tx_113.geojson",
+          "population_density_tx_453.geojson",
+          "property_values_tx_113.geojson",
+          "property_values_tx_453.geojson"
+        ],
+        "status": "complete"
+      },
+      "sources": [
+        {
+          "name": "TxDOT CRIS",
+          "url": "https://cris.dot.state.tx.us/public/Query/app/home",
+          "type": "manual",
+          "note": "Interactive JS app only. No API. Richest TX data but locked behind web interface."
+        }
+      ],
+      "hunt_with_bill": true,
+      "notes": "Interactive web app \u2014 no API. May need manual download or scraping approach."
+    },
+    "UT": {
+      "state": "UT",
+      "fars_fatal": {
+        "filename": "accidents_ut.geojson",
+        "size_mb": 0.33,
+        "features": 1073,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_ut.geojson",
+        "size_mb": 0.08,
+        "features": 435,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "VA": {
+      "state": "VA",
+      "fars_fatal": {
+        "filename": "accidents_va.geojson",
+        "size_mb": 1.11,
+        "features": 3415,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_va.geojson",
+        "size_mb": 0.09,
+        "features": 498,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [
+        {
+          "name": "VDOT Full_Crash",
+          "url": "https://services.arcgis.com/p5v98VHDX9Atv3l7/arcgis/rest/services/Full_Crash/FeatureServer",
+          "type": "arcgis",
+          "note": "All severity, KABCO, 60+ fields. Best next harvest."
+        }
+      ],
+      "hunt_with_bill": false,
+      "notes": ""
+    },
+    "VT": {
+      "state": "VT",
+      "fars_fatal": {
+        "filename": "accidents_vt.geojson",
+        "size_mb": 0.08,
+        "features": 244,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_vt.geojson",
+        "size_mb": 0.07,
+        "features": 381,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "WA": {
+      "state": "WA",
+      "fars_fatal": {
+        "filename": "accidents_wa.geojson",
+        "size_mb": 0.74,
+        "features": 2353,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_wa.geojson",
+        "size_mb": 0.09,
+        "features": 500,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "WI": {
+      "state": "WI",
+      "fars_fatal": {
+        "filename": "accidents_wi.geojson",
+        "size_mb": 0.69,
+        "features": 2214,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_wi.geojson",
+        "size_mb": 0.07,
+        "features": 376,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "WV": {
+      "state": "WV",
+      "fars_fatal": {
+        "filename": "accidents_wv.geojson",
+        "size_mb": 0.31,
+        "features": 1005,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_wv.geojson",
+        "size_mb": 0.09,
+        "features": 491,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    },
+    "WY": {
+      "state": "WY",
+      "fars_fatal": {
+        "filename": "accidents_wy.geojson",
+        "size_mb": 0.14,
+        "features": 454,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "all_severity": {
+        "filename": "",
+        "size_mb": 0,
+        "features": 0,
+        "date": "",
+        "status": "missing"
+      },
+      "aadt": {
+        "filename": "aadt_wy.geojson",
+        "size_mb": 0.06,
+        "features": 368,
+        "date": "2026-07-07",
+        "status": "complete"
+      },
+      "census": {
+        "files": [],
+        "status": "missing"
+      },
+      "sources": [],
+      "hunt_with_bill": true,
+      "notes": "No public all-severity crash data source found. Need to research state DOT portal."
+    }
+  }
+}

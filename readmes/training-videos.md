@@ -4,7 +4,7 @@
 
 | # | Title | Length | Audience | Purpose |
 |---|-------|--------|----------|---------|
-| 1 | **60-Second CityTool** | 1 min | Capital sources, city officials | Hook — see your city's numbers |
+| 1 | **60-Second Personalize Transit** | 1 min | Capital sources, city officials | Hook — see your city's numbers |
 | 2 | **Your First Network in 5 Minutes** | 5 min | Designers, community teams | Get started — search, overlay, draft, wild guess |
 | 3 | **Reading the Data** | 3 min | Designers | What the overlays mean and how to use them |
 | 4 | **Designing with Noelle** | 4 min | Designers | Draft, Apply, Wild Guess, Refine workflow |
@@ -15,14 +15,14 @@
 
 ---
 
-## Video 1: 60-Second CityTool
+## Video 1: 60-Second Personalize Transit
 **Length:** 60 seconds
 **Audience:** Capital sources, city officials, anyone curious
 **Goal:** Type a city, see the savings. Spark curiosity.
 
 ### Script
 
-[Screen: CityTool open, empty]
+[Screen: Personalize Transit open, empty]
 
 "Pick any US city. I'll type Tulsa, Oklahoma."
 
@@ -49,7 +49,7 @@ commercial and recreational. $322 million per year in fiscal improvement."
 
 "Try your city. The link is in the description."
 
-[End card: rtb.webclerk.com/citytool]
+[End card: personalizetransit.com]
 
 ---
 
@@ -137,11 +137,11 @@ one file, everything inside."
 build cost, capacity tables, and the evidence base. 
 This is your capital presentation."
 
-**Step 7 — CityTool (4:30-5:00)**
+**Step 7 — Personalize Transit (4:30-5:00)**
 
-[Click CityTool button]
+[Click Personalize Transit button]
 
-"Click CityTool to see the full economic analysis for your city. 
+"Click Personalize Transit to see the full economic analysis for your city. 
 Savings, payback period, CO2 reduction, fiscal impact."
 
 "Five minutes. You just designed a transit network. Save it, share it, 
@@ -419,7 +419,7 @@ manufacturing analysis. And the 5x5 Standard — the regulatory path."
 "Print this. Hand it to your city council. Hand it to your investor. 
 The numbers speak."
 
-[End card: rtb.webclerk.com/citytool]
+[End card: personalizetransit.com]
 
 ---
 
@@ -452,4 +452,4 @@ JPods is a 10x paradigm shift."
 
 "Design your city's network right now — the tools are free and open source."
 
-[End card: rtb.webclerk.com — CityTool — 5x5FreeMarket.com]
+[End card: personalizetransit.com — 5x5FreeMarket.com]

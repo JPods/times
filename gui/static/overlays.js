@@ -189,7 +189,11 @@ const Overlays = (() => {
     const r = await fetch("/api/overlays/crash_density" + _spatialParams());
     if (!r.ok) {
       const err = await r.json().catch(() => ({}));
-      _showOverlayNote("crash_density", err.error || "All-severity crash data not available for this state. Click Fetch Data first.");
+      if (err.contact) {
+        _showCrashContact(err.state, err.contact);
+      } else {
+        _showOverlayNote("crash_density", err.error || "All-severity crash data not available for this state. Click Fetch Data first.");
+      }
       return null;
     }
     _crashData = await r.json();
@@ -401,6 +405,69 @@ const Overlays = (() => {
   }
 
   // ── Helpers ──────────────────────────────────────────────────────────────────
+
+  function _showCrashContact(state, contact) {
+    const name = contact.contact || `${state} DOT`;
+    const url = contact.contact_url || "";
+    const phone = contact.contact_phone || "";
+    const notes = contact.notes || "";
+    const status = contact.status || "unavailable";
+
+    let html = `<div style="max-width:420px;font-family:system-ui;line-height:1.5">`;
+    html += `<div style="font-size:15px;font-weight:700;margin-bottom:8px">` +
+            `No crash data for ${state}</div>`;
+    html += `<div style="font-size:13px;color:#ccc;margin-bottom:10px">${notes}</div>`;
+    html += `<div style="font-size:13px;margin-bottom:6px">` +
+            `<b>Contact:</b> ${name}</div>`;
+    if (phone) {
+      html += `<div style="font-size:13px;margin-bottom:6px">` +
+              `<b>Phone:</b> <a href="tel:${phone}" style="color:#5bf">${phone}</a></div>`;
+    }
+    if (url) {
+      html += `<div style="font-size:13px;margin-bottom:10px">` +
+              `<a href="${url}" target="_blank" style="color:#5bf">${url}</a></div>`;
+    }
+    const portal = contact.request_portal || "";
+    if (portal) {
+      html += `<div style="font-size:13px;margin-bottom:10px">` +
+              `<b>Submit a data request:</b> <a href="${portal}" target="_blank" ` +
+              `style="color:#5bf;font-weight:700">${portal}</a></div>`;
+    }
+    html += `<div style="font-size:12px;color:#aaa;border-top:1px solid #444;padding-top:8px;margin-top:8px">` +
+            `Every state collects crash data. When you call or submit a request, ` +
+            `ask for all-severity crash data with coordinates. The more people ` +
+            `who ask, the faster states publish it.</div>`;
+    html += `</div>`;
+
+    // Show as a modal dialog over the map
+    let overlay = document.getElementById("crash-contact-overlay");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "crash-contact-overlay";
+      overlay.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;" +
+        "background:rgba(0,0,0,0.6);display:flex;align-items:center;" +
+        "justify-content:center;z-index:10000";
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) overlay.remove();
+      });
+      document.body.appendChild(overlay);
+    }
+    const box = document.createElement("div");
+    box.style.cssText = "background:#1a1a2e;color:#eee;padding:24px;border-radius:8px;" +
+      "box-shadow:0 4px 24px rgba(0,0,0,0.5);position:relative";
+    const close = document.createElement("button");
+    close.textContent = "×";
+    close.style.cssText = "position:absolute;top:8px;right:12px;background:none;" +
+      "border:none;color:#888;font-size:20px;cursor:pointer";
+    close.onclick = () => overlay.remove();
+    box.appendChild(close);
+    box.insertAdjacentHTML("beforeend", html);
+    overlay.innerHTML = "";
+    overlay.appendChild(box);
+
+    setStatus(`No crash data for ${state} — contact info shown`);
+    console.warn(`[Overlay:crash_density] Missing state ${state}:`, contact);
+  }
 
   function _showOverlayNote(key, msg) {
     if (typeof App !== "undefined" && App.flash) {
@@ -640,3 +707,215 @@ const Overlays = (() => {
 })();
 
 // City list removed — using Fetch Data button instead
+
+// ── Custom Points Overlay ─────────────────────────────────────────────────────
+// Generic point overlay tool. Accepts JSON array [{lat,lon,label}] or CSV.
+// Points rendered as distinct diamond markers so they don't blend with crash data.
+
+const CustomPoints = (() => {
+  let _layer = null;
+  let _data = null;  // array of {lat, lon, label, ...extra properties}
+  let _active = false;
+
+  function _parseJSON(text) {
+    const parsed = JSON.parse(text);
+    // Handle GeoJSON FeatureCollection
+    if (parsed.type === "FeatureCollection" && parsed.features) {
+      return parsed.features.map(f => ({
+        lat: f.geometry.coordinates[1],
+        lon: f.geometry.coordinates[0],
+        label: f.properties.name || f.properties.label || f.properties.stop_name || "",
+        ...f.properties,
+      }));
+    }
+    // Handle plain array
+    if (Array.isArray(parsed)) return parsed;
+    // Handle {points: [...]}
+    if (parsed.points) return parsed.points;
+    throw new Error("Unrecognized JSON format");
+  }
+
+  function _parseCSV(text) {
+    const lines = text.trim().split("\n");
+    if (lines.length < 2) throw new Error("CSV needs header + at least 1 row");
+    const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+    const latIdx = headers.findIndex(h => h === "lat" || h === "latitude" || h === "stop_lat");
+    const lonIdx = headers.findIndex(h => h === "lon" || h === "lng" || h === "longitude" || h === "stop_lon");
+    const labelIdx = headers.findIndex(h => h === "label" || h === "name" || h === "stop_name" || h === "station");
+    if (latIdx < 0 || lonIdx < 0) throw new Error("CSV must have lat/lon columns");
+    const points = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(",").map(c => c.trim());
+      const lat = parseFloat(cols[latIdx]);
+      const lon = parseFloat(cols[lonIdx]);
+      if (isNaN(lat) || isNaN(lon)) continue;
+      points.push({ lat, lon, label: labelIdx >= 0 ? cols[labelIdx] : "" });
+    }
+    return points;
+  }
+
+  function _render() {
+    if (!_data || _data.length === 0) return;
+    const m = App.getMap();
+    if (_layer) { m.removeLayer(_layer); _layer = null; }
+
+    _layer = L.layerGroup();
+    for (const pt of _data) {
+      const marker = L.circleMarker([pt.lat, pt.lon], {
+        radius: 7,
+        color: "#fff",
+        weight: 2,
+        fillColor: "#f5a623",
+        fillOpacity: 0.9,
+      });
+      const tooltip = pt.label || `${pt.lat.toFixed(4)}, ${pt.lon.toFixed(4)}`;
+      marker.bindTooltip(tooltip, { sticky: true });
+      _layer.addLayer(marker);
+    }
+    _layer.addTo(m);
+    _active = true;
+
+    const btn = document.getElementById("ov-btn-custom_points");
+    if (btn) btn.classList.add("ov-active");
+    const status = document.getElementById("ov-custom-status");
+    if (status) status.textContent = `${_data.length} points loaded`;
+    setStatus(`Custom points: ${_data.length} loaded`);
+  }
+
+  return {
+    toggle() {
+      const input = document.getElementById("ov-custom-input");
+      if (input) input.style.display = input.style.display === "none" ? "block" : "none";
+      if (_active && _layer) {
+        const m = App.getMap();
+        m.removeLayer(_layer);
+        _layer = null;
+        _active = false;
+        const btn = document.getElementById("ov-btn-custom_points");
+        if (btn) btn.classList.remove("ov-active");
+        setStatus("Custom points off");
+      } else if (_data) {
+        _render();
+      } else {
+        // Try loading from server (saved in .jpd)
+        fetch("/api/overlays/custom_points").then(r => r.json()).then(pts => {
+          if (pts && pts.length) { _data = pts; _render(); }
+        }).catch(() => {});
+      }
+    },
+
+    loadFile() {
+      document.getElementById("ov-custom-file").click();
+    },
+
+    handleFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target.result;
+          if (file.name.endsWith(".csv")) {
+            _data = _parseCSV(text);
+          } else {
+            _data = _parseJSON(text);
+          }
+          _render();
+        } catch (err) {
+          const status = document.getElementById("ov-custom-status");
+          if (status) status.textContent = "Error: " + err.message;
+          console.error("[CustomPoints]", err);
+        }
+      };
+      reader.readAsText(file);
+    },
+
+    fromPaste() {
+      const textarea = document.getElementById("ov-custom-paste");
+      if (!textarea || !textarea.value.trim()) return;
+      try {
+        const text = textarea.value.trim();
+        // Detect CSV vs JSON
+        if (text.startsWith("[") || text.startsWith("{")) {
+          _data = _parseJSON(text);
+        } else {
+          _data = _parseCSV(text);
+        }
+        _render();
+      } catch (err) {
+        const status = document.getElementById("ov-custom-status");
+        if (status) status.textContent = "Error: " + err.message;
+        console.error("[CustomPoints]", err);
+      }
+    },
+
+    clear() {
+      const m = App.getMap();
+      if (_layer) { m.removeLayer(_layer); _layer = null; }
+      _data = null;
+      _active = false;
+      const btn = document.getElementById("ov-btn-custom_points");
+      if (btn) btn.classList.remove("ov-active");
+      const status = document.getElementById("ov-custom-status");
+      if (status) status.textContent = "";
+      const textarea = document.getElementById("ov-custom-paste");
+      if (textarea) textarea.value = "";
+      setStatus("Custom points cleared");
+    },
+
+    /** Get current data for saving with .jpd */
+    getData() { return _data; },
+
+    /** Load data programmatically (e.g., from .jpd restore) */
+    setData(points) {
+      if (!points || !points.length) return;
+      _data = points;
+      _render();
+    },
+
+    /** Load presets list from server */
+    async loadPresets() {
+      try {
+        const r = await fetch("/api/overlays/custom_points/presets");
+        if (!r.ok) return;
+        const presets = await r.json();
+        const sel = document.getElementById("ov-custom-presets");
+        if (!sel) return;
+        // Clear existing options after default
+        while (sel.options.length > 1) sel.remove(1);
+        for (const p of presets) {
+          const opt = document.createElement("option");
+          opt.value = p.file;
+          opt.textContent = `${p.name} (${p.count})`;
+          sel.appendChild(opt);
+        }
+      } catch (e) { console.error("[CustomPoints] presets:", e); }
+    },
+
+    /** Load a preset file by name */
+    async loadPreset(filename) {
+      if (!filename) return;
+      try {
+        const r = await fetch(`/api/overlays/custom_points/preset/${filename}`);
+        if (!r.ok) {
+          const err = await r.json().catch(() => ({}));
+          const status = document.getElementById("ov-custom-status");
+          if (status) status.textContent = err.error || "Failed to load";
+          return;
+        }
+        _data = await r.json();
+        _render();
+        // Zoom to fit the points
+        if (_data.length > 0) {
+          const bounds = L.latLngBounds(_data.map(p => [p.lat, p.lon]));
+          App.getMap().fitBounds(bounds, { padding: [50, 50] });
+        }
+      } catch (e) {
+        console.error("[CustomPoints] loadPreset:", e);
+      }
+    },
+  };
+})();
+
+// Wire into Overlays namespace
+Overlays.toggleCustomPoints = function() { CustomPoints.toggle(); };
+Overlays.customPoints = CustomPoints;

@@ -36,6 +36,17 @@ if _parent not in sys.path:
 from CrashHarvester.reader import MobilityData
 _md = MobilityData()
 
+# Crash data status — contact info for missing/weak states
+import json as _json
+_crash_status = {}
+_crash_status_path = os.path.join(os.path.dirname(_rt_dir), "overlays", "crash-data-status.json")
+if os.path.exists(_crash_status_path):
+    try:
+        with open(_crash_status_path) as _f:
+            _crash_status = _json.load(_f)
+    except Exception:
+        pass
+
 # ---------------------------------------------------------------------------
 # Shared state imports
 # ---------------------------------------------------------------------------
@@ -215,6 +226,7 @@ def overlay_fetch_all():
         "population_density": "population_density",
         "property_values": "property_values",
         "jobs": "jobs",
+        "transit": "transit",
     }
 
     if state_abbr:
@@ -290,7 +302,15 @@ def overlay_crash_density():
         return jsonify({"error": "Cannot determine state — place a station first"}), 404
     data = _md.get_crashes(state, center_lat, center_lon, radius)
     if not data or not data.get("features"):
-        return jsonify({"error": f"No all-severity crash data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --state-dot {state} RAW_FILE"}), 404
+        # Check if we have contact info for this state
+        missing = _crash_status.get("missing_states", {}).get(state.upper(), {})
+        if missing:
+            return jsonify({
+                "error": f"No all-severity crash data for {state.upper()}",
+                "contact": missing,
+                "state": state.upper(),
+            }), 404
+        return jsonify({"error": f"No all-severity crash data for {state.upper()}"}), 404
 
     # Quality check: if crashes ≈ fatal, this is just FARS repackaged, not real all-severity
     sample = data["features"][:200]
@@ -307,10 +327,134 @@ def overlay_crash_density():
     return jsonify(data)
 
 
+@overlays_bp.get("/overlays/transit")
+def overlay_transit():
+    """Transit rail/subway stations from CrashHarvester library."""
+    state, _, _ = _detect_state()
+    if not state:
+        return jsonify({"error": "Cannot determine state — place a station first"}), 404
+    data = _md.get_transit(state)
+    if data and data.get("features"):
+        return jsonify(data)
+    return jsonify({"error": f"No transit data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --transit {state}"}), 404
+
+
 @overlays_bp.get("/overlays/mobility")
 def overlay_mobility():
     """Cell mobility data — not yet in CrashHarvester library."""
     return jsonify({"error": "Mobility data not yet harvested"}), 404
+
+
+@overlays_bp.get("/overlays/custom_points")
+def get_custom_points():
+    """Return saved custom points from the current session/jpd."""
+    points = _state.get("custom_points")
+    if points:
+        return jsonify(points)
+    return jsonify([])
+
+
+@overlays_bp.post("/overlays/custom_points")
+def set_custom_points():
+    """Save custom points to session (persists with .jpd save)."""
+    data = request.json
+    if not isinstance(data, list):
+        return jsonify({"error": "Expected JSON array of {lat, lon, label}"}), 400
+    _state["custom_points"] = data
+    return jsonify({"ok": True, "count": len(data)})
+
+
+@overlays_bp.get("/overlays/custom_points/presets")
+def list_custom_presets():
+    """List available preset point files in overlays/ directory."""
+    import json as json_mod
+    overlay_dir = os.path.join(_rt_dir, "overlays")
+    presets = []
+    for fname in sorted(os.listdir(overlay_dir)):
+        if fname.endswith(".json") and not fname.startswith(("aadt", "accidents", "crash", "population", "property", "jobs")):
+            path = os.path.join(overlay_dir, fname)
+            try:
+                with open(path) as f:
+                    data = json_mod.load(f)
+                count = len(data) if isinstance(data, list) else 0
+                presets.append({"file": fname, "name": fname[:-5].replace("_", " ").title(), "count": count})
+            except Exception:
+                pass
+    return jsonify(presets)
+
+
+@overlays_bp.get("/overlays/custom_points/preset/<filename>")
+def load_custom_preset(filename):
+    """Load a preset point file."""
+    import json as json_mod
+    if ".." in filename or "/" in filename:
+        return jsonify({"error": "Invalid filename"}), 400
+    overlay_dir = os.path.join(_rt_dir, "overlays")
+    path = os.path.join(overlay_dir, filename)
+    if not os.path.exists(path):
+        return jsonify({"error": f"File not found: {filename}"}), 404
+    with open(path) as f:
+        data = json_mod.load(f)
+    if isinstance(data, list):
+        _state["custom_points"] = data
+        return jsonify(data)
+    return jsonify({"error": "File is not a point array"}), 400
+
+
+@overlays_bp.get("/overlays/crash_data_status")
+def overlay_crash_data_status():
+    """All 50 states crash data availability — what we have, what needs manual effort.
+    Returns three tiers: harvested (auto), portal_required (human needed), missing."""
+    import json as json_mod
+
+    catalog_path = os.path.join(_parent, "crash_harvester", "all_sources_catalog.json")
+    portal_states = {}
+    if os.path.exists(catalog_path):
+        with open(catalog_path) as f:
+            catalog = json_mod.load(f)
+        portal_states = catalog.get("portal_required_states", {}).get("states", {})
+
+    # Check what's actually in the library
+    all_states = [
+        "ak", "al", "ar", "az", "ca", "co", "ct", "dc", "de", "fl",
+        "ga", "hi", "ia", "id", "il", "in", "ks", "ky", "la", "ma",
+        "md", "me", "mi", "mn", "mo", "ms", "mt", "nc", "nd", "ne",
+        "nh", "nj", "nm", "nv", "ny", "oh", "ok", "or", "pa", "ri",
+        "sc", "sd", "tn", "tx", "ut", "va", "vt", "wa", "wi", "wv", "wy",
+    ]
+
+    harvested = []
+    portal_required = []
+    missing = []
+
+    for st in all_states:
+        has_crash = _md.is_available("crash", st)
+        has_fatal = _md.is_available("fatal", st)
+        st_upper = st.upper()
+        if has_crash:
+            harvested.append({"state": st_upper, "type": "all_severity"})
+        elif st_upper in portal_states:
+            info = portal_states[st_upper]
+            portal_required.append({
+                "state": st_upper,
+                "portal": info.get("portal", ""),
+                "action": info.get("action", ""),
+                "has_fatal": has_fatal,
+            })
+        else:
+            missing.append({"state": st_upper, "has_fatal": has_fatal})
+
+    return jsonify({
+        "harvested": harvested,
+        "portal_required": portal_required,
+        "missing": missing,
+        "summary": {
+            "total": len(all_states),
+            "harvested": len(harvested),
+            "portal_required": len(portal_required),
+            "missing": len(missing),
+        },
+    })
 
 
 @overlays_bp.get("/overlays/population_density")

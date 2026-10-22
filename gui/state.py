@@ -5,6 +5,15 @@ Session-keyed shared state for the MeshMobility GUI.
 
 All modules (api.py, builders.py, overlays.py, etc.) import state from here.
 The _state proxy routes reads/writes to the current request's session dict.
+
+NOTE: This module manages *network editing state* (structures, CPs, simulation
+results, etc.) in an in-memory _sessions dict.  This state is intentionally NOT
+persisted to Redis — it contains live Python objects (Network, Node, etc.) that
+are not serialisable.  Network state resets on server restart.
+
+*Authentication sessions* (Flask session — user identity, login status) ARE
+persisted via flask-session + Redis (see app.py).  Users stay logged in across
+server restarts even though their network editing state resets.
 """
 
 from __future__ import annotations
@@ -441,6 +450,7 @@ def restore_structures(structures_data: list, cps_data: list, net) -> None:
             center_lon=s.get("center_lon", 0.0),
             heading_deg=s.get("heading_deg", 0.0),
             arm_headings=s.get("arm_headings", []),
+            structure_uuid=s.get("structure_uuid"),
         )
         _state["structures"][struct.structure_id] = struct
     for c in cps_data:
@@ -457,6 +467,7 @@ def restore_structures(structures_data: list, cps_data: list, net) -> None:
             center_lat=c["center_lat"],
             center_lon=c["center_lon"],
             connected_to=c.get("connected_to"),
+            cp_uuid=c.get("cp_uuid"),
         )
         _state["cps"][cp.cp_id] = cp
 

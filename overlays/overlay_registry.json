@@ -1,0 +1,3092 @@
+{
+  "_meta": {
+    "description": "Complete overlay data registry \u2014 tracks all data types across both storage locations",
+    "generated": "2026-07-11T02:33:58Z",
+    "locations": {
+      "5TB": "/Volumes/Allie/data/overlays/",
+      "mesh_mobility": "mesh_mobility/overlays/"
+    },
+    "categories": {
+      "aadt": "AADT traffic counts",
+      "accidents": "FARS fatal crashes (NHTSA)",
+      "crash_density": "Crash density grid (200m cells)",
+      "crashes_all": "All-severity state DOT crashes",
+      "population_density": "Census population density",
+      "property_values": "Census property values",
+      "jobs": "Census job density"
+    },
+    "rutgers_catalog": "knowledge/projects/rutgers-crash-database-catalog.csv"
+  },
+  "summary": {
+    "aadt": {
+      "description": "AADT traffic counts",
+      "complete": 51,
+      "partial": 0,
+      "missing": 0
+    },
+    "accidents": {
+      "description": "FARS fatal crashes (NHTSA)",
+      "complete": 51,
+      "partial": 0,
+      "missing": 0
+    },
+    "crash_density": {
+      "description": "Crash density grid (200m cells)",
+      "complete": 51,
+      "partial": 0,
+      "missing": 0
+    },
+    "crashes_all": {
+      "description": "All-severity state DOT crashes",
+      "complete": 2,
+      "partial": 0,
+      "missing": 49
+    },
+    "population_density": {
+      "description": "Census population density",
+      "complete": 5,
+      "partial": 0,
+      "missing": 46
+    },
+    "property_values": {
+      "description": "Census property values",
+      "complete": 5,
+      "partial": 0,
+      "missing": 46
+    },
+    "jobs": {
+      "description": "Census job density",
+      "complete": 5,
+      "partial": 0,
+      "missing": 46
+    }
+  },
+  "states": {
+    "AK": {
+      "state": "AK",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 576,
+          "size_mb": 0.11,
+          "date": "2026-07-07",
+          "filename": "aadt_ak.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 251,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "accidents_ak.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 244,
+          "size_mb": 0.04,
+          "date": "2026-07-07",
+          "filename": "crash_density_ak.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://public.alaskadata.net/",
+        "raw_data": "N/A",
+        "availability": "Data is not Public",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "AL": {
+      "state": "AL",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 544,
+          "size_mb": 0.1,
+          "date": "2026-07-07",
+          "filename": "aadt_al.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3505,
+          "size_mb": 1.1,
+          "date": "2026-07-07",
+          "filename": "accidents_al.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3387,
+          "size_mb": 0.58,
+          "date": "2026-07-07",
+          "filename": "crash_density_al.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://safety.aladata.com/",
+        "raw_data": "https://safety.aladata.com/",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "AR": {
+      "state": "AR",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 538,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_ar.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2277,
+          "size_mb": 0.71,
+          "date": "2026-07-07",
+          "filename": "accidents_ar.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2209,
+          "size_mb": 0.38,
+          "date": "2026-07-07",
+          "filename": "crash_density_ar.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://gis.ardot.gov/portal/apps/dashboards/3ae35f942fa340888abd27f26d405558",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "AZ": {
+      "state": "AZ",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 450,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_az.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3979,
+          "size_mb": 1.25,
+          "date": "2026-07-07",
+          "filename": "accidents_az.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3703,
+          "size_mb": 0.64,
+          "date": "2026-07-07",
+          "filename": "crash_density_az.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://www.azdhs.gov/preparedness/emergency-medical-services-trauma-system/data-visualization/index.php#dashboards-mvt-related-trauma",
+        "raw_data": "https://azdot.gov/planning/traffic-safety/arizona-motor-vehicle-crash-facts",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "CA": {
+      "state": "CA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 588,
+          "size_mb": 0.11,
+          "date": "2026-07-07",
+          "filename": "aadt_ca.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 15490,
+          "size_mb": 4.97,
+          "date": "2026-07-07",
+          "filename": "accidents_ca.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 14478,
+          "size_mb": 2.5,
+          "date": "2026-07-07",
+          "filename": "crash_density_ca.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://tims.berkeley.edu/login.php?next=%2Ftools%2Fgismap%2F",
+        "raw_data": "https://tims.berkeley.edu/login.php?next=%2Ftools%2Fgismap%2F",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "CO": {
+      "state": "CO",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 498,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_co.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2456,
+          "size_mb": 0.78,
+          "date": "2026-07-07",
+          "filename": "accidents_co.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2330,
+          "size_mb": 0.4,
+          "date": "2026-07-07",
+          "filename": "crash_density_co.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://tableau.state.co.us/t/CDOT/views/CDOTCrashSummaryAVtestver2_0/StatewideSummary?%3Aorigin=card_share_link&%3Aembed=y&%3AisGuestRedirectFromVizportal=y",
+        "raw_data": "https://www.codot.gov/safety/traffic-safety/data-analysis/crash-data",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "CT": {
+      "state": "CT",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 433,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "aadt_ct.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1137,
+          "size_mb": 0.36,
+          "date": "2026-07-07",
+          "filename": "accidents_ct.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1099,
+          "size_mb": 0.19,
+          "date": "2026-07-07",
+          "filename": "crash_density_ct.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://connecticut-ctdot.opendata.arcgis.com/apps/0f738ee8a9344d2589608171dbded2b3/explore",
+        "raw_data": "https://www.ctcrash.uconn.edu/",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "DC": {
+      "state": "DC",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 272,
+          "size_mb": 0.05,
+          "date": "2026-07-07",
+          "filename": "aadt_dc.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 123,
+          "size_mb": 0.04,
+          "date": "2026-07-07",
+          "filename": "accidents_dc.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 119,
+          "size_mb": 0.02,
+          "date": "2026-07-07",
+          "filename": "crash_density_dc.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://opendata.dc.gov/datasets/crashes-in-dc/explore",
+        "raw_data": "https://opendata.dc.gov/datasets/crashes-in-dc/explore",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "DE": {
+      "state": "DE",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 462,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_de.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 498,
+          "size_mb": 0.15,
+          "date": "2026-07-07",
+          "filename": "accidents_de.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 480,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "crash_density_de.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://data.delaware.gov/stories/s/Public-Crash-Data-Dashboard/9yvr-c38p/",
+        "raw_data": "https://data.delaware.gov/Transportation/Public-Crash-Data-Map/3rrv-8pfj",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "FL": {
+      "state": "FL",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 604,
+          "size_mb": 0.11,
+          "date": "2026-07-07",
+          "filename": "aadt_fl.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 12802,
+          "size_mb": 3.98,
+          "date": "2026-07-07",
+          "filename": "accidents_fl.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 11561,
+          "size_mb": 1.98,
+          "date": "2026-07-07",
+          "filename": "crash_density_fl.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://signal4analytics.com/",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "GA": {
+      "state": "GA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 456,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_ga.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 6250,
+          "size_mb": 1.97,
+          "date": "2026-07-07",
+          "filename": "accidents_ga.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 5918,
+          "size_mb": 1.01,
+          "date": "2026-07-07",
+          "filename": "crash_density_ga.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://gdot.aashtowaresafety.net/crash-data#/?view_id=1",
+        "raw_data": "https://gdot.aashtowaresafety.net/crash-data#/?view_id=9",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "HI": {
+      "state": "HI",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 99,
+          "size_mb": 0.02,
+          "date": "2026-07-07",
+          "filename": "aadt_hi.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 388,
+          "size_mb": 0.12,
+          "date": "2026-07-07",
+          "filename": "accidents_hi.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 382,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "crash_density_hi.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://public.alaskadata.net/",
+        "raw_data": "N/A",
+        "availability": "Data is not Public",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "IA": {
+      "state": "IA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 298,
+          "size_mb": 0.05,
+          "date": "2026-07-07",
+          "filename": "aadt_ia.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1257,
+          "size_mb": 0.39,
+          "date": "2026-07-07",
+          "filename": "accidents_ia.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1239,
+          "size_mb": 0.21,
+          "date": "2026-07-07",
+          "filename": "crash_density_ia.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://icat.iowadot.gov/",
+        "raw_data": "https://data.iowadot.gov/datasets/84cc3a98db944e71aed9e4a984a3ff60/explore?location=42.047752%2C-93.626788%2C15.00",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "ID": {
+      "state": "ID",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 533,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_id.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 829,
+          "size_mb": 0.26,
+          "date": "2026-07-07",
+          "filename": "accidents_id.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 816,
+          "size_mb": 0.14,
+          "date": "2026-07-07",
+          "filename": "crash_density_id.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://itd.aashtowaresafety.net/itd-safety-dashboards#/ff058059-901e-4065-abf2-c36a69bc2d10",
+        "raw_data": "https://data-iplan.opendata.arcgis.com/datasets/0b2144204ade4595997c592c625ca2c2/explore?location=45.560473%2C-114.745762%2C11.00&showTable=true",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "IL": {
+      "state": "IL",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 657,
+          "size_mb": 0.12,
+          "date": "2026-07-07",
+          "filename": "aadt_il.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4369,
+          "size_mb": 1.36,
+          "date": "2026-07-07",
+          "filename": "accidents_il.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4179,
+          "size_mb": 0.72,
+          "date": "2026-07-07",
+          "filename": "crash_density_il.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://apps1.dot.illinois.gov/fatalcrash/snapshot.html",
+        "raw_data": "https://gis-idot.opendata.arcgis.com/search?layout=grid&q=crashes",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "IN": {
+      "state": "IN",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 225,
+          "size_mb": 0.04,
+          "date": "2026-07-07",
+          "filename": "aadt_in.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3332,
+          "size_mb": 1.03,
+          "date": "2026-07-07",
+          "filename": "accidents_in.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3236,
+          "size_mb": 0.55,
+          "date": "2026-07-07",
+          "filename": "crash_density_in.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://www.ariesportal.com/",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "KS": {
+      "state": "KS",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 427,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_ks.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1485,
+          "size_mb": 0.47,
+          "date": "2026-07-07",
+          "filename": "accidents_ks.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1457,
+          "size_mb": 0.25,
+          "date": "2026-07-07",
+          "filename": "crash_density_ks.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://storymaps.arcgis.com/stories/01b8e784d1634e94b84ea0df67b8aea4",
+        "raw_data": "https://wfs.ksdot.org/arcgis_web_adaptor/rest/services/Transportation/Accidents/MapServer",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "KY": {
+      "state": "KY",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 498,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_ky.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2802,
+          "size_mb": 0.88,
+          "date": "2026-07-07",
+          "filename": "accidents_ky.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2710,
+          "size_mb": 0.46,
+          "date": "2026-07-07",
+          "filename": "crash_density_ky.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "http://crashinformationky.org/Home/Dashboard",
+        "raw_data": "http://crashinformationky.org/LocationSearch",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "LA": {
+      "state": "LA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 446,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_la.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3177,
+          "size_mb": 1.01,
+          "date": "2026-07-07",
+          "filename": "accidents_la.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3046,
+          "size_mb": 0.52,
+          "date": "2026-07-07",
+          "filename": "crash_density_la.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://carts.lsu.edu/datareports/report/shspcrash",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "MA": {
+      "state": "MA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 356,
+          "size_mb": 0.06,
+          "date": "2026-07-07",
+          "filename": "aadt_ma.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1456,
+          "size_mb": 0.46,
+          "date": "2026-07-07",
+          "filename": "accidents_ma.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1414,
+          "size_mb": 0.24,
+          "date": "2026-07-07",
+          "filename": "crash_density_ma.geojson"
+        },
+        "crashes_all": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 121210,
+          "size_mb": 29.94,
+          "date": "2026-07-07",
+          "filename": "crashes_all_ma.geojson"
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://apps.crashdata.dot.mass.gov/cdp/home",
+        "raw_data": "https://massdot-impact-crashes-vhb.opendata.arcgis.com/search?layout=grid&q=crashes",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "MD": {
+      "state": "MD",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 537,
+          "size_mb": 0.1,
+          "date": "2026-07-07",
+          "filename": "aadt_md.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2098,
+          "size_mb": 0.66,
+          "date": "2026-07-07",
+          "filename": "accidents_md.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1991,
+          "size_mb": 0.34,
+          "date": "2026-07-07",
+          "filename": "crash_density_md.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://mdsp.maryland.gov/Pages/Dashboards/CrashDataDashboard.aspx",
+        "raw_data": "https://mdsp.maryland.gov/Pages/Dashboards/CrashDataDownload.aspx",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "ME": {
+      "state": "ME",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 238,
+          "size_mb": 0.04,
+          "date": "2026-07-07",
+          "filename": "aadt_me.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 594,
+          "size_mb": 0.19,
+          "date": "2026-07-07",
+          "filename": "accidents_me.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 592,
+          "size_mb": 0.1,
+          "date": "2026-07-07",
+          "filename": "crash_density_me.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://mdotapps.maine.gov/MaineCrashPublic/PublicQueryMap",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "MI": {
+      "state": "MI",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 414,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "aadt_mi.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4043,
+          "size_mb": 1.27,
+          "date": "2026-07-07",
+          "filename": "accidents_mi.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3902,
+          "size_mb": 0.67,
+          "date": "2026-07-07",
+          "filename": "crash_density_mi.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://www.michigantrafficcrashfacts.org/querytool/map#q1;0;2022;;",
+        "raw_data": "https://www.michigantrafficcrashfacts.org/querytool/map#q1;0;2022;;",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "MN": {
+      "state": "MN",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 602,
+          "size_mb": 0.11,
+          "date": "2026-07-07",
+          "filename": "aadt_mn.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1567,
+          "size_mb": 0.49,
+          "date": "2026-07-07",
+          "filename": "accidents_mn.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1536,
+          "size_mb": 0.26,
+          "date": "2026-07-07",
+          "filename": "crash_density_mn.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 328,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "jobs_mn.geojson"
+        },
+        "population_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 328,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "population_density_mn.geojson"
+        },
+        "property_values": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 323,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "property_values_mn.geojson"
+        }
+      },
+      "crash_sources": {
+        "dashboard": "N/A",
+        "raw_data": "https://mncrash.state.mn.us/Pages/AdHocSearch.aspx",
+        "availability": "Raw Data Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "MO": {
+      "state": "MO",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 459,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_mo.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3625,
+          "size_mb": 1.14,
+          "date": "2026-07-07",
+          "filename": "accidents_mo.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3482,
+          "size_mb": 0.6,
+          "date": "2026-07-07",
+          "filename": "crash_density_mo.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://www.savemolives.com/mcrs/dashboards",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "MS": {
+      "state": "MS",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 590,
+          "size_mb": 0.11,
+          "date": "2026-07-07",
+          "filename": "aadt_ms.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2541,
+          "size_mb": 0.79,
+          "date": "2026-07-07",
+          "filename": "accidents_ms.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2465,
+          "size_mb": 0.42,
+          "date": "2026-07-07",
+          "filename": "crash_density_ms.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "N/A",
+        "raw_data": "https://publicdata.dps.ms.gov/Public-CrashData/eCrash/",
+        "availability": "Data is not Public",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "MT": {
+      "state": "MT",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 538,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_mt.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 762,
+          "size_mb": 0.25,
+          "date": "2026-07-07",
+          "filename": "accidents_mt.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 747,
+          "size_mb": 0.13,
+          "date": "2026-07-07",
+          "filename": "crash_density_mt.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://mdt.maps.arcgis.com/apps/webappviewer/index.html?id=237b766a07074259ad7a6eec66d699b7",
+        "raw_data": "https://www.mdt.mt.gov/publications/datastats/crashdata.aspx",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "NC": {
+      "state": "NC",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 376,
+          "size_mb": 0.06,
+          "date": "2026-07-07",
+          "filename": "aadt_nc.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 5715,
+          "size_mb": 1.82,
+          "date": "2026-07-07",
+          "filename": "accidents_nc.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 5568,
+          "size_mb": 0.95,
+          "date": "2026-07-07",
+          "filename": "crash_density_nc.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 65,
+          "size_mb": 0.02,
+          "date": "2026-07-07",
+          "filename": "jobs_nc_021.geojson"
+        },
+        "population_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 65,
+          "size_mb": 0.02,
+          "date": "2026-07-07",
+          "filename": "population_density_nc_021.geojson"
+        },
+        "property_values": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 64,
+          "size_mb": 0.02,
+          "date": "2026-07-07",
+          "filename": "property_values_nc_021.geojson"
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://www.ncdot.gov/initiatives-policies/safety/traffic-safety/Pages/safety-data-maps.aspx/",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "ND": {
+      "state": "ND",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 547,
+          "size_mb": 0.1,
+          "date": "2026-07-07",
+          "filename": "aadt_nd.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 365,
+          "size_mb": 0.11,
+          "date": "2026-07-07",
+          "filename": "accidents_nd.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 362,
+          "size_mb": 0.06,
+          "date": "2026-07-07",
+          "filename": "crash_density_nd.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://ndsu.maps.arcgis.com/apps/dashboards/93a0ca93e706476f89e927a84e247155",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "NE": {
+      "state": "NE",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 361,
+          "size_mb": 0.06,
+          "date": "2026-07-07",
+          "filename": "aadt_ne.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 835,
+          "size_mb": 0.25,
+          "date": "2026-07-07",
+          "filename": "accidents_ne.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 820,
+          "size_mb": 0.14,
+          "date": "2026-07-07",
+          "filename": "crash_density_ne.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://ntip.nebraska.gov/Map",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "NH": {
+      "state": "NH",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 458,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_nh.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 428,
+          "size_mb": 0.14,
+          "date": "2026-07-07",
+          "filename": "accidents_nh.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 419,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "crash_density_nh.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://wisdom.dhhs.nh.gov/wisdom/dashboard.html?topic=motor-vehicle-crash-injuries&subtopic=motor-vehicle-crash-injuries&indicator=motor-vehicle-crash-hospital-visits-(emergency-dept.)#barhidden",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "NJ": {
+      "state": "NJ",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 573,
+          "size_mb": 0.1,
+          "date": "2026-07-07",
+          "filename": "aadt_nj.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2376,
+          "size_mb": 0.75,
+          "date": "2026-07-07",
+          "filename": "accidents_nj.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2270,
+          "size_mb": 0.39,
+          "date": "2026-07-07",
+          "filename": "crash_density_nj.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://njdot.aashtowaresafety.net/njdot-crash-data-dashboard#/",
+        "raw_data": "https://www.nj.gov/transportation/refdata/accident/rawdata01-current.shtm",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "NM": {
+      "state": "NM",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 420,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_nm.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1580,
+          "size_mb": 0.5,
+          "date": "2026-07-07",
+          "filename": "accidents_nm.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1503,
+          "size_mb": 0.26,
+          "date": "2026-07-07",
+          "filename": "crash_density_nm.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://crash-mapping.edacnm.org/",
+        "raw_data": "https://www.dot.nm.gov/traffic-records-system/crash-data-request-form/",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "NV": {
+      "state": "NV",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 454,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_nv.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1338,
+          "size_mb": 0.42,
+          "date": "2026-07-07",
+          "filename": "accidents_nv.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1266,
+          "size_mb": 0.22,
+          "date": "2026-07-07",
+          "filename": "crash_density_nv.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://ndot.maps.arcgis.com/apps/webappviewer/index.html?id=00d23dc547eb4382bef9beabe07eaefd",
+        "raw_data": "https://www.dot.nv.gov/safety/traffic-crash-data",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "NY": {
+      "state": "NY",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 925,
+          "size_mb": 0.17,
+          "date": "2026-07-07",
+          "filename": "aadt_ny.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3980,
+          "size_mb": 1.27,
+          "date": "2026-07-07",
+          "filename": "accidents_ny.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3864,
+          "size_mb": 0.66,
+          "date": "2026-07-07",
+          "filename": "crash_density_ny.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "N/A",
+        "raw_data": "https://data.ny.gov/Transportation/Motor-Vehicle-Crashes-Case-Information-Three-Year-/e8ky-4vqe/about_data",
+        "availability": "Raw Data Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "OH": {
+      "state": "OH",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 485,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_oh.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4610,
+          "size_mb": 1.45,
+          "date": "2026-07-07",
+          "filename": "accidents_oh.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4483,
+          "size_mb": 0.77,
+          "date": "2026-07-07",
+          "filename": "crash_density_oh.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://statepatrol.ohio.gov/dashboards-statistics/ostats-dashboards/crash-dashboard",
+        "raw_data": "https://ohtrafficdata.dps.ohio.gov/CrashStatistics/Home",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "OK": {
+      "state": "OK",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 396,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "aadt_ok.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2505,
+          "size_mb": 0.77,
+          "date": "2026-07-07",
+          "filename": "accidents_ok.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2435,
+          "size_mb": 0.42,
+          "date": "2026-07-07",
+          "filename": "crash_density_ok.geojson"
+        },
+        "crashes_all": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 5693,
+          "size_mb": 1.38,
+          "date": "2026-07-09",
+          "filename": "crashes_all_ok.geojson"
+        },
+        "jobs": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 208,
+          "size_mb": 0.05,
+          "date": "2026-07-09",
+          "filename": "jobs_ok_143.geojson"
+        },
+        "population_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 208,
+          "size_mb": 0.05,
+          "date": "2026-07-09",
+          "filename": "population_density_ok_143.geojson"
+        },
+        "property_values": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 203,
+          "size_mb": 0.05,
+          "date": "2026-07-09",
+          "filename": "property_values_ok_143.geojson"
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://storymaps.arcgis.com/stories/ff413a6d4d7c4451a0abd3e930e40002",
+        "raw_data": "https://okdpswf.maps.arcgis.com/apps/MapSeries/index.html?appid=bbceac52ab4644cb8e9d9753bfd8f137",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "OR": {
+      "state": "OR",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 485,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_or.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2015,
+          "size_mb": 0.65,
+          "date": "2026-07-07",
+          "filename": "accidents_or.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1957,
+          "size_mb": 0.34,
+          "date": "2026-07-07",
+          "filename": "crash_density_or.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://www.oregon.gov/odot/Data/Pages/Crash-Data-Viewer.aspx",
+        "raw_data": "https://www.oregon.gov/odot/Data/Pages/CrashDataProducts.aspx?wp8625=p:1",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "PA": {
+      "state": "PA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 511,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_pa.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4294,
+          "size_mb": 1.39,
+          "date": "2026-07-07",
+          "filename": "accidents_pa.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4168,
+          "size_mb": 0.71,
+          "date": "2026-07-07",
+          "filename": "crash_density_pa.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://crashinfo.penndot.pa.gov/PCIT/welcome.html",
+        "raw_data": "https://experience.arcgis.com/experience/51809b06e7b140208a4ed6fbad964990",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "RI": {
+      "state": "RI",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 313,
+          "size_mb": 0.05,
+          "date": "2026-07-07",
+          "filename": "aadt_ri.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 229,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "accidents_ri.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 220,
+          "size_mb": 0.04,
+          "date": "2026-07-07",
+          "filename": "crash_density_ri.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "N/A",
+        "raw_data": "N/A",
+        "availability": "Data is not Public",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "SC": {
+      "state": "SC",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 630,
+          "size_mb": 0.11,
+          "date": "2026-07-07",
+          "filename": "aadt_sc.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4022,
+          "size_mb": 1.27,
+          "date": "2026-07-07",
+          "filename": "accidents_sc.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3897,
+          "size_mb": 0.67,
+          "date": "2026-07-07",
+          "filename": "crash_density_sc.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 123,
+          "size_mb": 0.03,
+          "date": "2026-07-09",
+          "filename": "jobs_sc_045.geojson"
+        },
+        "population_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 123,
+          "size_mb": 0.03,
+          "date": "2026-07-09",
+          "filename": "population_density_sc_045.geojson"
+        },
+        "property_values": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 121,
+          "size_mb": 0.03,
+          "date": "2026-07-09",
+          "filename": "property_values_sc_045.geojson"
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://www.arcgis.com/apps/dashboards/e8566211982d4647b1b16ea0f1dfb6bd",
+        "raw_data": "https://scdps-gis-and-mapping-scdps.hub.arcgis.com/search?categories=%252Fcategories%252Fopen%2520data%2520collisions&layout=grid",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "SD": {
+      "state": "SD",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 400,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "aadt_sd.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 472,
+          "size_mb": 0.15,
+          "date": "2026-07-07",
+          "filename": "accidents_sd.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 463,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "crash_density_sd.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "N/A",
+        "raw_data": "https://www.safesd.gov/#crash-data",
+        "availability": "Raw Data Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "TN": {
+      "state": "TN",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 461,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_tn.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4602,
+          "size_mb": 1.46,
+          "date": "2026-07-07",
+          "filename": "accidents_tn.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 4384,
+          "size_mb": 0.75,
+          "date": "2026-07-07",
+          "filename": "crash_density_tn.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://gis.safety.tn.gov/",
+        "raw_data": "https://titan.safety.tn.gov/Areas/Public/Links.aspx",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "TX": {
+      "state": "TX",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 993,
+          "size_mb": 0.17,
+          "date": "2026-07-07",
+          "filename": "aadt_tx.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 14838,
+          "size_mb": 4.66,
+          "date": "2026-07-07",
+          "filename": "accidents_tx.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 14043,
+          "size_mb": 2.41,
+          "date": "2026-07-07",
+          "filename": "crash_density_tx.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 289,
+          "size_mb": 0.06,
+          "date": "2026-07-10",
+          "filename": "jobs_tx_453.geojson"
+        },
+        "population_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 289,
+          "size_mb": 0.07,
+          "date": "2026-07-10",
+          "filename": "population_density_tx_453.geojson"
+        },
+        "property_values": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 266,
+          "size_mb": 0.06,
+          "date": "2026-07-10",
+          "filename": "property_values_tx_453.geojson"
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://cris.dot.state.tx.us/public/Query/app/home",
+        "raw_data": "N/A",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "UT": {
+      "state": "UT",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 435,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "aadt_ut.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1073,
+          "size_mb": 0.33,
+          "date": "2026-07-07",
+          "filename": "accidents_ut.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1041,
+          "size_mb": 0.18,
+          "date": "2026-07-07",
+          "filename": "crash_density_ut.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://highwaysafety.utah.gov/crash-data-and-statistics/",
+        "raw_data": "https://opendata.utah.gov/browse?q=crashes&sortBy=relevance",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "VA": {
+      "state": "VA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 498,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_va.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3415,
+          "size_mb": 1.11,
+          "date": "2026-07-07",
+          "filename": "accidents_va.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 3316,
+          "size_mb": 0.57,
+          "date": "2026-07-07",
+          "filename": "crash_density_va.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://vdot.maps.arcgis.com/apps/webappviewer/index.html?id=ef9957cd10964a7286d2f9df5b85e833",
+        "raw_data": "https://www.virginiaroads.org/datasets/crashdata-basic-1/explore",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "VT": {
+      "state": "VT",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 381,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "aadt_vt.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 244,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "accidents_vt.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 244,
+          "size_mb": 0.04,
+          "date": "2026-07-07",
+          "filename": "crash_density_vt.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://apps.vtrans.vermont.gov/crashpublicquerytool/",
+        "raw_data": "https://apps.vtrans.vermont.gov/crashpublicquerytool/",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "WA": {
+      "state": "WA",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 500,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_wa.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2353,
+          "size_mb": 0.74,
+          "date": "2026-07-07",
+          "filename": "accidents_wa.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2292,
+          "size_mb": 0.4,
+          "date": "2026-07-07",
+          "filename": "crash_density_wa.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://wtsc.wa.gov/dashboards/",
+        "raw_data": "https://data.wa.gov/Transportation/State-Crash-Data/qau6-fd9y/data?no_mobile=true",
+        "availability": "Raw Data and Dashboard/Map",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "WI": {
+      "state": "WI",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 376,
+          "size_mb": 0.07,
+          "date": "2026-07-07",
+          "filename": "aadt_wi.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2214,
+          "size_mb": 0.69,
+          "date": "2026-07-07",
+          "filename": "accidents_wi.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 2168,
+          "size_mb": 0.37,
+          "date": "2026-07-07",
+          "filename": "crash_density_wi.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "https://transportal.cee.wisc.edu/partners/community-maps/crash/search/BasicSearch.do",
+        "raw_data": "https://transportal.cee.wisc.edu/services/crash-data/",
+        "availability": "Dashboard/Map Only",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "WV": {
+      "state": "WV",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 491,
+          "size_mb": 0.09,
+          "date": "2026-07-07",
+          "filename": "aadt_wv.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 1005,
+          "size_mb": 0.31,
+          "date": "2026-07-07",
+          "filename": "accidents_wv.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 988,
+          "size_mb": 0.17,
+          "date": "2026-07-07",
+          "filename": "crash_density_wv.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "N/A",
+        "raw_data": "https://transportation.wv.gov/highways/traffic/Pages/Traffic-Accident-Data.aspx",
+        "availability": "Data is not Public",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    },
+    "WY": {
+      "state": "WY",
+      "overlays": {
+        "aadt": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 368,
+          "size_mb": 0.06,
+          "date": "2026-07-07",
+          "filename": "aadt_wy.geojson"
+        },
+        "accidents": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 454,
+          "size_mb": 0.14,
+          "date": "2026-07-07",
+          "filename": "accidents_wy.geojson"
+        },
+        "crash_density": {
+          "status": "complete",
+          "in_5tb": true,
+          "in_mesh_mobility": true,
+          "features": 448,
+          "size_mb": 0.08,
+          "date": "2026-07-07",
+          "filename": "crash_density_wy.geojson"
+        },
+        "crashes_all": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "jobs": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "population_density": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        },
+        "property_values": {
+          "status": "missing",
+          "in_5tb": false,
+          "in_mesh_mobility": false
+        }
+      },
+      "crash_sources": {
+        "dashboard": "N/A",
+        "raw_data": "N/A",
+        "availability": "Data is not Public",
+        "source_catalog": "Rutgers HNY3 Crash Database 2024"
+      }
+    }
+  }
+}

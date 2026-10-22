@@ -1,0 +1,1944 @@
+[
+  {
+    "lat": 33.94222,
+    "lon": -118.243159,
+    "label": "103rd Street / Watts Towers  Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.803463,
+    "lon": -122.271596,
+    "label": "12th Street / Oakland City Center",
+    "lines": [
+      "Orange-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.803508,
+    "lon": -122.271694,
+    "label": "12th Street / Oakland City Center",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.76518,
+    "lon": -122.419679,
+    "label": "16th Street / Mission",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 34.023155,
+    "lon": -118.480372,
+    "label": "17th Street / SMC Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 37.808065,
+    "lon": -122.26872,
+    "label": "19th Street Oakland",
+    "lines": [
+      "Orange-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 33.76874,
+    "lon": -118.189362,
+    "label": "1st Street Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.757599,
+    "lon": -122.39188,
+    "label": "22nd Street Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.756972,
+    "lon": -122.392492,
+    "label": "22nd Street Station",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.752426,
+    "lon": -122.418445,
+    "label": "24th Street / Mission",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.752422,
+    "lon": -122.418518,
+    "label": "24th Street / Mission",
+    "lines": [
+      "Blue-S",
+      "Green-S",
+      "Red-S",
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 34.027995,
+    "lon": -118.46912,
+    "label": "26th Street / Bergamot Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.773598,
+    "lon": -118.189412,
+    "label": "5th Street Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.04861,
+    "lon": -118.258822,
+    "label": "7th Street / Metro Center Station - Metro A & E Lines",
+    "lines": [
+      "Metro A Line",
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.136814,
+    "lon": -117.891636,
+    "label": "APU / Citrus College Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.152417,
+    "lon": -118.114348,
+    "label": "Allen Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.78183,
+    "lon": -118.189384,
+    "label": "Anaheim Street Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.995415,
+    "lon": -121.780353,
+    "label": "Antioch",
+    "lines": [
+      "Yellow-N",
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 34.14286,
+    "lon": -118.029199,
+    "label": "Arcadia Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.876082,
+    "lon": -118.222503,
+    "label": "Artesia Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.853069,
+    "lon": -122.26975,
+    "label": "Ashby",
+    "lines": [
+      "Orange-N",
+      "Red-N"
+    ]
+  },
+  {
+    "lat": 34.033398,
+    "lon": -118.154469,
+    "label": "Atlantic Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.927465,
+    "lon": -118.265217,
+    "label": "Avalon Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 33.94557205,
+    "lon": -118.378683,
+    "label": "Aviation / Century Station",
+    "lines": [
+      "Metro C Line",
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 33.929621,
+    "lon": -118.377134,
+    "label": "Aviation / Imperial Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 34.135863,
+    "lon": -117.906631,
+    "label": "Azusa Downtown Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.721748,
+    "lon": -122.447433,
+    "label": "Balboa Park",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.721758,
+    "lon": -122.44751,
+    "label": "Balboa Park",
+    "lines": [
+      "Blue-S",
+      "Green-S",
+      "Red-S",
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 37.696887,
+    "lon": -122.126488,
+    "label": "Bay Fair",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 37.709537,
+    "lon": -122.401586,
+    "label": "Bayshore Caltrain Northbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.70766,
+    "lon": -122.401665,
+    "label": "Bayshore Station",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.52089,
+    "lon": -122.275738,
+    "label": "Belmont Caltrain Northbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.368474,
+    "lon": -121.874759,
+    "label": "Berryessa / North San Jose",
+    "lines": [
+      "Green-N",
+      "Green-S",
+      "Orange-N",
+      "Orange-S",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.252422,
+    "lon": -121.797643,
+    "label": "Blossom Hill Caltrain Northbound",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.252606,
+    "lon": -121.797907,
+    "label": "Blossom Hill Caltrain Station",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.58764,
+    "lon": -122.36265,
+    "label": "Broadway Caltrain Northbound",
+    "lines": [
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.58726,
+    "lon": -122.362,
+    "label": "Broadway Station",
+    "lines": [
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.580197,
+    "lon": -122.3449,
+    "label": "Burlingame Caltrain Northbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.57985,
+    "lon": -122.34418,
+    "label": "Burlingame Station",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.429365,
+    "lon": -122.141927,
+    "label": "California Avenue Caltrain Northbound",
+    "lines": [
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.428834,
+    "lon": -122.14113,
+    "label": "California Avenue Station",
+    "lines": [
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.284102,
+    "lon": -121.841955,
+    "label": "Capitol Caltrain Northbound",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.690708,
+    "lon": -122.075614,
+    "label": "Castro Valley",
+    "lines": [
+      "Blue-N"
+    ]
+  },
+  {
+    "lat": 34.063861,
+    "lon": -118.23584,
+    "label": "Chinatown Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.0549,
+    "lon": -118.246057,
+    "label": "Civic Center / Grand Park Station",
+    "lines": [
+      "Metro B Line",
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 37.77938,
+    "lon": -122.413804,
+    "label": "Civic Center / UN Plaza",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.753558,
+    "lon": -122.19676,
+    "label": "Coliseum",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 37.752225,
+    "lon": -122.19627,
+    "label": "Coliseum - OAC",
+    "lines": [
+      "Grey-N",
+      "Grey-S"
+    ]
+  },
+  {
+    "lat": 37.342338,
+    "lon": -121.914677,
+    "label": "College Park Caltrain Southbound",
+    "lines": [
+      "Local Weekday"
+    ]
+  },
+  {
+    "lat": 37.34289,
+    "lon": -121.91565,
+    "label": "College Park Station",
+    "lines": [
+      "Local Weekday"
+    ]
+  },
+  {
+    "lat": 37.684691,
+    "lon": -122.466115,
+    "label": "Colma",
+    "lines": [
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 33.89749,
+    "lon": -118.224249,
+    "label": "Compton Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.973751,
+    "lon": -122.029046,
+    "label": "Concord",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 33.925201,
+    "lon": -118.32655,
+    "label": "Crenshaw C-Line Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 34.027896,
+    "lon": -118.388986,
+    "label": "Culver City Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 37.706227,
+    "lon": -122.468851,
+    "label": "Daly City",
+    "lines": [
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 33.848222,
+    "lon": -118.211017,
+    "label": "Del Amo Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.14191,
+    "lon": -118.148214,
+    "label": "Del Mar Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.905299,
+    "lon": -118.383113,
+    "label": "Douglas Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 37.870117,
+    "lon": -122.268078,
+    "label": "Downtown Berkeley",
+    "lines": [
+      "Orange-N",
+      "Red-N"
+    ]
+  },
+  {
+    "lat": 33.96715635,
+    "lon": -118.3514966,
+    "label": "Downtown Inglewood Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 33.768071,
+    "lon": -118.192921,
+    "label": "Downtown Long Beach Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.01401,
+    "lon": -118.491384,
+    "label": "Downtown Santa Monica Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.132518,
+    "lon": -117.96768,
+    "label": "Duarte / City of Hope Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.70161,
+    "lon": -121.899245,
+    "label": "Dublin / Pleasanton",
+    "lines": [
+      "Blue-N"
+    ]
+  },
+  {
+    "lat": 34.033364,
+    "lon": -118.161206,
+    "label": "East LA Civic Center Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 37.925205,
+    "lon": -122.316868,
+    "label": "El Cerrito Del Norte",
+    "lines": [
+      "Orange-N",
+      "Red-N"
+    ]
+  },
+  {
+    "lat": 37.902633,
+    "lon": -122.298895,
+    "label": "El Cerrito Plaza",
+    "lines": [
+      "Orange-N",
+      "Red-N"
+    ]
+  },
+  {
+    "lat": 33.916063,
+    "lon": -118.386539,
+    "label": "El Segundo Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 37.792741,
+    "lon": -122.397019,
+    "label": "Embarcadero",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 34.031705,
+    "lon": -118.452896,
+    "label": "Expo / Bundy Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.022526,
+    "lon": -118.335078,
+    "label": "Expo / Crenshaw E-Line Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.02215554,
+    "lon": -118.3348508,
+    "label": "Expo / Crenshaw K-Line Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.024803,
+    "lon": -118.355159,
+    "label": "Expo / La Brea / Ethel Bradley Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.035408,
+    "lon": -118.434234,
+    "label": "Expo / Sepulveda Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.018245,
+    "lon": -118.29154,
+    "label": "Expo / Vermont Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.018331,
+    "lon": -118.30891,
+    "label": "Expo / Western Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.018227,
+    "lon": -118.285734,
+    "label": "Expo Park / USC Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.97525155,
+    "lon": -118.3360716,
+    "label": "Fairview Heights Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.023981,
+    "lon": -118.346095,
+    "label": "Farmdale Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.133521,
+    "lon": -118.148126,
+    "label": "Fillmore Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.959611,
+    "lon": -118.243205,
+    "label": "Firestone Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.97374,
+    "lon": -118.243271,
+    "label": "Florence Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.557459,
+    "lon": -121.976658,
+    "label": "Fremont",
+    "lines": [
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 37.557513,
+    "lon": -121.976605,
+    "label": "Fremont",
+    "lines": [
+      "Green-S",
+      "Orange-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.774818,
+    "lon": -122.224121,
+    "label": "Fruitvale",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 37.003538,
+    "lon": -121.566088,
+    "label": "Gilroy Caltrain Northbound",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.003485,
+    "lon": -121.566225,
+    "label": "Gilroy Caltrain Southbound",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.004466,
+    "lon": -121.566727,
+    "label": "Gilroy Station",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.733212,
+    "lon": -122.433498,
+    "label": "Glen Park",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.733269,
+    "lon": -122.433557,
+    "label": "Glen Park",
+    "lines": [
+      "Blue-S",
+      "Green-S",
+      "Red-S",
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 34.1319,
+    "lon": -117.8663,
+    "label": "Glendora Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.033155,
+    "lon": -118.269333,
+    "label": "Grand / LATTC Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.05472448,
+    "lon": -118.2515307,
+    "label": "Grand Ave Arts / Bunker Hill Station",
+    "lines": [
+      "Metro A Line",
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.928714,
+    "lon": -118.2811,
+    "label": "Harbor Freeway Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 33.933408,
+    "lon": -118.351602,
+    "label": "Hawthorne / Lennox Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 37.669678,
+    "lon": -122.087,
+    "label": "Hayward",
+    "lines": [
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 37.552938,
+    "lon": -122.309338,
+    "label": "Hayward Park Caltrain Northbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.552994,
+    "lon": -122.309608,
+    "label": "Hayward Park Caltrain Southbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.087227,
+    "lon": -118.213213,
+    "label": "Heritage Square / Arroyo Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.111179,
+    "lon": -118.192606,
+    "label": "Highland Park Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.5426076589713,
+    "lon": -122.301496636584,
+    "label": "Hillsdale Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.542536,
+    "lon": -122.301666,
+    "label": "Hillsdale Caltrain Southbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.542392678,
+    "lon": -122.301612061,
+    "label": "Hillsdale Station",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.05215607,
+    "lon": -118.2463211,
+    "label": "Historic Broadway Station",
+    "lines": [
+      "Metro A Line",
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.101547,
+    "lon": -118.338549,
+    "label": "Hollywood / Highland Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 34.10163,
+    "lon": -118.32518,
+    "label": "Hollywood / Vine Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 34.101737,
+    "lon": -118.308117,
+    "label": "Hollywood / Western Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 33.98818653,
+    "lon": -118.3308158,
+    "label": "Hyde Park Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.0343,
+    "lon": -118.192182,
+    "label": "Indiana Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.129048,
+    "lon": -117.932506,
+    "label": "Irwindale Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.022123,
+    "lon": -118.278118,
+    "label": "Jefferson / USC Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.029112,
+    "lon": -118.273603,
+    "label": "LATTC / Ortho Institute Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.9500753,
+    "lon": -118.37866,
+    "label": "LAX / Metro Transit Center",
+    "lines": [
+      "Metro C Line",
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.026355,
+    "lon": -118.37212,
+    "label": "La Cienega / Jefferson Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.0972,
+    "lon": -117.7681,
+    "label": "La Verne / Fairplex Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.893155,
+    "lon": -122.124621,
+    "label": "Lafayette",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.797296,
+    "lon": -122.265287,
+    "label": "Lake Merritt",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 34.151806,
+    "lon": -118.13139,
+    "label": "Lake Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.91307,
+    "lon": -118.1406,
+    "label": "Lakewood Blvd Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 37.370598,
+    "lon": -121.997114,
+    "label": "Lawrence Caltrain Northbound",
+    "lines": [
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.370484,
+    "lon": -121.997135,
+    "label": "Lawrence Caltrain Southbound",
+    "lines": [
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.00390927,
+    "lon": -118.3320162,
+    "label": "Leimert Park Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.080949,
+    "lon": -118.220429,
+    "label": "Lincoln Heights / Cypress Park Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.04884524,
+    "lon": -118.2387567,
+    "label": "Little Tokyo / Arts District Station",
+    "lines": [
+      "Metro A Line",
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.92488,
+    "lon": -118.209945,
+    "label": "Lynwood Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 37.82879,
+    "lon": -122.266978,
+    "label": "MacArthur",
+    "lines": [
+      "Orange-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 34.033319,
+    "lon": -118.16814,
+    "label": "Maravilla Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.047215,
+    "lon": -118.219648,
+    "label": "Mariachi Plaza / Boyle Heights Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.9232,
+    "lon": -118.387572,
+    "label": "Mariposa Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.00956339,
+    "lon": -118.3353594,
+    "label": "Martin Luther King Jr Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.148356,
+    "lon": -118.147512,
+    "label": "Memorial Park Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.454856,
+    "lon": -122.182297,
+    "label": "Menlo Park Caltrain Northbound",
+    "lines": [
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.600199,
+    "lon": -122.38684,
+    "label": "Millbrae (Caltrain Transfer Platform)",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend",
+      "Red-N",
+      "Red-S",
+      "Yellow-N",
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 37.409808,
+    "lon": -121.890883,
+    "label": "Milpitas",
+    "lines": [
+      "Green-N",
+      "Orange-S",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 34.133155,
+    "lon": -118.003473,
+    "label": "Monrovia Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.789143,
+    "lon": -122.401558,
+    "label": "Montgomery Street",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.129363,
+    "lon": -121.650244,
+    "label": "Morgan Hill Caltrain Northbound",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.129644,
+    "lon": -121.650558,
+    "label": "Morgan Hill Station",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.394459,
+    "lon": -122.075956,
+    "label": "Mountain View Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.395067,
+    "lon": -122.07722,
+    "label": "Mountain View Station",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.874032,
+    "lon": -122.283508,
+    "label": "North Berkeley",
+    "lines": [
+      "Orange-N",
+      "Red-N"
+    ]
+  },
+  {
+    "lat": 38.003369,
+    "lon": -122.02449,
+    "label": "North Concord / Martinez",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 38.003407,
+    "lon": -122.024561,
+    "label": "North Concord / Martinez",
+    "lines": [
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 34.168504,
+    "lon": -118.376808,
+    "label": "North Hollywood Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 33.914033,
+    "lon": -118.104717,
+    "label": "Norwalk Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 37.713256,
+    "lon": -122.212237,
+    "label": "Oakland International Airport Station",
+    "lines": [
+      "Grey-N",
+      "Grey-S"
+    ]
+  },
+  {
+    "lat": 37.87847,
+    "lon": -122.183643,
+    "label": "Orinda",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.878503,
+    "lon": -122.183717,
+    "label": "Orinda",
+    "lines": [
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 33.772258,
+    "lon": -118.1937,
+    "label": "Pacific Ave Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.78909,
+    "lon": -118.189382,
+    "label": "Pacific Coast Hwy Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.029323,
+    "lon": -118.404255,
+    "label": "Palms Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 37.443475,
+    "lon": -122.164614,
+    "label": "Palo Alto Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.44322,
+    "lon": -122.16429,
+    "label": "Palo Alto Station",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.049316,
+    "lon": -118.251259,
+    "label": "Pershing Square Station",
+    "lines": [
+      "Metro B Line",
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.047634,
+    "lon": -118.22594,
+    "label": "Pico / Aliso Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 34.040735,
+    "lon": -118.266118,
+    "label": "Pico Station",
+    "lines": [
+      "Metro A Line",
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 38.018881,
+    "lon": -121.944249,
+    "label": "Pittsburg / Bay Point",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 38.016805,
+    "lon": -121.889039,
+    "label": "Pittsburg Center",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.928414,
+    "lon": -122.055954,
+    "label": "Pleasant Hill / Contra Costa Centre",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 34.094,
+    "lon": -117.7522,
+    "label": "Pomona North Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.784576,
+    "lon": -122.407302,
+    "label": "Powell Street",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 33.89464,
+    "lon": -118.369196,
+    "label": "Redondo Beach Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 37.486159,
+    "lon": -122.231936,
+    "label": "Redwood City Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.485865,
+    "lon": -122.2315,
+    "label": "Redwood City Station",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.936795,
+    "lon": -122.353004,
+    "label": "Richmond",
+    "lines": [
+      "Orange-N",
+      "Red-N"
+    ]
+  },
+  {
+    "lat": 37.844725,
+    "lon": -122.251225,
+    "label": "Rockridge",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.4073321573797,
+    "lon": -122.107002027212,
+    "label": "San Antonio Caltrain Northbound",
+    "lines": [
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.637751,
+    "lon": -122.416292,
+    "label": "San Bruno",
+    "lines": [
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.6304996012158,
+    "lon": -122.411592604101,
+    "label": "San Bruno Caltrain Northbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.50805,
+    "lon": -122.26015,
+    "label": "San Carlos Caltrain Northbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.1052,
+    "lon": -117.8058,
+    "label": "San Dimas Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.77639,
+    "lon": -122.394992,
+    "label": "San Francisco Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.616091,
+    "lon": -122.392049,
+    "label": "San Francisco International Airport",
+    "lines": [
+      "Red-N",
+      "Red-S",
+      "Yellow-N",
+      "Yellow-S"
+    ]
+  },
+  {
+    "lat": 37.329239,
+    "lon": -121.903011,
+    "label": "San Jose Diridon Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend",
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.329694,
+    "lon": -121.903208,
+    "label": "San Jose Diridon Station",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend",
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.721773,
+    "lon": -122.160792,
+    "label": "San Leandro",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 37.085225,
+    "lon": -121.610049,
+    "label": "San Martin Caltrain Northbound",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.086653,
+    "lon": -121.610936,
+    "label": "San Martin Caltrain Southbound",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.085984,
+    "lon": -121.61048,
+    "label": "San Martin Station",
+    "lines": [
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.568087,
+    "lon": -122.323851,
+    "label": "San Mateo Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.026807,
+    "lon": -118.255505,
+    "label": "San Pedro Street Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.353238,
+    "lon": -121.93608,
+    "label": "Santa Clara Caltrain Northbound",
+    "lines": [
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.147752,
+    "lon": -118.081212,
+    "label": "Sierra Madre Villa Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.98876,
+    "lon": -118.243398,
+    "label": "Slauson Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.043747,
+    "lon": -118.210061,
+    "label": "Soto Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 37.634328,
+    "lon": -122.057233,
+    "label": "South Hayward",
+    "lines": [
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 34.115186,
+    "lon": -118.157886,
+    "label": "South Pasadena Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.664497,
+    "lon": -122.444193,
+    "label": "South San Francisco",
+    "lines": [
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 37.6559413947962,
+    "lon": -122.404979051211,
+    "label": "South San Francisco Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 34.098243,
+    "lon": -118.206712,
+    "label": "Southwest Museum Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.378916,
+    "lon": -122.031372,
+    "label": "Sunnyvale Caltrain Northbound",
+    "lines": [
+      "Express",
+      "Limited",
+      "Local Weekday",
+      "Local Weekend"
+    ]
+  },
+  {
+    "lat": 37.31174,
+    "lon": -121.883721,
+    "label": "Tamien Caltrain Northbound",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend",
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.31269,
+    "lon": -121.8847,
+    "label": "Tamien Caltrain Station",
+    "lines": [
+      "Local Weekday",
+      "Local Weekend",
+      "South County"
+    ]
+  },
+  {
+    "lat": 37.590714,
+    "lon": -122.017292,
+    "label": "Union City",
+    "lines": [
+      "Green-N",
+      "Orange-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 34.056061,
+    "lon": -118.234759,
+    "label": "Union Station - Metro A-Line",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.056197,
+    "lon": -118.234249,
+    "label": "Union Station - Metro B & D Lines",
+    "lines": [
+      "Metro B Line",
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.140002,
+    "lon": -118.362699,
+    "label": "Universal / Studio City Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 33.928683,
+    "lon": -118.291733,
+    "label": "Vermont / Athens Station",
+    "lines": [
+      "Metro C Line"
+    ]
+  },
+  {
+    "lat": 34.076526,
+    "lon": -118.291686,
+    "label": "Vermont / Beverly Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 34.08991,
+    "lon": -118.29173,
+    "label": "Vermont / Santa Monica Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 34.097708,
+    "lon": -118.291756,
+    "label": "Vermont / Sunset Station",
+    "lines": [
+      "Metro B Line"
+    ]
+  },
+  {
+    "lat": 34.00292,
+    "lon": -118.243303,
+    "label": "Vernon Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.90578,
+    "lon": -122.067302,
+    "label": "Walnut Creek",
+    "lines": [
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 33.819865,
+    "lon": -118.19609,
+    "label": "Wardlow Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.502274,
+    "lon": -121.939459,
+    "label": "Warm Springs / South Fremont",
+    "lines": [
+      "Green-N",
+      "Orange-S"
+    ]
+  },
+  {
+    "lat": 34.01965,
+    "lon": -118.243084,
+    "label": "Washington Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 37.699693,
+    "lon": -121.92828,
+    "label": "West Dublin / Pleasanton",
+    "lines": [
+      "Blue-N"
+    ]
+  },
+  {
+    "lat": 37.804862,
+    "lon": -122.295185,
+    "label": "West Oakland",
+    "lines": [
+      "Blue-N",
+      "Green-N",
+      "Red-N",
+      "Yellow-N"
+    ]
+  },
+  {
+    "lat": 33.96203144,
+    "lon": -118.374378,
+    "label": "Westchester / Veterans Station",
+    "lines": [
+      "Metro K Line"
+    ]
+  },
+  {
+    "lat": 34.056368,
+    "lon": -118.274879,
+    "label": "Westlake / MacArthur Park Station",
+    "lines": [
+      "Metro B Line",
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.036816,
+    "lon": -118.424576,
+    "label": "Westwood / Rancho Park Station",
+    "lines": [
+      "Metro E Line"
+    ]
+  },
+  {
+    "lat": 33.807079,
+    "lon": -118.189834,
+    "label": "Willow Street Station",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 33.928048,
+    "lon": -118.237555,
+    "label": "Willowbrook - Rosa Parks Station - Metro A-Line",
+    "lines": [
+      "Metro A Line"
+    ]
+  },
+  {
+    "lat": 34.06296708,
+    "lon": -118.3611657,
+    "label": "Wilshire / Fairfax Station",
+    "lines": [
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.06221475,
+    "lon": -118.3434467,
+    "label": "Wilshire / La Brea Station",
+    "lines": [
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.06483444,
+    "lon": -118.3747009,
+    "label": "Wilshire / La Cienega Station",
+    "lines": [
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.061753,
+    "lon": -118.301458,
+    "label": "Wilshire / Normandie Station",
+    "lines": [
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.062701,
+    "lon": -118.290082,
+    "label": "Wilshire / Vermont Station",
+    "lines": [
+      "Metro B Line",
+      "Metro D Line"
+    ]
+  },
+  {
+    "lat": 34.061689,
+    "lon": -118.308756,
+    "label": "Wilshire / Western Station",
+    "lines": [
+      "Metro D Line"
+    ]
+  }
+]

@@ -1,0 +1,741 @@
+[
+  {
+    "lat": 33.015407,
+    "lon": -96.698598,
+    "label": "12TH STREET SILVER LINE STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 33.01436,
+    "lon": -96.701066,
+    "label": "12TH STREET STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.748082,
+    "lon": -96.798474,
+    "label": "8TH & CORINTH STATION",
+    "lines": [
+      "BLUE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.958982,
+    "lon": -96.828258,
+    "label": "ADDISON STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.781893,
+    "lon": -96.800633,
+    "label": "AKARD STATION",
+    "lines": [
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.963447,
+    "lon": -96.722981,
+    "label": "ARAPAHO CENTER STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.853778,
+    "lon": -96.877344,
+    "label": "BACHMAN STATION",
+    "lines": [
+      "GREEN",
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.786495,
+    "lon": -96.782132,
+    "label": "BAYLOR STATION",
+    "lines": [
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.804585,
+    "lon": -97.155108,
+    "label": "BELL STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.888023,
+    "lon": -96.986505,
+    "label": "BELT LINE STATION",
+    "lines": [
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.718478,
+    "lon": -96.685108,
+    "label": "BUCKNER STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.842971,
+    "lon": -96.862176,
+    "label": "BURBANK STATION",
+    "lines": [
+      "GREEN",
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.666638,
+    "lon": -96.7881,
+    "label": "CAMP WISDOM STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.768574,
+    "lon": -96.793253,
+    "label": "CEDARS STATION",
+    "lines": [
+      "BLUE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.81701,
+    "lon": -97.05294,
+    "label": "CENTREPORT STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 33.002166,
+    "lon": -96.703144,
+    "label": "CITYLINE/BUSH STATION",
+    "lines": [
+      "ORANGE",
+      "RED",
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.805424,
+    "lon": -96.793176,
+    "label": "CITYPLACE/UPTOWN STATION",
+    "lines": [
+      "BLUE",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.772481,
+    "lon": -96.802992,
+    "label": "CONVENTION CENTER STATION",
+    "lines": [
+      "BLUE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.950699,
+    "lon": -96.983242,
+    "label": "CYPRESS WATERS STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.875197,
+    "lon": -96.967119,
+    "label": "DALLAS COLLEGE NORTHLAKE CAMPUS STATION",
+    "lines": [
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.785866,
+    "lon": -96.788532,
+    "label": "DEEP ELLUM STATION",
+    "lines": [
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.907386,
+    "lon": -97.039504,
+    "label": "DFW AIRPORT STATION",
+    "lines": [
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.933913,
+    "lon": -97.054193,
+    "label": "DFW NORTH STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.906306,
+    "lon": -97.041243,
+    "label": "DFW TERMINAL B",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.95567,
+    "lon": -96.908107,
+    "label": "DOWNTOWN CARROLLTON SILVER LINE STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.954443,
+    "lon": -96.908277,
+    "label": "DOWNTOWN CARROLLTON STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.916319,
+    "lon": -96.635369,
+    "label": "DOWNTOWN GARLAND STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.814972,
+    "lon": -96.947559,
+    "label": "DOWNTOWN IRVING/HERITAGE CROSSING STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 33.020856,
+    "lon": -96.700898,
+    "label": "DOWNTOWN PLANO STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.904111,
+    "lon": -96.563388,
+    "label": "DOWNTOWN ROWLETT STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.816443,
+    "lon": -97.014941,
+    "label": "EAST TEX YARD LIMIT",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.776208,
+    "lon": -96.808201,
+    "label": "EBJ UNION STATION",
+    "lines": [
+      "BLUE",
+      "RED",
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.782058,
+    "lon": -96.765928,
+    "label": "FAIR PARK STATION",
+    "lines": [
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.921962,
+    "lon": -96.896238,
+    "label": "FARMERS BRANCH STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.908056,
+    "lon": -96.679457,
+    "label": "FOREST / JUPITER STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.908604,
+    "lon": -96.76168,
+    "label": "FOREST LN STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.751796,
+    "lon": -97.325397,
+    "label": "FORT WORTH CENTRAL STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.985226,
+    "lon": -96.710953,
+    "label": "GALATYN PARK STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.726333,
+    "lon": -96.855532,
+    "label": "HAMPTON STATION",
+    "lines": [
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.766323,
+    "lon": -96.742471,
+    "label": "HATCHER STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.882109,
+    "lon": -96.955159,
+    "label": "HIDDEN RIDGE STATION",
+    "lines": [
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.723302,
+    "lon": -96.805162,
+    "label": "ILLINOIS TC/STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.822243,
+    "lon": -96.833361,
+    "label": "INWOOD/LOVE FIELD STATION",
+    "lines": [
+      "GREEN",
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.876891,
+    "lon": -96.938558,
+    "label": "IRVING CONVENTION CENTER STATION",
+    "lines": [
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.707113,
+    "lon": -96.801175,
+    "label": "KIEST STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.962884,
+    "lon": -96.817617,
+    "label": "KNOLL TRAIL STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.879487,
+    "lon": -96.730452,
+    "label": "LAKE HIGHLANDS STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.732335,
+    "lon": -96.709432,
+    "label": "LAKE JUNE STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.868572,
+    "lon": -96.933574,
+    "label": "LAS COLINAS URBAN CENTER STATION",
+    "lines": [
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.765606,
+    "lon": -96.720388,
+    "label": "LAWNVIEW STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.918254,
+    "lon": -96.752235,
+    "label": "LBJ / CENTRAL STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.897924,
+    "lon": -96.712139,
+    "label": "LBJ / SKILLMAN STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.683394,
+    "lon": -96.788812,
+    "label": "LEDBETTER STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.848601,
+    "lon": -96.771758,
+    "label": "LOVERS LANE STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.804635,
+    "lon": -96.823713,
+    "label": "MARKET CENTER STATION",
+    "lines": [
+      "GREEN",
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.809269,
+    "lon": -96.840291,
+    "label": "MEDICAL/MARKET CTR STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.773757,
+    "lon": -96.764576,
+    "label": "MLK STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.73986,
+    "lon": -96.802604,
+    "label": "MORRELL STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.991611,
+    "lon": -96.936753,
+    "label": "NORTH CARROLLTON/FRANKFORD STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.872513,
+    "lon": -96.765899,
+    "label": "PARK LANE STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 33.033454,
+    "lon": -96.700736,
+    "label": "PARKER ROAD STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.786618,
+    "lon": -96.79431,
+    "label": "PEARL/ARTS DISTRICT STATION",
+    "lines": [
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.896055,
+    "lon": -96.88811,
+    "label": "ROYAL LANE STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.927116,
+    "lon": -96.746197,
+    "label": "SHERMAN POCKET TRACK",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 33.012603,
+    "lon": -96.665722,
+    "label": "SHILOH RD STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.837828,
+    "lon": -96.774939,
+    "label": "SMU/MOCKINGBIRD STATION",
+    "lines": [
+      "BLUE",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.813602,
+    "lon": -96.833204,
+    "label": "SOUTHWEST MEDICAL DISTRICT/PARKLAND",
+    "lines": [
+      "GREEN",
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.940852,
+    "lon": -96.737424,
+    "label": "SPRING VALLEY STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.784296,
+    "lon": -96.797026,
+    "label": "ST PAUL STATION",
+    "lines": [
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.745258,
+    "lon": -97.328201,
+    "label": "T&P STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.805375,
+    "lon": -97.209656,
+    "label": "TRINITY LAKES STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.980876,
+    "lon": -96.926476,
+    "label": "TRINITY MILLS RAIL STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.73314,
+    "lon": -96.83839,
+    "label": "TYLER VERNON STATION",
+    "lines": [
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.849085,
+    "lon": -96.915006,
+    "label": "UNIVERSITY OF DALLAS STATION",
+    "lines": [
+      "ORANGE"
+    ]
+  },
+  {
+    "lat": 32.654057,
+    "lon": -96.801091,
+    "label": "UNT DALLAS STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.996459,
+    "lon": -96.750008,
+    "label": "UT DALLAS STATION",
+    "lines": [
+      "SILVER"
+    ]
+  },
+  {
+    "lat": 32.693641,
+    "lon": -96.792986,
+    "label": "VA MEDICAL CENTER STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.789607,
+    "lon": -96.812513,
+    "label": "VICTORY STATION",
+    "lines": [
+      "GREEN",
+      "ORANGE",
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.88265,
+    "lon": -96.764931,
+    "label": "WALNUT HILL STATION",
+    "lines": [
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.88212,
+    "lon": -96.883811,
+    "label": "WALNUT HILL/DENTON STATION",
+    "lines": [
+      "GREEN"
+    ]
+  },
+  {
+    "lat": 32.780915,
+    "lon": -96.805443,
+    "label": "WEST END STATION",
+    "lines": [
+      "BLUE",
+      "GREEN",
+      "ORANGE",
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.816074,
+    "lon": -97.007097,
+    "label": "WEST IRVING STATION",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.816702,
+    "lon": -97.023847,
+    "label": "WEST TEX YARD LIMIT",
+    "lines": [
+      "TRE"
+    ]
+  },
+  {
+    "lat": 32.719758,
+    "lon": -96.871727,
+    "label": "WESTMORELAND STATION",
+    "lines": [
+      "RED"
+    ]
+  },
+  {
+    "lat": 32.855791,
+    "lon": -96.732732,
+    "label": "WHITE ROCK STATION",
+    "lines": [
+      "BLUE"
+    ]
+  },
+  {
+    "lat": 32.740771,
+    "lon": -96.812896,
+    "label": "ZOO STATION",
+    "lines": [
+      "RED"
+    ]
+  }
+]

@@ -16,7 +16,7 @@ import argparse
 import threading
 import webbrowser
 
-from flask import Flask, send_from_directory, make_response
+from flask import Flask, send_from_directory, make_response, redirect
 
 _gui_dir = os.path.dirname(os.path.abspath(__file__))
 _rt_dir  = os.path.dirname(_gui_dir)
@@ -37,6 +37,43 @@ from mesh_mobility.engine.network import Network
 import json
 
 app = Flask(__name__, static_folder=os.path.join(_gui_dir, "static"))
+app.secret_key = os.environ.get("MM_SECRET_KEY", "mm-dev-key-change-in-production")
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = False  # Andi is behind CF tunnel — sees HTTP not HTTPS
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["PERMANENT_SESSION_LIFETIME"] = 86400 * 30  # 30 days
+
+# --- Server-side session storage (survives restarts) ---
+# Redis on Andi (production); filesystem fallback for dev machines without Redis.
+try:
+    import redis
+    from flask_session import Session
+    _redis_url = os.environ.get("MM_REDIS_URL", "redis://localhost:6379")
+    _r = redis.from_url(_redis_url)
+    _r.ping()  # fail fast if Redis is not running
+    app.config["SESSION_TYPE"] = "redis"
+    app.config["SESSION_REDIS"] = _r
+    app.config["SESSION_PERMANENT"] = True
+    app.config["SESSION_KEY_PREFIX"] = "mm_session:"
+    Session(app)
+    logging.getLogger(__name__).info("Session backend: Redis (%s)", _redis_url)
+except Exception as _e:
+    try:
+        from flask_session import Session
+        _fs_dir = os.path.join(_rt_dir, ".flask_sessions")
+        os.makedirs(_fs_dir, exist_ok=True)
+        app.config["SESSION_TYPE"] = "filesystem"
+        app.config["SESSION_FILE_DIR"] = _fs_dir
+        app.config["SESSION_PERMANENT"] = True
+        app.config["SESSION_KEY_PREFIX"] = "mm_session:"
+        Session(app)
+        logging.getLogger(__name__).info(
+            "Session backend: filesystem (%s) — Redis unavailable: %s", _fs_dir, _e)
+    except ImportError:
+        # flask-session not installed at all — fall back to default cookie sessions
+        logging.getLogger(__name__).warning(
+            "Session backend: in-memory cookies (flask-session not installed)")
+
 app.register_blueprint(api)
 app.register_blueprint(auth)
 app.register_blueprint(builders)
@@ -44,6 +81,24 @@ app.register_blueprint(noelle)
 app.register_blueprint(overlays_bp)
 app.register_blueprint(sim_bp)
 app.register_blueprint(network_io_bp)
+
+# --- Athena security guard — scans incoming JSON on all API endpoints ---
+@app.before_request
+def _athena_guard():
+    from flask import request as req
+    try:
+        import importlib.util
+        _ag = "/opt/andi/scripts/athena-guard.py"
+        if os.path.exists(_ag):
+            spec = importlib.util.spec_from_file_location("athena_guard", _ag)
+            athena = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(athena)
+            result = athena.flask_guard(req, source=f"meshmobility:{req.path}")
+            if result:
+                from flask import jsonify as jf
+                return jf(result[0]), result[1]
+    except Exception:
+        pass  # never block requests if Athena fails
 
 
 _MIME = {
@@ -99,6 +154,31 @@ def library():
     return _serve_static("library.html")
 
 
+@app.route("/training")
+def training():
+    return _serve_static("training.html")
+
+
+@app.route("/pbc")
+def payback_calculator():
+    return _serve_static("pbc/index.html")
+
+
+@app.route("/pbc/<path:filename>")
+def pbc_static(filename):
+    return _serve_static(f"pbc/{filename}")
+
+
+@app.route("/patents")
+def patents_page():
+    return _serve_static("patents/index.html")
+
+
+@app.route("/software")
+def software_page():
+    return _serve_static("patents/software.html")
+
+
 @app.route("/examples/<path:filename>")
 def serve_example(filename):
     """Serve example .jpd and .pdf files from mesh_mobility_maps."""
@@ -140,15 +220,8 @@ def list_examples():
 @app.route("/citytool")
 @app.route("/citytool.html")
 def citytool():
-    """Serve CityTool from its original location."""
-    ct_path = "/Users/williamjames/Documents/08_JPods/000_websiteReWork/citytool.html"
-    if not os.path.isfile(ct_path):
-        return "CityTool not found", 404
-    data = open(ct_path, "r", encoding="utf-8").read()
-    resp = make_response(data)
-    resp.headers["Content-Type"] = "text/html; charset=utf-8"
-    resp.headers["Cache-Control"] = "no-cache"
-    return resp
+    """Redirect to Personalize Transit."""
+    return redirect("https://personalizetransit.com")
 
 
 @app.route("/<path:filename>")

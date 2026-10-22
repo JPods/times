@@ -1,9 +1,9 @@
 /**
  * auth.js — MeshMobility authentication and contact profile
  *
- * Guest access: browse, view, simulate — no login needed.
- * Authenticated: draw, build, save — requires Cloudflare email verification.
- * On first authenticated visit, shows profile form to collect contact info.
+ * Guest access: browse, view, simulate, download — no login needed.
+ * Authenticated: save to server, clone, compete — requires email verification.
+ * Flow: enter email → receive code → verify → fill profile → save enabled.
  */
 
 "use strict";
@@ -20,8 +20,17 @@ const Auth = (() => {
       _status = { authenticated: false };
     }
     _updateBadge();
-    if (_status.authenticated && _status.needs_profile) {
-      showProfileForm();
+    if (_status.authenticated) {
+      _loadConfig(_status.config || {});
+      // Show library Save button for superusers only
+      const saveBtn = document.getElementById("btn-save-library");
+      if (saveBtn) saveBtn.style.display = _status.is_superuser ? "" : "none";
+      if (_status.needs_profile) {
+        showProfileForm();
+      }
+    } else {
+      // Load from localStorage cache even when not authenticated
+      _loadConfig({});
     }
     return _status;
   }
@@ -35,11 +44,139 @@ const Auth = (() => {
       badge.title = _status.email;
       badge.style.color = "#4c4";
     } else {
-      badge.textContent = "Guest";
-      badge.title = "Browsing as guest — verify email to edit";
+      badge.textContent = "Sign In";
+      badge.title = "Verify email to save networks to the server";
       badge.style.color = "#fc0";
+      badge.style.cursor = "pointer";
     }
   }
+
+  // --- Email verification dialog ---
+
+  function showSignIn() {
+    if (_status && _status.authenticated) {
+      showProfileForm();
+      return;
+    }
+    const existing = document.getElementById("signin-dialog-backdrop");
+    if (existing) { existing.style.display = "flex"; return; }
+
+    const backdrop = document.createElement("div");
+    backdrop.id = "signin-dialog-backdrop";
+    backdrop.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:10000";
+
+    backdrop.innerHTML = `
+      <div style="background:#1a1a2e;border:1px solid #444;border-radius:8px;padding:24px;width:380px;max-width:90vw;color:#ccc;font-family:sans-serif">
+        <h3 style="margin:0 0 4px;color:#fff">Sign In to MeshMobility</h3>
+        <p style="margin:0 0 16px;font-size:12px;color:#999">Enter your email to receive a verification code. No password needed.</p>
+
+        <div id="signin-step-email">
+          <label style="font-size:11px;color:#aaa">Email address</label>
+          <input id="si-email" type="email" placeholder="you@example.com"
+                 style="width:100%;box-sizing:border-box;padding:8px;margin:4px 0 12px;background:#111;border:1px solid #444;color:#eee;border-radius:4px;font-size:14px">
+          <button onclick="Auth._sendCode()" style="width:100%;padding:8px;background:#2a6a3a;border:1px solid #4a8a5a;color:#fff;border-radius:4px;cursor:pointer;font-size:14px">Send Verification Code</button>
+        </div>
+
+        <div id="signin-step-code" style="display:none">
+          <p style="font-size:12px;color:#8c8;margin-bottom:12px" id="si-sent-msg">Code sent!</p>
+          <label style="font-size:11px;color:#aaa">6-digit code</label>
+          <input id="si-code" type="text" maxlength="6" placeholder="123456"
+                 style="width:100%;box-sizing:border-box;padding:8px;margin:4px 0 12px;background:#111;border:1px solid #444;color:#eee;border-radius:4px;font-size:18px;text-align:center;letter-spacing:6px">
+          <button onclick="Auth._verifyCode()" style="width:100%;padding:8px;background:#2a6a3a;border:1px solid #4a8a5a;color:#fff;border-radius:4px;cursor:pointer;font-size:14px">Verify</button>
+          <p style="font-size:11px;color:#666;margin-top:8px;text-align:center">
+            <a href="#" onclick="Auth._sendCode(); return false" style="color:#5cb8ff">Resend code</a>
+          </p>
+        </div>
+
+        <div id="signin-error" style="color:#f66;font-size:12px;margin-top:10px;display:none"></div>
+
+        <div style="text-align:center;margin-top:14px">
+          <a href="#" onclick="Auth._closeSignIn(); return false" style="color:#666;font-size:12px">Cancel</a>
+        </div>
+        <p style="font-size:10px;color:#555;margin-top:12px;line-height:1.4;text-align:center">
+          Your data is never shared. You control it. You can delete your account at any time.
+        </p>
+      </div>
+    `;
+    document.body.appendChild(backdrop);
+  }
+
+  async function _sendCode() {
+    const email = (document.getElementById("si-email")?.value || "").trim();
+    if (!email || !email.includes("@")) {
+      _showSignInError("Enter a valid email address");
+      return;
+    }
+    _showSignInError("");
+    try {
+      const r = await fetch("/api/auth/send_code", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        document.getElementById("signin-step-email").style.display = "none";
+        document.getElementById("signin-step-code").style.display = "block";
+        const msg = document.getElementById("si-sent-msg");
+        if (data.dev_note) {
+          msg.textContent = "Code logged on server (email not configured)";
+          msg.style.color = "#fc8";
+        } else {
+          msg.textContent = `Code sent to ${email}`;
+        }
+      } else {
+        _showSignInError(data.error || "Failed to send code");
+      }
+    } catch (e) {
+      _showSignInError("Connection error: " + e.message);
+    }
+  }
+
+  async function _verifyCode() {
+    const email = (document.getElementById("si-email")?.value || "").trim();
+    const code = (document.getElementById("si-code")?.value || "").trim();
+    if (!code || code.length !== 6) {
+      _showSignInError("Enter the 6-digit code");
+      return;
+    }
+    _showSignInError("");
+    try {
+      const r = await fetch("/api/auth/verify_code", {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ email, code }),
+      });
+      const data = await r.json();
+      if (data.ok) {
+        _closeSignIn();
+        _status = data;
+        _updateBadge();
+        if (typeof setStatus === "function") setStatus("Signed in as " + email);
+        if (typeof App !== "undefined" && App.flash) App.flash("Email verified! You can now save.", 4000);
+        if (data.needs_profile) {
+          setTimeout(() => showProfileForm(), 500);
+        }
+      } else {
+        _showSignInError(data.error || "Verification failed");
+      }
+    } catch (e) {
+      _showSignInError("Connection error: " + e.message);
+    }
+  }
+
+  function _showSignInError(msg) {
+    const el = document.getElementById("signin-error");
+    if (el) {
+      el.textContent = msg;
+      el.style.display = msg ? "block" : "none";
+    }
+  }
+
+  function _closeSignIn() {
+    const el = document.getElementById("signin-dialog-backdrop");
+    if (el) el.style.display = "none";
+  }
+
+  // --- Profile form (shown after email verification) ---
 
   function showProfileForm() {
     const existing = document.getElementById("profile-dialog-backdrop");
@@ -80,7 +217,6 @@ const Auth = (() => {
 
         <div style="font-size:10px;color:#777;margin-bottom:14px;line-height:1.4">
           Your data is never shared. You control it. You can delete your account at any time.
-          We do not knowingly collect age data.
         </div>
 
         <div style="display:flex;gap:8px;justify-content:flex-end">
@@ -140,12 +276,60 @@ const Auth = (() => {
     return _status && _status.authenticated;
   }
 
+  // --- .config — user preferences stored in their WC3 contact record ---
+  // This is the CarryOn seed. Sync app tokens go between databases.
+  // .config tokens go to individuals.
+
+  let _config = {};
+
+  function getConfig(key) {
+    return key ? _config[key] : _config;
+  }
+
+  async function setConfig(key, value) {
+    _config[key] = value;
+    // Also persist to localStorage as immediate cache
+    try { localStorage.setItem("mm_config", JSON.stringify(_config)); } catch(_) {}
+    // Save to WC3 contact record (async, best-effort)
+    if (isAuthenticated()) {
+      try {
+        await fetch("/api/auth/config", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(_config),
+        });
+      } catch(_) {}
+    }
+  }
+
+  function _loadConfig(serverConfig) {
+    // Merge: server config wins over localStorage cache
+    try {
+      const local = JSON.parse(localStorage.getItem("mm_config") || "{}");
+      _config = { ...local, ...serverConfig };
+    } catch(_) {
+      _config = serverConfig || {};
+    }
+    // Apply config to app state
+    if (_config.last_city && typeof App !== "undefined" && App._lastCity === undefined) {
+      App._lastCity = _config.last_city;
+    }
+    if (_config.overlays && typeof App !== "undefined" && App._configOverlays === undefined) {
+      App._configOverlays = _config.overlays;
+    }
+  }
+
+  function _isLocal() {
+    const h = window.location.hostname;
+    return h === "localhost" || h === "127.0.0.1" || h === "::1";
+  }
+
   function requireAuth(action) {
-    if (isAuthenticated()) return true;
+    if (isAuthenticated() || _isLocal()) return true;
+    // Show sign-in dialog instead of just a message
+    showSignIn();
     if (typeof setStatus === "function")
       setStatus("Sign in required to " + (action || "use this feature"));
-    if (typeof App !== "undefined" && App.flash)
-      App.flash("Please verify your email to " + (action || "use this feature"), 5000);
     return false;
   }
 
@@ -157,7 +341,12 @@ const Auth = (() => {
     return _status;
   }
 
-  return { check, showProfileForm, submitProfile, skipProfile, isAuthenticated, requireAuth, getEmail, getStatus };
+  return {
+    check, showSignIn, showProfileForm, submitProfile, skipProfile,
+    isAuthenticated, requireAuth, getEmail, getStatus,
+    getConfig, setConfig,
+    _sendCode, _verifyCode, _closeSignIn,
+  };
 })();
 
 // Check auth on page load

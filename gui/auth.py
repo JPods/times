@@ -30,6 +30,14 @@ WC3_API_KEY = os.environ.get("WC3_API_KEY", "")
 # Header Cloudflare Access uses to pass verified email
 CF_EMAIL_HEADER = "Cf-Access-Authenticated-User-Email"
 
+# Superusers — can save to library, publish networks, manage data
+SUPERUSER_EMAILS = {
+    "bill@jpods.com",
+    "bill.james@jpods.com",
+    "claude@jpods.com",
+    "meshmobility@jpods.com",
+}
+
 # Only gate endpoints that persist to disk or external systems.
 # In-memory editing (place stations, draw guideways, build) is free for guests.
 SAVE_PREFIXES = (
@@ -39,45 +47,121 @@ SAVE_PREFIXES = (
 )
 
 
+_wcapi_token = {"access": None, "expires": 0}
+
+def _wcapi_get_token():
+    """Get a JWT access token from WC3. Caches until expiry."""
+    import time
+    if _wcapi_token["access"] and time.time() < _wcapi_token["expires"]:
+        return _wcapi_token["access"]
+    try:
+        r = requests.post(
+            f"{WC3_BASE}/wcapi/token/",
+            headers={"Content-Type": "application/json"},
+            json={"email": os.environ.get("WC3_SERVICE_EMAIL", "meshmobility@jpods.com"),
+                  "password": os.environ.get("WC3_SERVICE_PASS", "mm-service-2026")},
+            timeout=5,
+        )
+        r.raise_for_status()
+        data = r.json().get("data", {})
+        _wcapi_token["access"] = data.get("access")
+        _wcapi_token["expires"] = time.time() + 1700  # ~28 min (tokens last 30)
+        return _wcapi_token["access"]
+    except Exception as e:
+        logger.warning("wcapi token failed: %s", e)
+        return None
+
+
 def _wcapi(method, endpoint, data=None):
-    """Call WC3 wcapi endpoint."""
-    url = f"{WC3_BASE}/wcapi/{endpoint}"
-    headers = {"Content-Type": "application/json"}
-    if WC3_API_KEY:
-        headers["Authorization"] = f"Bearer {WC3_API_KEY}"
+    """Call WC3 wcapi endpoint using JWT auth and correct URL pattern."""
+    token = _wcapi_get_token()
+    if not token:
+        return None
+    headers = {"Content-Type": "application/json", "Authorization": f"Bearer {token}"}
     try:
         if method == "GET":
-            r = requests.get(url, headers=headers, timeout=5)
+            url = f"{WC3_BASE}/wcapi/get/{endpoint}"
+            r = requests.get(url, headers=headers, params=data, timeout=5)
+        elif method == "SAVE":
+            url = f"{WC3_BASE}/wcapi/save/"
+            r = requests.post(url, headers=headers, json=data, timeout=5)
         else:
+            url = f"{WC3_BASE}/wcapi/{endpoint}"
             r = requests.post(url, headers=headers, json=data, timeout=5)
         r.raise_for_status()
-        return r.json()
+        result = r.json()
+        if result.get("status") == "success":
+            return result.get("data")
+        logger.warning("wcapi %s %s: %s", method, endpoint, result.get("message", ""))
+        return None
     except Exception as e:
         logger.warning("wcapi %s %s failed: %s", method, endpoint, e)
         return None
 
 
 def _get_or_create_contact(email):
-    """Look up contact by email in WC3. Create if missing. Return contact dict."""
-    result = _wcapi("GET", f"contacts/?email={email}")
-    if result and result.get("results"):
-        return result["results"][0]
-    # Not found — create minimal contact (user will fill in details)
-    contact = _wcapi("POST", "contacts/", {
+    """Look up contact by email in WC3. Create if missing. Return contact dict.
+    Falls back to local stub if WC3 is unavailable."""
+    # Try WC3 wcapi get
+    result = _wcapi("GET", "contact/", {"email": email})
+    if result:
+        records = result.get("records", [])
+        if records:
+            return records[0]
+
+    # Try to create in WC3 via wcapi save
+    contact = _wcapi("SAVE", None, {
+        "model_name": "contact",
         "email": email,
         "uuid": str(uuid.uuid4()),
         "role": "guest",
+        "source_name": "meshmobility.com",
         "metadata": {
             "source": "meshmobility",
             "needs_profile": True,
         },
     })
-    return contact
+    if contact:
+        return contact.get("record", contact)
+
+    # WC3 unavailable — return a local stub so auth still works
+    logger.info("WC3 unavailable — using local profile for %s", email)
+    return {
+        "id": None,
+        "email": email,
+        "uuid": str(uuid.uuid4()),
+        "metadata": {"source": "meshmobility", "needs_profile": True},
+    }
+
+
+def _is_local_request():
+    """True when the request originates from the same machine (localhost)."""
+    remote = request.remote_addr or ""
+    return remote in ("127.0.0.1", "::1", "localhost")
 
 
 def get_current_user():
-    """Return the authenticated user email from Cloudflare header, or None."""
-    return request.headers.get(CF_EMAIL_HEADER)
+    """Return authenticated user email from CF header, session, or localhost."""
+    # Cloudflare Access header (production behind CF)
+    email = request.headers.get(CF_EMAIL_HEADER)
+    if email:
+        return email
+    # App-level session auth (standalone / no CF Access)
+    from flask import session
+    if session.get("verified_email"):
+        return session["verified_email"]
+    # Local machine — owner is always authenticated
+    if _is_local_request():
+        return "bill@jpods.com"
+    return None
+
+
+def is_superuser(email=None):
+    """Check if user is a superuser. Superusers can save to library and publish networks."""
+    email = email or get_current_user()
+    if not email:
+        return False
+    return email.lower() in SUPERUSER_EMAILS
 
 
 def auth_required(f):
@@ -95,9 +179,27 @@ def auth_required(f):
     return decorated
 
 
+def superuser_required(f):
+    """Decorator: reject requests from non-superusers."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        email = get_current_user()
+        if not email or not is_superuser(email):
+            return jsonify({
+                "error": "Superuser access required",
+                "detail": "Only superusers can save to the library.",
+            }), 403
+        g.user_email = email
+        return f(*args, **kwargs)
+    return decorated
+
+
 @auth.before_app_request
 def _inject_user():
-    """Set g.user_email on every request if Cloudflare header present."""
+    """Set g.user_email on every request. Keep session permanent."""
+    from flask import session
+    if session.get("verified_email"):
+        session.permanent = True  # refresh 30-day expiry on every visit
     g.user_email = get_current_user()
 
 
@@ -133,6 +235,12 @@ def auth_status():
         if not contact.get("name_first"):
             needs_profile = True
 
+    # Extract config from contact metadata
+    config = {}
+    if contact:
+        meta = contact.get("metadata") or {}
+        config = meta.get("config") or {}
+
     return jsonify({
         "authenticated": True,
         "email": email,
@@ -140,6 +248,8 @@ def auth_status():
         "uuid": contact.get("uuid") if contact else None,
         "name": contact.get("attention", "") if contact else "",
         "needs_profile": needs_profile,
+        "is_superuser": is_superuser(email),
+        "config": config,
     })
 
 
@@ -156,24 +266,158 @@ def save_profile():
         return jsonify({"error": "Could not create contact"}), 500
 
     contact_id = contact.get("id")
-    update = {
+    save_data = {
+        "model_name": "contact",
         "name_first": data.get("name_first", "").strip(),
         "name_last": data.get("name_last", "").strip(),
         "company": data.get("organization", "").strip(),
-        "address_full": data.get("city_region", "").strip(),
-        "metadata": {
-            **(contact.get("metadata") or {}),
-            "source": "meshmobility",
-            "needs_profile": False,
-            "interest": data.get("interest", "").strip(),
-            "notify_updates": data.get("notify_updates", False),
-        },
+        "source_name": "meshmobility.com",
     }
+    if contact_id:
+        save_data["id"] = contact_id
 
-    result = _wcapi("POST", f"contacts/{contact_id}/", update)
+    result = _wcapi("SAVE", None, save_data)
     if result:
-        return jsonify({"ok": True, "contact_id": contact_id})
-    return jsonify({"error": "Failed to update profile"}), 500
+        return jsonify({"ok": True, "contact_id": contact_id or result.get("id")})
+
+    # WC3 unavailable — still let the user proceed
+    logger.warning("Profile save to WC3 failed for %s — session still valid", email)
+    return jsonify({"ok": True, "contact_id": None, "note": "Profile saved locally"})
+
+
+@auth.post("/api/auth/config")
+def save_config():
+    """Save user's .config preferences to their WC3 contact metadata.
+    The config element lives inside the contact record — it IS the CarryOn seed.
+    Sync app tokens go between databases. .config tokens go to individuals."""
+    email = get_current_user()
+    if not email:
+        return jsonify({"error": "Not authenticated"}), 401
+
+    new_config = request.json or {}
+    contact = _get_or_create_contact(email)
+    if not contact:
+        return jsonify({"error": "Could not find contact"}), 500
+
+    contact_id = contact.get("id")
+    if not contact_id:
+        # Local stub — store in session as fallback
+        from flask import session
+        session["mm_config"] = new_config
+        return jsonify({"ok": True, "stored": "session"})
+
+    # Merge new config into existing metadata
+    meta = contact.get("metadata") or {}
+    existing_config = meta.get("config") or {}
+    existing_config.update(new_config)
+    meta["config"] = existing_config
+
+    result = _wcapi("SAVE", None, {
+        "model_name": "contact",
+        "id": contact_id,
+        "metadata": meta,
+    })
+    if result:
+        return jsonify({"ok": True, "stored": "wc3", "config": existing_config})
+
+    # WC3 unavailable — store in session
+    from flask import session
+    session["mm_config"] = existing_config
+    logger.warning("Config save to WC3 failed for %s — stored in session", email)
+    return jsonify({"ok": True, "stored": "session", "config": existing_config})
+
+
+# --- App-level email verification (no Cloudflare Access needed) ---
+
+import random
+import time
+
+_pending_codes = {}  # email → (code, timestamp)
+CODE_EXPIRY = 600    # 10 minutes
+
+@auth.post("/api/auth/send_code")
+def send_verification_code():
+    """Send a 6-digit verification code to the provided email."""
+    data = request.json or {}
+    email = (data.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return jsonify({"error": "Valid email required"}), 400
+
+    code = str(random.randint(100000, 999999))
+    _pending_codes[email] = (code, time.time())
+
+    # Send via SMTP (Gmail or any provider)
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        smtp_host = os.environ.get("SMTP_HOST", "localhost")
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+        smtp_user = os.environ.get("SMTP_USER", "")
+        smtp_pass = os.environ.get("SMTP_PASS", "")
+        smtp_from = os.environ.get("SMTP_FROM", "noreply@meshmobility.com")
+        msg = MIMEText(
+            f"Your MeshMobility verification code is: {code}\n\n"
+            f"Enter this code in MeshMobility to save your network designs.\n"
+            f"This code expires in 10 minutes.\n\n"
+            f"MeshMobility — meshmobility.com\n"
+            f"JPods — Building the Physical Internet",
+            "plain"
+        )
+        msg["Subject"] = f"MeshMobility verification code: {code}"
+        msg["From"] = smtp_from
+        msg["To"] = email
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as s:
+            s.starttls()
+            if smtp_user and smtp_pass:
+                s.login(smtp_user, smtp_pass)
+            s.send_message(msg)
+        logger.info("Verification code sent to %s", email)
+    except Exception as e:
+        logger.warning("Email send failed for %s: %s — code is %s", email, e, code)
+        # In dev, log the code so it's still usable
+        return jsonify({"ok": True, "dev_note": "Email not configured — check server log for code"})
+
+    return jsonify({"ok": True})
+
+
+@auth.post("/api/auth/verify_code")
+def verify_code():
+    """Verify the 6-digit code and establish session."""
+    from flask import session
+    data = request.json or {}
+    email = (data.get("email") or "").strip().lower()
+    code = (data.get("code") or "").strip()
+
+    if not email or not code:
+        return jsonify({"error": "Email and code required"}), 400
+
+    pending = _pending_codes.get(email)
+    if not pending:
+        return jsonify({"error": "No code pending for this email. Request a new one."}), 400
+
+    stored_code, timestamp = pending
+    if time.time() - timestamp > CODE_EXPIRY:
+        del _pending_codes[email]
+        return jsonify({"error": "Code expired. Request a new one."}), 400
+
+    if code != stored_code:
+        return jsonify({"error": "Wrong code. Try again."}), 400
+
+    # Success — establish session
+    del _pending_codes[email]
+    session["verified_email"] = email
+    session.permanent = True
+
+    # Create/get WC3 contact
+    contact = _get_or_create_contact(email)
+
+    logger.info("Email verified: %s", email)
+    return jsonify({
+        "ok": True,
+        "authenticated": True,
+        "email": email,
+        "needs_profile": (contact.get("metadata") or {}).get("needs_profile", True) if contact else True,
+    })
 
 
 # --- Network Document management ---

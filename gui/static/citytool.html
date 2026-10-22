@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Personalize Transit</title>
+	<meta name="generator" content="BBEdit 15.5">
+</head>
+<body>
+
+<!-- ══ JPODS NAV ══ -->
+<nav class="jpods-nav">
+  <a href="/index.html" class="jpods-nav-logo">
+    <img src="images/ingenuity/JPodsVectorLogo_BlueLg2.png" alt="JPods">
+  </a>
+  <ul class="jpods-nav-links">
+    <li><a href="/index.html#story">Why/What/How</a></li>
+    <li><a href="/index.html#how">How It Works</a></li>
+    <li><a href="/index.html#proof">Track Record</a></li>
+    <li><a href="/index.html#scorecard">Compare</a></li>
+    <li><a href="/index.html#process">For Cities</a></li>
+    <li><a href="/index.html" class="jpods-nav-back">← Home</a></li>
+    <li><a href="/index.html#contact" class="jpods-nav-cta">Get Involved</a></li>
+  </ul>
+  <div class="theme-toggle" role="group" aria-label="Color theme">
+    <button class="tt-btn" onclick="setTheme('dark',this)">Dark</button>
+    <button class="tt-btn" onclick="setTheme('light',this)">Light</button>
+    <button class="tt-btn" onclick="setTheme('hico',this)">Hi-Con</button>
+  </div>
+</nav>
+
+<div class="jpods-fullwidth">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Personalize Transit</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&family=Bebas+Neue&family=Barlow+Condensed:wght@700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/docx@9.0.3/build/index.umd.min.js"></script>
+<style>
+  /* ─── JPODS NAV ─── */
+  .jpods-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.9rem 2.5rem;
+    background: rgba(8,8,8,0.95);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(57,255,20,0.15);
+    font-family: 'Barlow', sans-serif;
+  }
+  .jpods-nav-logo img { height: 40px; mix-blend-mode: screen; display: block; }
+  .jpods-nav-links { display: flex; gap: 1.8rem; list-style: none; align-items: center; }
+  .jpods-nav-links a {
+    color: #f0ede6; text-decoration: none;
+    font-size: 0.78rem; font-weight: 500;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    opacity: 0.55; transition: opacity 0.2s, color 0.2s;
+  }
+  .jpods-nav-links a:hover { opacity: 1; color: #39ff14; }
+  .jpods-nav-back {
+    background: rgba(57,255,20,0.12) !important;
+    border: 1px solid rgba(57,255,20,0.4) !important;
+    color: #39ff14 !important; padding: 0.45rem 1.1rem;
+    border-radius: 2px; font-weight: 700 !important;
+    opacity: 1 !important; font-size: 0.72rem !important;
+    letter-spacing: 0.12em; transition: background 0.2s !important;
+  }
+  .jpods-nav-back:hover { background: rgba(57,255,20,0.22) !important; }
+  .jpods-nav-cta {
+    background: #39ff14 !important; color: #080808 !important;
+    padding: 0.45rem 1.1rem; border-radius: 2px;
+    font-weight: 700 !important; opacity: 1 !important;
+    font-size: 0.72rem !important; letter-spacing: 0.1em;
+  }
+  .jpods-nav-cta:hover { filter: brightness(1.12); opacity: 1 !important; }
+
+  /* ─── THEME TOGGLE ─── */
+  .theme-toggle {
+    display: flex; align-items: center; gap: 3px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 3px; padding: 3px; margin-left: 0.8rem; flex-shrink: 0;
+  }
+  .tt-btn {
+    font-family: 'DM Mono', monospace; font-size: 0.58rem;
+    font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.3rem 0.65rem; border-radius: 2px; border: none;
+    cursor: pointer; transition: all 0.2s;
+    color: rgba(240,237,230,0.4); background: transparent;
+  }
+  .tt-btn.active { background: #39ff14; color: #080808; }
+  .tt-btn:not(.active):hover { color: rgba(240,237,230,0.85); }
+  body.theme-light .tt-btn { color: rgba(0,0,0,0.35); }
+  body.theme-light .tt-btn.active { background: #1a7a00; color: #fff; }
+  body.theme-light .theme-toggle { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.12); }
+  body.theme-light .jpods-nav { background: rgba(245,240,232,0.96) !important; border-bottom-color: rgba(26,122,0,0.25) !important; }
+  body.theme-light .jpods-nav-links a { color: #0f0f0f !important; }
+  body.theme-light .jpods-nav-cta { background: #1a7a00 !important; color: #fff !important; }
+  body.theme-light .jpods-nav-back { background: rgba(26,122,0,0.1) !important; color: #1a7a00 !important; border-color: rgba(26,122,0,0.4) !important; }
+  body.theme-light { background: #f0f4f8 !important; }
+  body.theme-light .hero { background: linear-gradient(135deg, #e8f0f8 0%, #d0e4f0 60%, #b8d4e8 100%) !important; }
+  body.theme-light .input-panel, body.theme-light .output-panel { box-shadow: 0 4px 24px rgba(0,0,0,0.1) !important; }
+  body.theme-hico { background: #000 !important; color: #fff !important; }
+  body.theme-hico .jpods-nav { background: rgba(0,0,0,0.99) !important; border-bottom-color: rgba(57,255,20,0.5) !important; }
+  body.theme-hico .jpods-nav-links a { color: #fff !important; }
+  body.theme-hico a { color: #39ff14 !important; }
+  body.theme-hico .hero { background: #000 !important; }
+  body.theme-hico .input-panel, body.theme-hico .output-panel { background: #0a0a0a !important; border: 1px solid rgba(255,255,255,0.15) !important; }
+  body.theme-hico .panel-header { background: #111 !important; }
+  body.theme-hico .field input { background: #111 !important; color: #fff !important; border-color: rgba(255,255,255,0.2) !important; }
+  body.theme-hico .dtable td { border-bottom-color: rgba(255,255,255,0.08) !important; }
+  body.theme-hico .dlbl { color: #ccc !important; }
+  body.theme-hico .dval { color: #39ff14 !important; }
+  :root {
+    --blue:#1F4E79;--mid:#2E75B6;--light:#D6E4F0;
+    --orange:#C55A11;--orange-light:#FCE4D6;
+    --green:#1A6B2F;--green-light:#E2EFDA;
+    --gray:#F2F2F2;
+    --warn-bg:#FFF8E1;--warn-border:#F59E0B;--warn-text:#92400E;--warn-header:#B45309;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:#0d1117;color:#1a1a1a;min-height:100vh;padding-top:64px;}
+
+  /* HERO */
+  .hero{background:linear-gradient(135deg,#0d1117 0%,#1F4E79 60%,#2E75B6 100%);padding:28px 32px 36px;text-align:center;position:relative;overflow:hidden;}
+  .hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 40px,rgba(255,255,255,0.02) 40px,rgba(255,255,255,0.02) 41px);pointer-events:none;}
+  .hero-tag{font-family:'DM Mono',monospace;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#7DD3FC;margin-bottom:12px;}
+  .hero h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(40px,6vw,72px);letter-spacing:2px;color:#fff;line-height:1;margin-bottom:8px;}
+  .hero h1 span{color:#F59E0B;}
+  .hero p{font-size:16px;color:rgba(255,255,255,0.7);max-width:560px;margin:12px auto 0;line-height:1.6;}
+
+  /* LAYOUT */
+  .app-wrap{width:100%;margin:0;padding:32px 24px 64px;display:grid;grid-template-columns:340px 1fr;gap:32px;align-items:start;min-width:0;}
+  @media(max-width:900px){.app-wrap{grid-template-columns:1fr;}}
+
+  /* INPUT PANEL */
+  .input-panel{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.3);position:sticky;top:24px;}
+  .panel-header{background:var(--blue);color:#fff;padding:18px 20px;font-weight:600;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;}
+  .panel-header span{font-family:'DM Mono',monospace;font-size:10px;color:rgba(255,255,255,0.5);letter-spacing:1px;display:block;margin-top:3px;}
+
+  /* SEARCH */
+  .search-section{padding:20px;border-bottom:1px solid #eee;}
+  .step-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--mid);margin-bottom:10px;}
+  .search-row{display:flex;gap:8px;}
+  .search-row input{flex:1;padding:10px 12px;border:2px solid var(--mid);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;}
+  .search-row input:focus{outline:none;border-color:var(--blue);}
+  .state-input{width:64px;flex:none;}
+  .search-btn{padding:10px 16px;background:var(--mid);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:background 0.15s;}
+  .search-btn:hover{background:var(--blue);}
+  .search-btn:disabled{background:#ccc;cursor:not-allowed;}
+  .search-status{margin-top:10px;font-size:12px;color:#888;font-style:italic;min-height:18px;line-height:1.4;}
+  .search-status.loading{color:var(--mid);}
+  .search-status.found{color:var(--green);font-style:normal;font-weight:500;}
+  .search-status.error{color:var(--orange);font-style:normal;}
+
+  /* LOCKED HINT */
+  .locked-hint{padding:10px 20px;background:var(--light);font-size:12px;color:var(--blue);display:flex;align-items:center;gap:8px;border-bottom:1px solid #c8dcef;}
+  .locked-hint.hidden{display:none;}
+
+  /* DATA SECTIONS */
+  .data-section{padding:14px 20px;border-bottom:1px solid #eee;}
+  .sec-title-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .sec-title{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--mid);}
+  .edit-btn{font-size:11px;font-weight:600;color:var(--orange);background:var(--orange-light);border:none;border-radius:4px;padding:3px 10px;cursor:pointer;transition:all 0.15s;display:none;}
+  .edit-btn:hover{background:var(--orange);color:#fff;}
+  .edit-btn.visible{display:inline-block;}
+  .edit-btn.active{background:var(--green);color:#fff;}
+
+  .field{margin-bottom:9px;}
+  .field label{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:#555;margin-bottom:3px;flex-wrap:wrap;}
+  .star{color:var(--green);font-size:10px;}
+  .mod-badge{font-family:'DM Mono',monospace;font-size:9px;color:var(--warn-text);background:#FEF3C7;padding:1px 4px;border-radius:3px;display:none;}
+  .reset-lnk{font-size:10px;color:var(--orange);background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;text-decoration:underline;display:none;padding:0;}
+  .reset-lnk.show{display:inline;}
+
+  .field input{width:100%;padding:7px 10px;border:1.5px solid #e0e0e0;border-radius:6px;font-family:'DM Mono',monospace;font-size:13px;color:#1a1a1a;background:#f8f8f8;transition:all 0.2s;}
+  .field input:focus{outline:none;border-color:var(--mid);background:#fff;}
+  .field input.locked{background:#f0f0f0;color:#888;border-color:#e8e8e8;cursor:not-allowed;}
+  .field input.modified{border-color:var(--warn-border);background:var(--warn-bg);}
+  .src{font-size:9px;color:#bbb;font-style:italic;margin-top:2px;display:none;}
+  .src.show{display:block;}
+
+  /* ACTIONS */
+  .action-section{padding:16px 20px;}
+  .calc-btn{display:block;width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer;transition:background 0.15s;margin-bottom:10px;}
+  .calc-btn:hover{background:var(--mid);}
+  .calc-btn:disabled{background:#ccc;cursor:not-allowed;}
+  .dl-row{display:flex;gap:6px;flex-wrap:wrap;}
+  .dl-btn{flex:1;padding:8px 4px;border:1.5px solid var(--blue);border-radius:6px;background:none;color:var(--blue);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s;text-align:center;white-space:nowrap;}
+  .dl-btn:hover{background:var(--blue);color:#fff;}
+
+  /* OUTPUT */
+  .output-panel{background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,0.3);min-width:0;width:100%;}
+  .watermark-wrap{position:relative;min-width:0;}
+  .watermark{display:none;position:absolute;inset:0;pointer-events:none;z-index:10;overflow:hidden;}
+  .watermark-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-35deg);font-family:'Bebas Neue',sans-serif;font-size:64px;letter-spacing:4px;color:rgba(245,158,11,0.12);white-space:nowrap;text-align:center;line-height:1.4;}
+  .is-modified .watermark{display:block;}
+  .mod-banner{display:none;background:#FEF3C7;border-bottom:2px solid var(--warn-border);padding:10px 20px;font-size:13px;color:var(--warn-text);font-weight:500;align-items:center;gap:8px;}
+  .is-modified .mod-banner{display:flex;}
+
+  .placeholder{padding:80px 40px;text-align:center;color:#aaa;}
+  .placeholder h3{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:2px;color:#ccc;margin-bottom:8px;}
+  .placeholder p{font-size:14px;}
+
+  .metrics-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));}
+  @media(max-width:700px){.metrics-row{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  .mbox{padding:20px 14px;text-align:center;}
+  .mbox .val{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:1px;line-height:1;color:#fff;}
+  .mbox .lbl{font-size:11px;color:rgba(255,255,255,0.7);margin-top:4px;}
+  .mb-b{background:var(--mid);}.mb-g{background:var(--green);}.mb-o{background:var(--orange);}.mb-gr{background:#5A5A5A;}
+  .is-modified .mb-b{background:#D97706;}.is-modified .mb-g{background:#B45309;}.is-modified .mb-o{background:#92400E;}.is-modified .mb-gr{background:#78716C;}
+
+  .out-header{background:var(--blue);color:#fff;padding:10px 16px;font-size:12px;font-weight:600;letter-spacing:2px;text-transform:uppercase;}
+  .is-modified .out-header{background:var(--warn-header);}
+
+  .dtable{width:100%;border-collapse:collapse;table-layout:fixed;}
+  .dtable td{padding:9px 14px;font-size:13px;border-bottom:1px solid #eee;vertical-align:middle;overflow-wrap:break-word;}
+  .dtable tr:last-child td{border-bottom:none;}
+  .dlbl{font-weight:500;color:#333;width:58%;}
+  .dval{font-family:'DM Mono',monospace;font-size:13px;color:var(--blue);font-weight:600;text-align:right;}
+  .alt td{background:var(--gray);}
+  .hi td{background:var(--green-light);}.hi .dval{color:var(--green);}
+  .warn-row td{background:var(--orange-light);}.warn-row .dval{color:var(--orange);}
+  .blue-row td{background:var(--light);}.blue-row .dval{color:var(--blue);}
+  .is-modified .dval{color:var(--warn-header);}
+  .is-modified .hi td{background:#FEF3C7;}.is-modified .hi .dval{color:var(--warn-text);}
+
+  /* BAR CHART */
+  .btable{width:100%;border-collapse:collapse;}
+  .btable td{padding:7px 14px;font-size:12px;border-bottom:1px solid #eee;vertical-align:middle;}
+  .btable tr:last-child td{border-bottom:none;}
+  .bcat{width:32%;font-size:12px;font-weight:500;color:#333;}
+  .brate{width:11%;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center;}
+  .bcell{width:57%;}
+  .bwrap{display:flex;align-items:center;height:24px;position:relative;}
+  .bctr{position:absolute;left:50%;top:0;bottom:0;width:2px;background:#bbb;transform:translateX(-50%);}
+  .bleft,.bright{position:absolute;top:3px;bottom:3px;border-radius:2px;transition:width 0.5s cubic-bezier(.4,0,.2,1);}
+  .bleft{right:50%;background:#C55A11;}.bright{left:50%;background:#1A6B2F;}
+  .is-modified .bleft{background:#92400E;}.is-modified .bright{background:#B45309;}
+  .blbl{font-family:'DM Mono',monospace;font-size:10px;color:#888;margin-top:2px;text-align:center;}
+
+  .subnote{padding:5px 16px 8px;font-size:11px;font-style:italic;color:#999;background:#fafafa;border-top:1px solid #eee;}
+  .cta-bar{background:var(--blue);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+  .is-modified .cta-bar{background:var(--warn-header);}
+  .cta-bar p{font-size:13px;color:rgba(255,255,255,0.9);}
+  .cta-bar a{color:#F59E0B;font-weight:700;text-decoration:none;}
+  .narr-btn{padding:9px 18px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);color:#fff;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background 0.15s;white-space:nowrap;}
+  .narr-btn:hover{background:rgba(255,255,255,0.25);}
+  .narr-box{padding:20px;background:#f8f9fa;border-top:1px solid #eee;font-size:14px;line-height:1.7;color:#333;display:none;}
+  .sources-line{padding:10px 16px;font-size:11px;color:#aaa;font-style:italic;text-align:center;border-top:1px solid #eee;}
+
+  /* MODAL */
+  .moverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;align-items:center;justify-content:center;}
+  .moverlay.open{display:flex;}
+  .mdialog{background:#fff;border-radius:12px;width:90%;max-width:700px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+  .mhead{padding:18px 24px;background:var(--blue);color:#fff;border-radius:12px 12px 0 0;display:flex;justify-content:space-between;align-items:center;}
+  .mhead h3{font-size:16px;font-weight:600;}
+  .mclose{background:none;border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;}
+  .mbody{padding:20px 24px;overflow-y:auto;flex:1;}
+  .mbody p{font-size:13px;color:#555;line-height:1.6;margin-bottom:12px;}
+  .mbody pre{background:#f4f4f4;border:1px solid #ddd;border-radius:6px;padding:14px;font-family:'DM Mono',monospace;font-size:11px;line-height:1.6;white-space:pre-wrap;color:#333;max-height:320px;overflow-y:auto;}
+  .mfoot{padding:16px 24px;border-top:1px solid #eee;display:flex;gap:10px;justify-content:flex-end;}
+  .mbtn{padding:9px 18px;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--blue);}
+  .mbtn.p{background:var(--blue);color:#fff;}.mbtn.s{background:none;color:var(--blue);}
+
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spin{display:inline-block;width:12px;height:12px;border:2px solid #ccc;border-top-color:var(--mid);border-radius:50%;animation:spin 0.7s linear infinite;margin-right:6px;vertical-align:middle;}
+
+  /* HERO PRINT ROW */
+  .hero-action{display:flex;align-items:center;justify-content:center;gap:16px;max-width:680px;margin:12px auto 0;flex-wrap:wrap;position:relative;z-index:1;}
+  .hero-action p{margin:0;font-size:16px;color:rgba(255,255,255,0.7);line-height:1.6;}
+  .hero-print-btn{padding:7px 18px;background:rgba(255,255,255,0.15);border:2px solid rgba(255,255,255,0.6);color:#fff;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background 0.15s, border-color 0.15s, color 0.15s;letter-spacing:0.5px;}
+  .hero-print-btn:hover{background:rgba(255,255,255,0.9);color:#1F4E79;border-color:#fff;}
+  .hero-print-btn:active{background:#fff;color:#1F4E79;transform:scale(0.97);}
+
+  /* PRINT STYLES */
+  @media print {
+    @page { size: portrait; margin: 0.45in; }
+
+    /* Use system fonts — eliminates Google Fonts network fetch on print */
+    * { font-family: Arial, Helvetica, sans-serif !important; }
+    .mbox .val, .field input, .dval, .brate, pre, code { font-family: 'Courier New', Courier, monospace !important; }
+
+    /* White canvas — override dark body, no nav offset */
+    html, body { background: #fff !important; color: #000 !important; padding: 0 !important; margin: 0 !important; }
+
+    /* Hide chrome */
+    .jpods-nav, .moverlay, .hero-print-btn,
+    .search-section, .locked-hint,
+    .edit-btn, .reset-lnk, .mod-badge,
+    .action-section, .watermark,
+    .cta-bar, .dl-row { display: none !important; }
+
+    /* Compact hero — ~50% of screen size, flush to top */
+    .hero { background: #fff !important; padding: 3px 0 4px !important; margin-top: 0 !important; }
+    .hero::before { display: none !important; }
+    .hero-tag { display: none !important; }
+    .hero h1 { font-size: 16px !important; color: #1F4E79 !important; margin-bottom: 0 !important; letter-spacing: 1px !important; }
+    .hero h1 span { color: #C55A11 !important; }
+    .hero-action { margin: 1px auto 0 !important; gap: 10px !important; }
+    .hero-action p { display: none !important; }
+
+    /* Single-column layout */
+    .jpods-fullwidth, #jpods-app { padding: 0 !important; }
+    .app-wrap { display: block !important; padding: 6px 0 0 !important; gap: 0 !important; }
+
+    /* Input panel — 3-column grid for data sections */
+    .input-panel { position: static !important; box-shadow: none !important;
+      border: 1px solid #ccc !important; border-radius: 4px !important;
+      margin-bottom: 10px !important; overflow: visible !important;
+      display: grid !important;
+      grid-template-columns: repeat(3, 1fr) !important; }
+    .panel-header { grid-column: 1 / -1 !important;
+      padding: 6px 10px !important; font-size: 10px !important; }
+    .data-section { padding: 6px 10px !important;
+      border-bottom: none !important;
+      border-right: 1px solid #eee !important; }
+    .data-section:last-of-type { border-right: none !important; }
+    .sec-title-row { margin-bottom: 6px !important; }
+    .sec-title { font-size: 9px !important; }
+    .field { margin-bottom: 4px !important; }
+    .field label { font-size: 10px !important; line-height: 1.3 !important; }
+    .field input { padding: 2px 6px !important; font-size: 11px !important;
+      background: transparent !important; border: 1px solid #ddd !important;
+      color: #000 !important; width: 100% !important; }
+    .src { display: none !important; }
+
+    /* Output panel */
+    #outputWrap { box-shadow: none !important; border: 1px solid #ccc !important;
+      border-radius: 4px !important; overflow: visible !important; }
+    .mod-banner { font-size: 10px !important; padding: 5px 10px !important; }
+    .out-header { padding: 5px 10px !important; font-size: 9px !important;
+      -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .metrics-row { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .mbox { padding: 8px 6px !important; }
+    .mbox .val { font-size: 20px !important; }
+    .mbox .lbl { font-size: 9px !important; }
+    .dtable td { padding: 4px 10px !important; font-size: 11px !important; }
+    .btable td { padding: 3px 10px !important; font-size: 10px !important; }
+    .subnote { padding: 3px 10px !important; font-size: 10px !important; }
+    .narr-btn { display: none !important; }
+  }
+</style>
+
+
+<div id="jpods-app">
+
+<div class="hero">
+  <div class="hero-tag">JPods Solar Mobility Network</div>
+  <h1>City <span>Assessment</span> Tool</h1>
+  <div class="hero-action">
+    <p>Enter your city and state — we'll look up the data. Verify it, then run your assessment.</p>
+    <button class="hero-print-btn" id="printBtn">Print</button>
+  </div>
+</div>
+
+<div class="app-wrap">
+
+  <!-- INPUT PANEL -->
+  <div class="input-panel">
+    <div class="panel-header">City Data Input<span>★ = JPods standard assumption</span></div>
+
+    <!-- STEP 1: SEARCH -->
+    <div class="search-section">
+      <div class="step-label">Step 1 — Find Your City</div>
+      <div class="search-row">
+        <input type="text" id="cityName" placeholder="City name" autocomplete="off" onkeydown="if(event.key==='Enter')searchCity()"/>
+        <input type="text" id="stateAbbr" placeholder="ST" maxlength="2" class="state-input" onkeydown="if(event.key==='Enter')searchCity()"/>
+        <button class="search-btn" id="searchBtn" onclick="searchCity()">Look up</button>
+      </div>
+      <div class="search-status" id="searchStatus">Enter any US city — checks local cache first, then queries Census Bureau live.</div>
+    </div>
+
+    <!-- LOCKED HINT -->
+    <div class="locked-hint hidden" id="lockedHint">
+      🔒 Data from US Census ACS or local cache. Click <strong>&nbsp;Edit&nbsp;</strong> to adjust any value.
+    </div>
+
+    <!-- DEMOGRAPHICS -->
+    <div class="data-section">
+      <div class="sec-title-row">
+        <span class="sec-title">Demographics</span>
+        <button class="edit-btn" id="edt-demo" onclick="toggleEdit('demo',['population','households','carsHH'])">Edit</button>
+      </div>
+      <div class="field">
+        <label>Population</label>
+        <input type="number" id="population" class="locked" readonly placeholder="—"/>
+        <div class="src" id="src-population">US Census Bureau</div>
+      </div>
+      <div class="field">
+        <label>Households</label>
+        <input type="number" id="households" class="locked" readonly placeholder="—"/>
+        <div class="src" id="src-households">US Census Bureau</div>
+      </div>
+      <div class="field">
+        <label>
+          Cars per Household <span class="star">★</span>
+          <span class="mod-badge" id="mb-carsHH">MODIFIED</span>
+          <button class="reset-lnk" id="rl-carsHH" onclick="resetField('carsHH',2.0)">reset</button>
+        </label>
+        <input type="number" id="carsHH" class="locked" readonly step="0.1" placeholder="—" data-default="2.0" oninput="flagConstant('carsHH')"/>
+        <div class="src" id="src-carsHH">ACS / FHWA state average</div>
+      </div>
+    </div>
+
+    <!-- INFRASTRUCTURE -->
+    <div class="data-section">
+      <div class="sec-title-row">
+        <span class="sec-title">Infrastructure</span>
+        <button class="edit-btn" id="edt-infra" onclick="toggleEdit('infra',['roadMiles','walkScore','gasPrice'])">Edit</button>
+      </div>
+      <div class="field">
+        <label>Total Road Miles</label>
+        <input type="number" id="roadMiles" class="locked" readonly placeholder="—"/>
+        <div class="src" id="src-roadMiles">FHWA / state DOT estimate</div>
+      </div>
+      <div class="field">
+        <label>Walk Score (citywide)</label>
+        <input type="number" id="walkScore" class="locked" readonly placeholder="—" min="0" max="100"/>
+        <div class="src" id="src-walkScore">Walk Score® index</div>
+      </div>
+      <div class="field">
+        <label>
+          Gas Price ($/gal) <span class="star">★</span>
+          <span class="mod-badge" id="mb-gasPrice">MODIFIED</span>
+          <button class="reset-lnk" id="rl-gasPrice" onclick="resetField('gasPrice',3.15)">reset</button>
+        </label>
+        <input type="number" id="gasPrice" class="locked" readonly step="0.01" placeholder="—" data-default="3.15" oninput="flagConstant('gasPrice')"/>
+        <div class="src" id="src-gasPrice">EIA state avg (US) / Statistics Canada (CA) — converted to USD/gal equiv.</div>
+      </div>
+    </div>
+
+    <!-- JPODS CONSTANTS -->
+    <div class="data-section">
+      <div class="sec-title-row">
+        <span class="sec-title">JPods Constants <span style="color:var(--orange);font-size:9px;letter-spacing:0;text-transform:none">— editing flags output</span></span>
+        <button class="edit-btn" id="edt-const" onclick="toggleEdit('const',['aaaCost','buildCost','co2Rate','vehicleVal'])">Edit</button>
+      </div>
+      <div class="field">
+        <label>Vehicle annual cost / value <span class="star">★</span>
+          <span class="mod-badge" id="mb-aaaCost">MODIFIED</span>
+          <span class="mod-badge" id="mb-vehicleVal">MODIFIED</span>
+          <button class="reset-lnk" id="rl-aaaCost" onclick="resetField('aaaCost',9282)">reset cost</button>
+          <button class="reset-lnk" id="rl-vehicleVal" onclick="resetField('vehicleVal',29400)">reset value</button>
+        </label>
+        <div style="display:flex;gap:6px;">
+          <div style="flex:1">
+            <input type="number" id="aaaCost" class="locked" readonly placeholder="9,282" data-default="9282" oninput="flagConstant('aaaCost')" style="width:100%" title="Annual cost (AAA)"/>
+            <div style="font-size:9px;color:#aaa;margin-top:2px;font-style:italic">AAA annual cost</div>
+          </div>
+          <div style="flex:1">
+            <input type="number" id="vehicleVal" class="locked" readonly placeholder="29,400" data-default="29400" oninput="flagConstant('vehicleVal')" style="width:100%" title="Average vehicle value"/>
+            <div style="font-size:9px;color:#aaa;margin-top:2px;font-style:italic">avg vehicle value</div>
+          </div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Build cost per mile <span class="star">★</span>
+          <span class="mod-badge" id="mb-buildCost">MODIFIED</span>
+          <button class="reset-lnk" id="rl-buildCost" onclick="resetField('buildCost',20000000)">reset</button>
+        </label>
+        <input type="number" id="buildCost" class="locked" readonly placeholder="20,000,000" data-default="20000000" oninput="flagConstant('buildCost')"/>
+      </div>
+      <div class="field">
+        <label>CO₂ per vehicle mile (g) <span class="star">★</span>
+          <span class="mod-badge" id="mb-co2Rate">MODIFIED</span>
+          <button class="reset-lnk" id="rl-co2Rate" onclick="resetField('co2Rate',404)">reset</button>
+        </label>
+        <input type="number" id="co2Rate" class="locked" readonly placeholder="404" data-default="404" oninput="flagConstant('co2Rate')"/>
+      </div>
+    </div>
+
+    <!-- ACTIONS -->
+    <div class="action-section">
+      <button class="calc-btn" id="calcBtn" onclick="calculate()" disabled>Calculate Assessment</button>
+      <div class="dl-row">
+        <button class="dl-btn" onclick="downloadTxt()">⬇ Prompt .txt</button>
+        <button class="dl-btn" onclick="downloadDocx()">⬇ Prompt .docx</button>
+        <button class="dl-btn" onclick="showModal()">👁 View Prompt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- OUTPUT PANEL -->
+  <div class="output-panel watermark-wrap" id="outputWrap">
+    <div class="watermark"><div class="watermark-text">MODIFIED<br>ASSUMPTIONS<br>NOT JPods<br>STANDARD</div></div>
+    <div class="mod-banner">⚠️&nbsp; One or more JPods standard assumptions have been modified. This is <strong>&nbsp;not an official JPods assessment</strong>.</div>
+    <div id="out">
+      <div class="placeholder">
+        <h3>Awaiting City Search</h3>
+        <p>Enter your city name and state above, then click <strong>Look up</strong> to pre-fill data from public sources.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROMPT MODAL -->
+<div class="moverlay" id="promptModal">
+  <div class="mdialog">
+    <div class="mhead"><h3>JPods Assessment Prompt Template</h3><button class="mclose" onclick="closeModal()">✕</button></div>
+    <div class="mbody">
+      <p>Download this prompt and run it in Claude or ChatGPT for a full narrative assessment. Outputs using modified assumptions will be clearly flagged.</p>
+      <pre id="promptPre"></pre>
+    </div>
+    <div class="mfoot">
+      <button class="mbtn s" onclick="closeModal()">Close</button>
+      <button class="mbtn s" onclick="downloadDocx()">⬇ .docx</button>
+      <button class="mbtn p" onclick="downloadTxt()">⬇ .txt</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── PRINT BUTTON ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
+  // Auto-fill city from URL parameter (from MeshMobility link)
+  const urlParams = new URLSearchParams(window.location.search);
+  const cityParam = urlParams.get('city');
+  if (cityParam) {
+    // Parse "Oklahoma City, Oklahoma County, Oklahoma" → city + state
+    const parts = cityParam.split(',').map(s => s.trim());
+    const cityName = parts[0] || '';
+    // Find state abbreviation from last part
+    const stateMap = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC","United States":"US"};
+    let stateAbbr = '';
+    for (const p of parts) {
+      if (stateMap[p]) { stateAbbr = stateMap[p]; break; }
+    }
+    const cityEl = document.getElementById('cityName');
+    const stateEl = document.getElementById('stateAbbr');
+    if (cityEl) cityEl.value = cityName;
+    if (stateEl && stateAbbr) stateEl.value = stateAbbr;
+    // Auto-search after a brief delay
+    setTimeout(() => { if (typeof searchCity === 'function') searchCity(); }, 500);
+  }
+
+  const btn = document.getElementById('printBtn');
+  if (!btn) { console.error('printBtn not found'); return; }
+  console.log('printBtn wired up:', btn);
+
+  btn.addEventListener('mouseenter', function() {
+    console.log('printBtn: mouseenter');
+  });
+  btn.addEventListener('mouseleave', function() {
+    console.log('printBtn: mouseleave');
+  });
+  btn.addEventListener('click', function() {
+    console.log('printBtn: click — calling window.print()');
+    window.print();
+    console.log('printBtn: window.print() returned');
+  });
+});
+
+const DEFAULTS={carsHH:2.0,aaaCost:9282,buildCost:20000000,co2Rate:404,gasPrice:3.15,vehicleVal:29400};
+const CONSTANTS=['aaaCost','buildCost','co2Rate','vehicleVal','gasPrice','carsHH'];
+const editState={};
+
+// ── CITY DATABASE ──────────────────────────────────────────────────────────────
+// {pop, hh, carsHH, roadMiles, walkScore, gasPrice, metro}
+// NOTE: US entries commented out while Census API lookup is being validated.
+//       Canadian entries remain active (not covered by US Census API).
+const DB={
+  // ── CANADA (active — no Census API equivalent) ──
+  "mississauga,on":  {pop:747000,hh:244575,carsHH:1.5,roadMiles:1240,walkScore:49,gasPrice:4.00,metro:"Greater Toronto Area: 6.4M"},
+  "brampton,on":     {pop:657000,hh:193000,carsHH:1.7,roadMiles:1100,walkScore:40,gasPrice:4.00,metro:"Greater Toronto Area: 6.4M"},
+  "hamilton,on":     {pop:569000,hh:220000,carsHH:1.5,roadMiles:950, walkScore:54,gasPrice:4.00,metro:"Hamilton CMA: 800K"},
+  "london,on":       {pop:422000,hh:173000,carsHH:1.5,roadMiles:700, walkScore:53,gasPrice:4.00,metro:"Middlesex County: 490K"},
+  "kitchener,on":    {pop:256000,hh:100000,carsHH:1.5,roadMiles:430, walkScore:55,gasPrice:4.00,metro:"Waterloo Region: 590K"},
+  "windsor,on":      {pop:224000,hh:90000, carsHH:1.6,roadMiles:375, walkScore:52,gasPrice:4.00,metro:"Essex County: 415K"},
+  "ottawa,on":       {pop:1017000,hh:400000,carsHH:1.4,roadMiles:1700,walkScore:60,gasPrice:4.00,metro:"Ottawa-Gatineau CMA: 1.4M"},
+  "calgary,ab":      {pop:1336000,hh:518000,carsHH:1.7,roadMiles:2230,walkScore:48,gasPrice:3.80,metro:"Calgary CMA: 1.6M"},
+  "edmonton,ab":     {pop:1010000,hh:390000,carsHH:1.7,roadMiles:1685,walkScore:47,gasPrice:3.80,metro:"Edmonton CMA: 1.4M"},
+  "winnipeg,mb":     {pop:749000,hh:290000, carsHH:1.6,roadMiles:1250,walkScore:52,gasPrice:4.10,metro:"Winnipeg CMA: 840K"},
+  "saskatoon,sk":    {pop:317000,hh:125000, carsHH:1.7,roadMiles:530, walkScore:44,gasPrice:4.00,metro:"Saskatoon CMA: 370K"},
+  "regina,sk":       {pop:215000,hh:87000,  carsHH:1.7,roadMiles:360, walkScore:42,gasPrice:4.00,metro:"Regina CMA: 250K"},
+  "vancouver,bc":    {pop:662000,hh:280000, carsHH:1.1,roadMiles:1105,walkScore:78,gasPrice:5.20,metro:"Metro Vancouver: 2.6M"},
+  "surrey,bc":       {pop:568000,hh:185000, carsHH:1.5,roadMiles:948, walkScore:52,gasPrice:5.20,metro:"Metro Vancouver: 2.6M"},
+  "burnaby,bc":      {pop:249000,hh:100000, carsHH:1.3,roadMiles:415, walkScore:66,gasPrice:5.20,metro:"Metro Vancouver: 2.6M"},
+  "richmond,bc":     {pop:209000,hh:73000,  carsHH:1.4,roadMiles:348, walkScore:62,gasPrice:5.20,metro:"Metro Vancouver: 2.6M"},
+  "kelowna,bc":      {pop:144000,hh:62000,  carsHH:1.7,roadMiles:240, walkScore:40,gasPrice:4.80,metro:"Okanagan: 220K"},
+  "halifax,ns":      {pop:439000,hh:183000, carsHH:1.4,roadMiles:733, walkScore:51,gasPrice:4.20,metro:"Halifax CMA: 480K"},
+
+  /* ── US ENTRIES — commented out pending Census API validation ──────────────
+  "denton,tx":       {pop:148000,hh:52000, carsHH:1.8,roadMiles:600, walkScore:36,gasPrice:3.15,metro:"Denton County: 1.0M"},
+  "grand prairie,tx":{pop:196000,hh:67000, carsHH:2.1,roadMiles:700, walkScore:27,gasPrice:3.15,metro:"DFW Metro: 7.8M"},
+  "greenville,sc":   {pop:72000, hh:30500, carsHH:1.8,roadMiles:250, walkScore:44,gasPrice:3.10,metro:"Greenville MSA: 920K"},
+  "asheville,nc":    {pop:94000, hh:41000, carsHH:1.7,roadMiles:300, walkScore:39,gasPrice:3.20,metro:"Buncombe County: 270K"},
+  "gilroy,ca":       {pop:62000, hh:19200, carsHH:1.9,roadMiles:150, walkScore:42,gasPrice:4.80,metro:"Santa Clara County: 1.9M"},
+  "oklahoma city,ok":{pop:681000,hh:272000,carsHH:1.9,roadMiles:3200,walkScore:29,gasPrice:3.00,metro:"OKC MSA: 1.4M"},
+  "norman,ok":       {pop:128000,hh:49000, carsHH:1.8,roadMiles:620, walkScore:28,gasPrice:3.00,metro:"Cleveland County: 140K"},
+  "tulsa,ok":        {pop:413000,hh:168000,carsHH:1.8,roadMiles:2000,walkScore:37,gasPrice:3.00,metro:"Tulsa MSA: 1.0M"},
+  "broken arrow,ok": {pop:113000,hh:44000, carsHH:2.0,roadMiles:540, walkScore:25,gasPrice:3.00,metro:"Tulsa MSA: 1.0M"},
+  "edmond,ok":       {pop:95000, hh:36000, carsHH:2.0,roadMiles:460, walkScore:24,gasPrice:3.00,metro:"OKC MSA: 1.4M"},
+  "lawton,ok":       {pop:93000, hh:37000, carsHH:1.8,roadMiles:450, walkScore:29,gasPrice:3.00,metro:"Comanche County: 120K"},
+  "fort worth,tx":   {pop:935000,hh:340000,carsHH:1.9,roadMiles:3500,walkScore:34,gasPrice:3.15,metro:"DFW Metro: 7.8M"},
+  "dallas,tx":       {pop:1304000,hh:495000,carsHH:1.7,roadMiles:5000,walkScore:46,gasPrice:3.15,metro:"DFW Metro: 7.8M"},
+  "houston,tx":      {pop:2304000,hh:869000,carsHH:1.8,roadMiles:9000,walkScore:48,gasPrice:3.10,metro:"Houston MSA: 7.3M"},
+  "austin,tx":       {pop:978000,hh:403000, carsHH:1.6,roadMiles:3000,walkScore:40,gasPrice:3.15,metro:"Austin MSA: 2.4M"},
+  "san antonio,tx":  {pop:1437000,hh:521000,carsHH:1.9,roadMiles:5500,walkScore:35,gasPrice:3.10,metro:"SA MSA: 2.6M"},
+  "phoenix,az":      {pop:1608000,hh:610000,carsHH:1.8,roadMiles:6000,walkScore:41,gasPrice:3.50,metro:"Phoenix MSA: 5.0M"},
+  "las vegas,nv":    {pop:641000,hh:245000, carsHH:1.7,roadMiles:2800,walkScore:41,gasPrice:3.80,metro:"Las Vegas MSA: 2.2M"},
+  "albuquerque,nm":  {pop:564000,hh:222000, carsHH:1.8,roadMiles:2700,walkScore:42,gasPrice:3.25,metro:"Bernalillo County: 680K"},
+  "colorado springs,co":{pop:478000,hh:188000,carsHH:1.9,roadMiles:2300,walkScore:30,gasPrice:3.40,metro:"El Paso County: 730K"},
+  "boise,id":        {pop:235000,hh:95000,  carsHH:1.9,roadMiles:1100,walkScore:36,gasPrice:3.50,metro:"Ada County: 480K"},
+  "spokane,wa":      {pop:228000,hh:95000,  carsHH:1.8,roadMiles:1100,walkScore:45,gasPrice:3.90,metro:"Spokane MSA: 600K"},
+  "tacoma,wa":       {pop:219000,hh:90000,  carsHH:1.7,roadMiles:1000,walkScore:49,gasPrice:3.90,metro:"Pierce County: 900K"},
+  "knoxville,tn":    {pop:190000,hh:85000,  carsHH:1.8,roadMiles:950, walkScore:32,gasPrice:3.05,metro:"Knox County: 480K"},
+  "chattanooga,tn":  {pop:181000,hh:77000,  carsHH:1.8,roadMiles:900, walkScore:31,gasPrice:3.05,metro:"Hamilton County: 370K"},
+  "little rock,ar":  {pop:202000,hh:82000,  carsHH:1.8,roadMiles:1000,walkScore:33,gasPrice:3.05,metro:"Pulaski County: 410K"},
+  "columbia,sc":     {pop:136000,hh:58000,  carsHH:1.7,roadMiles:700, walkScore:38,gasPrice:3.10,metro:"Richland County: 420K"},
+  "savannah,ga":     {pop:147000,hh:58000,  carsHH:1.8,roadMiles:700, walkScore:45,gasPrice:3.10,metro:"Chatham County: 295K"},
+  "fayetteville,ar": {pop:93000, hh:37000,  carsHH:1.7,roadMiles:450, walkScore:35,gasPrice:3.05,metro:"Washington County: 250K"},
+  "lubbock,tx":      {pop:258000,hh:100000, carsHH:1.9,roadMiles:1300,walkScore:29,gasPrice:3.10,metro:"Lubbock County: 320K"},
+  "amarillo,tx":     {pop:201000,hh:80000,  carsHH:1.9,roadMiles:1000,walkScore:34,gasPrice:3.10,metro:"Potter County: 250K"},
+  "wichita,ks":      {pop:395000,hh:161000, carsHH:1.9,roadMiles:1900,walkScore:34,gasPrice:3.20,metro:"Sedgwick County: 520K"},
+  "topeka,ks":       {pop:126000,hh:53000,  carsHH:1.8,roadMiles:600, walkScore:37,gasPrice:3.20,metro:"Shawnee County: 180K"},
+  "springfield,mo":  {pop:170000,hh:72000,  carsHH:1.8,roadMiles:850, walkScore:33,gasPrice:3.15,metro:"Greene County: 300K"},
+  "kansas city,mo":  {pop:508000,hh:210000, carsHH:1.8,roadMiles:2500,walkScore:35,gasPrice:3.15,metro:"KC MSA: 2.2M"},
+  "st. louis,mo":    {pop:301000,hh:130000, carsHH:1.6,roadMiles:1500,walkScore:66,gasPrice:3.20,metro:"St. Louis MSA: 2.8M"},
+  "omaha,ne":        {pop:486000,hh:196000, carsHH:1.8,roadMiles:2200,walkScore:38,gasPrice:3.20,metro:"Douglas County: 600K"},
+  "lincoln,ne":      {pop:295000,hh:120000, carsHH:1.8,roadMiles:1400,walkScore:42,gasPrice:3.20,metro:"Lancaster County: 340K"},
+  "des moines,ia":   {pop:214000,hh:88000,  carsHH:1.8,roadMiles:1050,walkScore:40,gasPrice:3.25,metro:"Polk County: 500K"},
+  "birmingham,al":   {pop:212000,hh:88000,  carsHH:1.8,roadMiles:1000,walkScore:32,gasPrice:3.00,metro:"Jefferson County: 670K"},
+  "huntsville,al":   {pop:215000,hh:87000,  carsHH:1.9,roadMiles:1000,walkScore:24,gasPrice:3.00,metro:"Madison County: 390K"},
+  "mobile,al":       {pop:187000,hh:77000,  carsHH:1.8,roadMiles:900, walkScore:35,gasPrice:3.00,metro:"Mobile County: 415K"},
+  "jackson,ms":      {pop:153000,hh:62000,  carsHH:1.8,roadMiles:750, walkScore:30,gasPrice:3.00,metro:"Hinds County: 240K"},
+  "baton rouge,la":  {pop:227000,hh:92000,  carsHH:1.8,roadMiles:1100,walkScore:38,gasPrice:3.05,metro:"EBR Parish: 460K"},
+  "shreveport,la":   {pop:187000,hh:76000,  carsHH:1.8,roadMiles:900, walkScore:29,gasPrice:3.05,metro:"Caddo Parish: 245K"},
+  "memphis,tn":      {pop:633000,hh:253000, carsHH:1.8,roadMiles:3000,walkScore:38,gasPrice:3.05,metro:"Shelby County: 940K"},
+  "nashville,tn":    {pop:689000,hh:295000, carsHH:1.7,roadMiles:3300,walkScore:28,gasPrice:3.05,metro:"Davidson County: 715K"},
+  "louisville,ky":   {pop:633000,hh:264000, carsHH:1.8,roadMiles:3100,walkScore:35,gasPrice:3.15,metro:"Jefferson County: 780K"},
+  "lexington,ky":    {pop:322000,hh:133000, carsHH:1.7,roadMiles:1500,walkScore:35,gasPrice:3.15,metro:"Fayette County: 330K"},
+  "cincinnati,oh":   {pop:309000,hh:133000, carsHH:1.6,roadMiles:1500,walkScore:50,gasPrice:3.30,metro:"Hamilton County: 830K"},
+  "cleveland,oh":    {pop:373000,hh:160000, carsHH:1.5,roadMiles:1800,walkScore:54,gasPrice:3.30,metro:"Cuyahoga County: 1.2M"},
+  "columbus,oh":     {pop:905000,hh:383000, carsHH:1.6,roadMiles:4000,walkScore:39,gasPrice:3.30,metro:"Franklin County: 1.3M"},
+  "indianapolis,in": {pop:887000,hh:364000, carsHH:1.8,roadMiles:4000,walkScore:32,gasPrice:3.25,metro:"Marion County: 980K"},
+  "fort wayne,in":   {pop:264000,hh:108000, carsHH:1.9,roadMiles:1300,walkScore:32,gasPrice:3.25,metro:"Allen County: 380K"},
+  "green bay,wi":    {pop:107000,hh:45000,  carsHH:1.8,roadMiles:500, walkScore:43,gasPrice:3.35,metro:"Brown County: 270K"},
+  "madison,wi":      {pop:269000,hh:117000, carsHH:1.3,roadMiles:1200,walkScore:60,gasPrice:3.35,metro:"Dane County: 560K"},
+  "milwaukee,wi":    {pop:577000,hh:240000, carsHH:1.4,roadMiles:2700,walkScore:63,gasPrice:3.35,metro:"Milwaukee County: 940K"},
+  "minneapolis,mn":  {pop:429000,hh:196000, carsHH:1.3,roadMiles:2000,walkScore:70,gasPrice:3.40,metro:"Hennepin County: 1.3M"},
+  "sioux falls,sd":  {pop:192000,hh:80000,  carsHH:1.9,roadMiles:950, walkScore:36,gasPrice:3.25,metro:"Minnehaha County: 230K"},
+  "fargo,nd":        {pop:125000,hh:54000,  carsHH:1.8,roadMiles:600, walkScore:39,gasPrice:3.25,metro:"Cass County: 250K"},
+  "billings,mt":     {pop:117000,hh:49000,  carsHH:1.9,roadMiles:560, walkScore:40,gasPrice:3.60,metro:"Yellowstone County: 165K"},
+  "salt lake city,ut":{pop:200000,hh:80000, carsHH:1.5,roadMiles:950, walkScore:60,gasPrice:3.60,metro:"Salt Lake County: 1.2M"},
+  "provo,ut":        {pop:115000,hh:30000,  carsHH:1.6,roadMiles:550, walkScore:44,gasPrice:3.60,metro:"Utah County: 680K"},
+  "reno,nv":         {pop:264000,hh:107000, carsHH:1.7,roadMiles:1200,walkScore:44,gasPrice:3.80,metro:"Washoe County: 480K"},
+  "tucson,az":       {pop:542000,hh:215000, carsHH:1.7,roadMiles:2600,walkScore:42,gasPrice:3.50,metro:"Pima County: 1.0M"},
+  "fresno,ca":       {pop:542000,hh:168000, carsHH:1.8,roadMiles:2400,walkScore:42,gasPrice:4.80,metro:"Fresno County: 1.0M"},
+  "bakersfield,ca":  {pop:407000,hh:126000, carsHH:1.9,roadMiles:1900,walkScore:31,gasPrice:4.80,metro:"Kern County: 920K"},
+  "stockton,ca":     {pop:320000,hh:99000,  carsHH:1.8,roadMiles:1500,walkScore:44,gasPrice:4.80,metro:"San Joaquin County: 780K"},
+  "sacramento,ca":   {pop:524000,hh:195000, carsHH:1.7,roadMiles:2400,walkScore:49,gasPrice:4.80,metro:"Sacramento County: 1.6M"},
+  "modesto,ca":      {pop:218000,hh:68000,  carsHH:1.9,roadMiles:1000,walkScore:40,gasPrice:4.80,metro:"Stanislaus County: 560K"},
+  "eugene,or":       {pop:176000,hh:74000,  carsHH:1.5,roadMiles:800, walkScore:58,gasPrice:3.90,metro:"Lane County: 380K"},
+  "salem,or":        {pop:175000,hh:70000,  carsHH:1.7,roadMiles:820, walkScore:44,gasPrice:3.90,metro:"Marion County: 345K"},
+  "anchorage,ak":    {pop:288000,hh:113000, carsHH:1.9,roadMiles:1400,walkScore:48,gasPrice:3.60,metro:"Anchorage MSA: 400K"},
+  "waco,tx":         {pop:144000,hh:53000,  carsHH:1.9,roadMiles:700, walkScore:31,gasPrice:3.10,metro:"McLennan County: 270K"},
+  "el paso,tx":      {pop:678000,hh:216000, carsHH:1.8,roadMiles:3000,walkScore:37,gasPrice:3.10,metro:"El Paso County: 870K"},
+  "corpus christi,tx":{pop:318000,hh:120000,carsHH:1.9,roadMiles:1500,walkScore:32,gasPrice:3.10,metro:"Nueces County: 360K"},
+  "laredo,tx":       {pop:255000,hh:63000,  carsHH:1.9,roadMiles:1200,walkScore:41,gasPrice:3.10,metro:"Webb County: 280K"},
+  "mcallen,tx":      {pop:143000,hh:40000,  carsHH:1.8,roadMiles:650, walkScore:36,gasPrice:3.10,metro:"Hidalgo County: 870K"},
+  "midland,tx":      {pop:132000,hh:50000,  carsHH:2.0,roadMiles:630, walkScore:28,gasPrice:3.10,metro:"Midland County: 175K"},
+  "odessa,tx":       {pop:115000,hh:43000,  carsHH:2.0,roadMiles:550, walkScore:28,gasPrice:3.10,metro:"Ector County: 160K"},
+  "durham,nc":       {pop:278000,hh:110000, carsHH:1.6,roadMiles:1300,walkScore:36,gasPrice:3.20,metro:"Durham County: 335K"},
+  "raleigh,nc":      {pop:467000,hh:195000, carsHH:1.7,roadMiles:2200,walkScore:33,gasPrice:3.20,metro:"Wake County: 1.1M"},
+  "charlotte,nc":    {pop:874000,hh:352000, carsHH:1.7,roadMiles:4000,walkScore:26,gasPrice:3.20,metro:"Mecklenburg County: 1.1M"},
+  "winston-salem,nc":{pop:247000,hh:99000,  carsHH:1.8,roadMiles:1200,walkScore:27,gasPrice:3.20,metro:"Forsyth County: 385K"},
+  "greensboro,nc":   {pop:296000,hh:119000, carsHH:1.7,roadMiles:1400,walkScore:29,gasPrice:3.20,metro:"Guilford County: 540K"},
+  "columbia,mo":     {pop:121000,hh:50000,  carsHH:1.5,roadMiles:580, walkScore:38,gasPrice:3.15,metro:"Boone County: 185K"},
+  "springfield,il":  {pop:114000,hh:48000,  carsHH:1.8,roadMiles:550, walkScore:41,gasPrice:3.30,metro:"Sangamon County: 195K"},
+  "peoria,il":       {pop:113000,hh:47000,  carsHH:1.8,roadMiles:540, walkScore:40,gasPrice:3.30,metro:"Peoria County: 185K"},
+  "rockford,il":     {pop:148000,hh:60000,  carsHH:1.8,roadMiles:700, walkScore:43,gasPrice:3.30,metro:"Winnebago County: 295K"},
+  "aurora,il":       {pop:180000,hh:59000,  carsHH:1.9,roadMiles:850, walkScore:44,gasPrice:3.35,metro:"Kane County: 515K"},
+  "joliet,il":       {pop:149000,hh:52000,  carsHH:1.9,roadMiles:700, walkScore:34,gasPrice:3.35,metro:"Will County: 690K"},
+  "evansville,in":   {pop:119000,hh:51000,  carsHH:1.8,roadMiles:570, walkScore:34,gasPrice:3.25,metro:"Vanderburgh County: 180K"},
+  "south bend,in":   {pop:103000,hh:42000,  carsHH:1.7,roadMiles:490, walkScore:43,gasPrice:3.25,metro:"St. Joseph County: 270K"},
+  "dayton,oh":       {pop:137000,hh:59000,  carsHH:1.6,roadMiles:650, walkScore:41,gasPrice:3.30,metro:"Montgomery County: 530K"},
+  "akron,oh":        {pop:190000,hh:81000,  carsHH:1.6,roadMiles:900, walkScore:43,gasPrice:3.30,metro:"Summit County: 540K"},
+  "toledo,oh":       {pop:270000,hh:115000, carsHH:1.7,roadMiles:1300,walkScore:41,gasPrice:3.30,metro:"Lucas County: 435K"},
+  "lansing,mi":      {pop:112000,hh:46000,  carsHH:1.7,roadMiles:530, walkScore:45,gasPrice:3.40,metro:"Ingham County: 290K"},
+  "grand rapids,mi": {pop:198000,hh:80000,  carsHH:1.7,roadMiles:940, walkScore:50,gasPrice:3.40,metro:"Kent County: 660K"},
+  "flint,mi":        {pop:81000, hh:34000,  carsHH:1.7,roadMiles:385, walkScore:40,gasPrice:3.40,metro:"Genesee County: 410K"},
+  "sterling heights,mi":{pop:131000,hh:51000,carsHH:2.0,roadMiles:620,walkScore:32,gasPrice:3.40,metro:"Macomb County: 870K"},
+  "warren,mi":       {pop:139000,hh:57000,  carsHH:2.0,roadMiles:660, walkScore:36,gasPrice:3.40,metro:"Macomb County: 870K"},
+  "rochester,ny":    {pop:211000,hh:88000,  carsHH:1.4,roadMiles:1000,walkScore:62,gasPrice:3.70,metro:"Monroe County: 745K"},
+  "buffalo,ny":      {pop:278000,hh:116000, carsHH:1.3,roadMiles:1300,walkScore:64,gasPrice:3.70,metro:"Erie County: 920K"},
+  "syracuse,ny":     {pop:148000,hh:62000,  carsHH:1.4,roadMiles:700, walkScore:57,gasPrice:3.70,metro:"Onondaga County: 470K"},
+  "albany,ny":       {pop:99000, hh:42000,  carsHH:1.3,roadMiles:470, walkScore:57,gasPrice:3.70,metro:"Albany County: 310K"},
+  "providence,ri":   {pop:190000,hh:72000,  carsHH:1.3,roadMiles:900, walkScore:78,gasPrice:3.60,metro:"Providence County: 640K"},
+  "hartford,ct":     {pop:121000,hh:47000,  carsHH:1.2,roadMiles:570, walkScore:72,gasPrice:3.50,metro:"Hartford County: 895K"},
+  "new haven,ct":    {pop:134000,hh:51000,  carsHH:1.2,roadMiles:635, walkScore:74,gasPrice:3.50,metro:"New Haven County: 855K"},
+  "bridgeport,ct":   {pop:148000,hh:54000,  carsHH:1.3,roadMiles:700, walkScore:72,gasPrice:3.50,metro:"Fairfield County: 940K"},
+  "worcester,ma":    {pop:206000,hh:80000,  carsHH:1.3,roadMiles:975, walkScore:65,gasPrice:3.60,metro:"Worcester County: 830K"},
+  "springfield,ma":  {pop:155000,hh:59000,  carsHH:1.3,roadMiles:735, walkScore:64,gasPrice:3.60,metro:"Hampden County: 470K"},
+  "manchester,nh":   {pop:115000,hh:49000,  carsHH:1.6,roadMiles:545, walkScore:53,gasPrice:3.30,metro:"Hillsborough County: 420K"},
+  "portland,me":     {pop:68000, hh:30000,  carsHH:1.4,roadMiles:320, walkScore:63,gasPrice:3.40,metro:"Cumberland County: 305K"},
+  "burlington,vt":   {pop:45000, hh:20000,  carsHH:1.2,roadMiles:210, walkScore:68,gasPrice:3.40,metro:"Chittenden County: 225K"},
+  "richmond,va":     {pop:226000,hh:92000,  carsHH:1.5,roadMiles:1070,walkScore:54,gasPrice:3.20,metro:"Richmond MSA: 1.3M"},
+  "norfolk,va":      {pop:238000,hh:94000,  carsHH:1.5,roadMiles:1130,walkScore:48,gasPrice:3.20,metro:"Hampton Roads MSA: 1.8M"},
+  "virginia beach,va":{pop:459000,hh:177000,carsHH:1.8,roadMiles:2175,walkScore:27,gasPrice:3.20,metro:"Hampton Roads MSA: 1.8M"},
+  "wilmington,nc":   {pop:115000,hh:50000,  carsHH:1.7,roadMiles:545, walkScore:28,gasPrice:3.20,metro:"New Hanover County: 230K"},
+  "columbia,sc":     {pop:136000,hh:58000,  carsHH:1.7,roadMiles:645, walkScore:38,gasPrice:3.10,metro:"Richland County: 420K"},
+  "charleston,sc":   {pop:150000,hh:63000,  carsHH:1.7,roadMiles:710, walkScore:36,gasPrice:3.10,metro:"Charleston County: 410K"},
+  "augusta,ga":      {pop:202000,hh:79000,  carsHH:1.8,roadMiles:955, walkScore:28,gasPrice:3.10,metro:"Richmond County: 615K"},
+  "athens,ga":       {pop:127000,hh:50000,  carsHH:1.5,roadMiles:600, walkScore:34,gasPrice:3.10,metro:"Clarke County: 130K"},
+  "macon,ga":        {pop:157000,hh:63000,  carsHH:1.8,roadMiles:745, walkScore:27,gasPrice:3.10,metro:"Bibb County: 155K"},
+  "columbus,ga":     {pop:194000,hh:76000,  carsHH:1.8,roadMiles:920, walkScore:26,gasPrice:3.05,metro:"Muscogee County: 200K"},
+  "tallahassee,fl":  {pop:196000,hh:80000,  carsHH:1.6,roadMiles:930, walkScore:30,gasPrice:3.40,metro:"Leon County: 315K"},
+  "gainesville,fl":  {pop:140000,hh:55000,  carsHH:1.5,roadMiles:665, walkScore:41,gasPrice:3.40,metro:"Alachua County: 270K"},
+  "cape coral,fl":   {pop:194000,hh:80000,  carsHH:2.0,roadMiles:920, walkScore:20,gasPrice:3.40,metro:"Lee County: 760K"},
+  "lakeland,fl":     {pop:110000,hh:44000,  carsHH:1.9,roadMiles:520, walkScore:34,gasPrice:3.40,metro:"Polk County: 720K"},
+  ── end US entries ── */
+};
+
+// ── STATE FIPS MAP ──────────────────────────────────────────────────────────────
+const STATE_FIPS={
+  'al':'01','ak':'02','az':'04','ar':'05','ca':'06','co':'08','ct':'09','de':'10',
+  'dc':'11','fl':'12','ga':'13','hi':'15','id':'16','il':'17','in':'18','ia':'19',
+  'ks':'20','ky':'21','la':'22','me':'23','md':'24','ma':'25','mi':'26','mn':'27',
+  'ms':'28','mo':'29','mt':'30','ne':'31','nv':'32','nh':'33','nj':'34','nm':'35',
+  'ny':'36','nc':'37','nd':'38','oh':'39','ok':'40','or':'41','pa':'42','ri':'44',
+  'sc':'45','sd':'46','tn':'47','tx':'48','ut':'49','vt':'50','va':'51','wa':'53',
+  'wv':'54','wi':'55','wy':'56'
+};
+
+// State-level road miles per capita (FHWA), used when Census has no city-level FHWA data
+const STATE_ROAD_FACTOR={
+  'tx':0.0047,'ca':0.0023,'fl':0.0031,'ny':0.0021,'pa':0.0030,'il':0.0034,
+  'oh':0.0033,'ga':0.0035,'nc':0.0035,'mi':0.0038,'nj':0.0018,'va':0.0033,
+  'wa':0.0028,'az':0.0037,'ma':0.0022,'tn':0.0037,'in':0.0040,'mo':0.0045,
+  'md':0.0022,'wi':0.0042,'mn':0.0038,'co':0.0032,'sc':0.0038,'al':0.0042,
+  'la':0.0038,'ky':0.0043,'or':0.0033,'ok':0.0055,'ct':0.0020,'ut':0.0033,
+  'ia':0.0055,'nv':0.0036,'ar':0.0055,'ms':0.0049,'ks':0.0065,'ne':0.0065,
+  'nm':0.0052,'id':0.0048,'wv':0.0048,'hi':0.0025,'nh':0.0034,'me':0.0046,
+  'mt':0.0078,'ri':0.0019,'de':0.0026,'sd':0.0085,'nd':0.0085,'ak':0.0052,
+  'vt':0.0052,'wy':0.0110,'dc':0.0014
+};
+
+// State-level walk score averages (walkScore.com state data)
+const STATE_WALK={
+  'ny':68,'ma':62,'ct':58,'nj':56,'il':52,'pa':52,'md':50,'ca':50,'wa':49,
+  'or':48,'ri':48,'mn':47,'wi':46,'mi':45,'oh':44,'co':44,'fl':43,'va':43,
+  'mo':42,'tn':40,'ga':40,'nc':39,'in':38,'az':38,'la':37,'al':36,'sc':36,
+  'ky':35,'tx':35,'ut':34,'nv':33,'nm':32,'ar':31,'ms':31,'ks':31,'ne':31,
+  'id':30,'ok':30,'ia':30,'wv':29,'ak':28,'mt':27,'sd':26,'nd':25,'wy':24,
+  'me':42,'nh':43,'vt':44,'de':48,'hi':60,'dc':77
+};
+
+// EIA state gas price region map (2024 annual avg estimates in $/gal)
+const STATE_GAS={
+  'ca':4.75,'wa':4.40,'or':4.20,'nv':4.10,'hi':4.90,'ak':3.80,
+  'ny':3.80,'ct':3.65,'ma':3.65,'nj':3.55,'pa':3.55,'ri':3.55,'me':3.55,'vt':3.55,'nh':3.55,
+  'il':3.50,'mi':3.50,'mn':3.45,'wi':3.45,'oh':3.40,'in':3.35,'ia':3.30,'mo':3.20,
+  'az':3.55,'nm':3.25,'co':3.35,'ut':3.45,'id':3.45,'mt':3.45,'wy':3.35,'nd':3.30,'sd':3.25,'ne':3.25,'ks':3.20,
+  'tx':3.10,'ok':3.00,'la':3.05,'ar':3.05,'ms':3.00,'al':3.00,'tn':3.05,'ky':3.10,
+  'ga':3.10,'sc':3.10,'nc':3.20,'va':3.25,'wv':3.25,'md':3.45,'de':3.40,'dc':3.70,
+  'fl':3.40,'nv':4.10
+};
+
+function fuzzyFind(city,state){
+  const cl=city.toLowerCase().trim(), sl=state.toLowerCase().trim();
+  const exact=DB[cl+','+sl];
+  if(exact) return {data:exact,name:cl};
+  for(const [k,v] of Object.entries(DB)){
+    const[kc,ks]=k.split(',');
+    if(ks!==sl) continue;
+    if(kc.includes(cl)||cl.includes(kc)) return {data:v,name:kc};
+  }
+  return null;
+}
+
+function set(id,val){const e=document.getElementById(id);if(e)e.value=val;}
+function g(id){const v=parseFloat(document.getElementById(id)?.value);return isNaN(v)?0:v;}
+function gs(id){return document.getElementById(id)?.value?.trim()||'';}
+
+// ── CENSUS ACS LOOKUP ──────────────────────────────────────────────────────────
+// Variables: B01003_001E=population, B25001_001E=housing units,
+//            B08201_001E=households, B25046_001E=total vehicles available
+// Census place names look like: "Norman city, Oklahoma" or "Chicago city, Illinois"
+// Matching strategy: normalize both sides, try exact then fuzzy
+
+function censusNameMatch(censusName, searchCity) {
+  // censusName e.g. "Norman city, Oklahoma"
+  // searchCity e.g. "norman"
+  const cn = censusName.toLowerCase();
+  const s = searchCity.toLowerCase().trim();
+  // Strip suffix: "norman city, oklahoma" -> "norman"
+  const bare = cn.replace(/\s+(city|town|village|borough|municipality|township|cdp|charter township),.*$/, '').trim();
+  if (bare === s) return 10; // exact match
+  if (cn.startsWith(s + ' city,') || cn.startsWith(s + ' town,') ||
+      cn.startsWith(s + ' village,') || cn.startsWith(s + ' borough,')) return 9;
+  if (bare.startsWith(s)) return 7;
+  if (bare.includes(s)) return 5;
+  return 0;
+}
+
+async function fetchCensusData(cityName, stateAbbr) {
+  const stateFips = STATE_FIPS[stateAbbr.toLowerCase()];
+  if (!stateFips) return null;
+
+  const vars = 'B01003_001E,B25001_001E,B08201_001E,B25046_001E';
+  const censusKey = 'fca36029e2c32c0d7739b30da6912e4b2e5c1131';
+
+  // Strategy 1: Fetch all places in state and match by name
+  // This is the most reliable approach — Census ACS place list is well-structured
+  try {
+    const acsUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,${vars}&for=place:*&in=state:${stateFips}&key=${censusKey}`;
+    const acsResp = await fetch(acsUrl, { signal: AbortSignal.timeout(8000) });
+    if (!acsResp.ok) throw new Error('ACS HTTP ' + acsResp.status);
+    const acsData = await acsResp.json();
+
+    if (acsData && acsData.length > 1) {
+      const headers = acsData[0];
+      const nameIdx = headers.indexOf('NAME');
+      const rows = acsData.slice(1);
+
+      // Score all rows and take the best match
+      let best = null, bestScore = 0;
+      for (const row of rows) {
+        const score = censusNameMatch(row[nameIdx] || '', cityName);
+        if (score > bestScore) { bestScore = score; best = row; }
+      }
+      if (best && bestScore >= 5) {
+        return parseCensusRow(headers, best, stateAbbr);
+      }
+    }
+  } catch(e) {
+    console.warn('Census ACS place list failed:', e.message);
+  }
+
+  // Strategy 2: Try Census Geocoder with a dummy street address to get place FIPS
+  // Using "1 Main St" as a generic anchor — gets us into the right place polygon
+  try {
+    const geoUrl = `https://geocoding.geo.census.gov/geocoder/geographies/address?street=1+Main+St&city=${encodeURIComponent(cityName)}&state=${encodeURIComponent(stateAbbr)}&benchmark=Public_AR_Current&vintage=Current_Current&layers=29&format=json`;
+    const geoResp = await fetch(geoUrl, { signal: AbortSignal.timeout(6000) });
+    const geoData = await geoResp.json();
+    const places = geoData?.result?.geographies?.['Incorporated Places']
+                || geoData?.result?.geographies?.['Census Designated Places'];
+    if (places && places.length > 0) {
+      const placeFips = places[0].PLACE;
+      const acsUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,${vars}&for=place:${placeFips}&in=state:${stateFips}&key=${censusKey}`;
+      const acsResp = await fetch(acsUrl, { signal: AbortSignal.timeout(6000) });
+      const acsData = await acsResp.json();
+      if (acsData && acsData.length >= 2) {
+        return parseCensusRow(acsData[0], acsData[1], stateAbbr);
+      }
+    }
+  } catch(e) {
+    console.warn('Census geocoder fallback failed:', e.message);
+  }
+
+  return null;
+}
+
+function parseCensusRow(headers, row, stateAbbr) {
+  function val(name) {
+    const i = headers.indexOf(name);
+    return i >= 0 ? parseInt(row[i]) || 0 : 0;
+  }
+  const pop = val('B01003_001E');
+  const hh = val('B08201_001E') || val('B25001_001E');
+  const totalVehicles = val('B25046_001E');
+  if (pop < 1000) return null; // bad data
+
+  const sl = stateAbbr.toLowerCase();
+  // Cars per household from ACS vehicle availability
+  let carsHH = 2.0;
+  if (hh > 0 && totalVehicles > 0) {
+    carsHH = Math.round((totalVehicles / hh) * 10) / 10;
+    carsHH = Math.max(0.5, Math.min(3.5, carsHH));
+  }
+
+  // Road miles: use population × state road-miles-per-capita factor
+  const roadFactor = STATE_ROAD_FACTOR[sl] || 0.0035;
+  const roadMiles = Math.max(50, Math.round(pop * roadFactor));
+
+  const walkScore = STATE_WALK[sl] || 35;
+  const gasPrice = STATE_GAS[sl] || 3.15;
+
+  return { pop, hh, carsHH, roadMiles, walkScore, gasPrice, fromCensus: true };
+}
+
+async function searchCity(){
+  const city=gs('cityName'), state=gs('stateAbbr');
+  const status=document.getElementById('searchStatus');
+  const btn=document.getElementById('searchBtn');
+  if(!city||!state){status.textContent='Please enter both a city name and state abbreviation.';status.className='search-status error';return;}
+
+  btn.disabled=true;
+  status.innerHTML='<span class="spin"></span>Looking up '+city+', '+state.toUpperCase()+'…';
+  status.className='search-status loading';
+
+  // Step 1: Try local DB first (instant, pre-verified data)
+  const dbResult=fuzzyFind(city,state);
+  if(dbResult){
+    applyData(dbResult.data, city, state, '✓ Found', dbResult.data.metro||'');
+    btn.disabled=false;
+    return;
+  }
+
+  // Step 2: Live Census API lookup
+  status.innerHTML='<span class="spin"></span>Not in local cache — querying US Census Bureau for '+city+', '+state.toUpperCase()+'…';
+  try {
+    const censusData = await fetchCensusData(city, state);
+    if(censusData){
+      const metro = '';
+      applyData(censusData, city, state,
+        '✓ Found via US Census ACS',
+        'Road miles estimated from FHWA state avg · Walk Score from state avg · Gas from EIA state avg');
+      btn.disabled=false;
+      return;
+    }
+  } catch(e) { /* census failed */ }
+
+  // Step 3: Not found anywhere — manual entry
+  set('aaaCost',DEFAULTS.aaaCost); set('buildCost',DEFAULTS.buildCost);
+  set('co2Rate',DEFAULTS.co2Rate); set('vehicleVal',DEFAULTS.vehicleVal);
+  set('gasPrice', STATE_GAS[state.toLowerCase()] || DEFAULTS.gasPrice);
+  unlockAll();
+  ['demo','infra','const'].forEach(s=>document.getElementById('edt-'+s).classList.remove('visible'));
+  document.getElementById('lockedHint').classList.add('hidden');
+  document.getElementById('calcBtn').disabled=false;
+  status.innerHTML='⚠ "'+city+', '+state.toUpperCase()+'" not found in Census database. <strong>Enter your data manually below.</strong>';
+  status.className='search-status error';
+  btn.disabled=false;
+}
+
+function applyData(d, city, state, label, note) {
+  set('population',d.pop); set('households',d.hh); set('carsHH',d.carsHH);
+  set('roadMiles',d.roadMiles); set('walkScore',d.walkScore); set('gasPrice',d.gasPrice);
+  set('aaaCost',DEFAULTS.aaaCost); set('buildCost',DEFAULTS.buildCost);
+  set('co2Rate',DEFAULTS.co2Rate); set('vehicleVal',DEFAULTS.vehicleVal);
+
+  // Update source labels
+  const srcLabels = {
+    population: d.fromCensus ? 'US Census ACS 2022 (5-yr)' : 'US Census Bureau',
+    households: d.fromCensus ? 'US Census ACS 2022 (5-yr)' : 'US Census Bureau',
+    carsHH:     d.fromCensus ? 'US Census ACS B25046 (vehicles available)' : 'ACS / FHWA state average',
+    roadMiles:  d.fromCensus ? 'FHWA state avg × population' : 'FHWA / state DOT estimate',
+    walkScore:  d.fromCensus ? 'State average (Walk Score® state data)' : 'Walk Score® index',
+    gasPrice:   d.fromCensus ? 'EIA state average (2024)' : 'EIA state avg (US)'
+  };
+  Object.entries(srcLabels).forEach(([id,txt])=>{
+    const el=document.getElementById('src-'+id);
+    if(el){el.textContent=txt; el.classList.add('show');}
+  });
+
+  lockAll();
+  ['demo','infra','const'].forEach(s=>document.getElementById('edt-'+s).classList.add('visible'));
+  document.getElementById('lockedHint').classList.remove('hidden');
+  document.getElementById('calcBtn').disabled=false;
+
+  const displayName=city.replace(/\b\w/g,c=>c.toUpperCase());
+  const stateUp=state.toUpperCase();
+  const metaNote = note ? ` <span style="font-size:11px;color:#888;font-style:italic">— ${note}</span>` : '';
+  document.getElementById('searchStatus').innerHTML=`${label} <strong>${displayName}, ${stateUp}</strong>${metaNote}`;
+  document.getElementById('searchStatus').className='search-status found';
+  calculate();
+}
+
+function lockAll(){
+  document.querySelectorAll('.data-section input').forEach(e=>{e.classList.add('locked');e.readOnly=true;});
+  Object.keys(editState).forEach(k=>editState[k]=false);
+}
+function unlockAll(){
+  document.querySelectorAll('.data-section input').forEach(e=>{e.classList.remove('locked');e.readOnly=false;});
+}
+
+function toggleEdit(section,fields){
+  const btn=document.getElementById('edt-'+section);
+  const active=editState[section];
+  if(active){
+    fields.forEach(id=>{const e=document.getElementById(id);if(e){e.classList.add('locked');e.readOnly=true;}});
+    btn.textContent='Edit'; btn.classList.remove('active');
+    editState[section]=false;
+  } else {
+    fields.forEach(id=>{const e=document.getElementById(id);if(e){e.classList.remove('locked');e.readOnly=false;}});
+    btn.textContent='Lock ✓'; btn.classList.add('active');
+    editState[section]=true;
+  }
+  checkModified();
+}
+
+function resetField(id,def){
+  set(id,def);
+  const el=document.getElementById(id);
+  if(el) el.classList.remove('modified');
+  const mb=document.getElementById('mb-'+id); if(mb) mb.style.display='none';
+  const rl=document.getElementById('rl-'+id); if(rl) rl.classList.remove('show');
+  checkModified();
+}
+
+function flagConstant(id){
+  const el=document.getElementById(id);
+  const def=DEFAULTS[id]; if(def===undefined) return;
+  const changed=!isNaN(parseFloat(el.value))&&Math.abs(parseFloat(el.value)-def)>0.001;
+  el.classList.toggle('modified',changed);
+  const mb=document.getElementById('mb-'+id); if(mb) mb.style.display=changed?'inline':'none';
+  const rl=document.getElementById('rl-'+id); if(rl) rl.classList.toggle('show',changed);
+  checkModified();
+}
+
+function checkModified(){
+  let mod=false;
+  CONSTANTS.forEach(id=>{
+    const el=document.getElementById(id); if(!el||!el.value) return;
+    const def=DEFAULTS[id]; if(def===undefined) return;
+    if(Math.abs(parseFloat(el.value)-def)>0.001) mod=true;
+  });
+  document.getElementById('outputWrap').classList.toggle('is-modified',mod);
+  return mod;
+}
+
+// ── FORMAT ──
+function fmt(n){
+  if(n>=1e9) return '$'+(n/1e9).toFixed(2)+'B';
+  if(n>=1e6) return '$'+(n/1e6).toFixed(0)+'M';
+  if(n>=1e3) return '$'+Math.round(n).toLocaleString();
+  return '$'+n.toFixed(0);
+}
+function fN(n){return Math.round(n).toLocaleString('en-US');}
+
+// ── CALCULATE ──
+function calculate(){
+  const city=gs('cityName')||'Your City', state=gs('stateAbbr').toUpperCase()||'';
+  const pop=g('population')||150000, hh=g('households')||Math.round(pop/2.5);
+  const carsHH=g('carsHH')||2.0, roads=g('roadMiles')||500, walk=g('walkScore')||35;
+  const aaaCost=g('aaaCost')||9282, build=g('buildCost')||20000000;
+  const co2g=g('co2Rate')||404, gas=g('gasPrice')||3.15, carVal=g('vehicleVal')||29400;
+
+  const totalVeh=Math.round(hh*carsHH), vmt=totalVeh*12000;
+  const gw=Math.max(1,Math.round(roads/12)), netCost=gw*build;
+  const elim=Math.round(totalVeh*0.60), milesRed=vmt*0.60;
+  const vehSav=elim*aaaCost, fuelSav=(milesRed/25)*gas;
+  const co2T=(co2g/1e6)*milesRed, ccred=co2T*8;
+  const otVeh=elim*carVal, parking=elim*4*3500, oneTime=otVeh+parking;
+  const roadMaint=roads*50000*0.60;
+  const ccA=Math.round(roads*35), wcA=Math.max(100,Math.round(pop*0.002)), wrA=Math.max(200,Math.round(pop*0.004));
+  const wcT=wcA*90000/1e6, wrT=wrA*500/1e6, ccT=ccA*6000/1e6;
+  const convA=Math.round(ccA*0.60), fisc=convA*6000+convA*0.17*90000*0.05;
+  const totalA=ccA+wcA+wrA;
+  const wcPct=Math.round(wcA/totalA*100), wrPct=Math.round(wrA/totalA*100), ccPct=Math.round(ccA/totalA*100);
+  const maxBar=ccT;
+  function bp(v){return Math.min(48,Math.round(Math.abs(v)/maxBar*48));}
+  const isMod=document.getElementById('outputWrap').classList.contains('is-modified');
+  const cityLbl=city+(state?', '+state:'');
+
+  document.getElementById('out').innerHTML=`
+    <div class="metrics-row">
+      <div class="mbox mb-b"><div class="val">${fmt(netCost)}</div><div class="lbl">Network Cost</div></div>
+      <div class="mbox mb-g"><div class="val">${fmt(vehSav)}/yr</div><div class="lbl">Annual Savings</div></div>
+      <div class="mbox mb-o"><div class="val">${fmt(oneTime)}</div><div class="lbl">One-Time Value</div></div>
+      <div class="mbox mb-gr"><div class="val">${(co2T/1000).toFixed(0)}K t/yr</div><div class="lbl">CO₂ Reduction</div></div>
+    </div>
+    <div class="out-header">CITY SNAPSHOT — ${cityLbl.toUpperCase()}</div>
+    <table class="dtable">
+      <tr><td class="dlbl">Population</td><td class="dval">${fN(pop)}</td></tr>
+      <tr class="alt"><td class="dlbl">Households</td><td class="dval">${fN(hh)} | ${carsHH.toFixed(1)} cars/HH | ${fN(totalVeh)} vehicles</td></tr>
+      <tr><td class="dlbl">Walk Score</td><td class="dval">${walk} — ${walk<50?'Car-Dependent':walk<70?'Somewhat Walkable':'Very Walkable'}</td></tr>
+      <tr class="alt"><td class="dlbl">Annual VMT</td><td class="dval">${(vmt/1e9).toFixed(2)}B miles/year</td></tr>
+      <tr><td class="dlbl">JPods Guideway Miles</td><td class="dval">${gw} miles (${fN(roads)} road mi ÷ 12)</td></tr>
+    </table>
+    <div class="out-header" style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px;">
+      <span>LAND USE &amp; FISCAL IMPACT</span>
+      <span style="font-size:10px;letter-spacing:0.5px;font-weight:500;text-transform:none;opacity:0.9">
+        Total acres: ${fN(totalA)} &nbsp;·&nbsp; Convert 60% car-centric (${fN(convA)} ac) &gt; ${fmt(fisc)}/yr fiscal improvement
+      </span>
+    </div>
+    <table class="btable" style="table-layout:fixed;">
+      <colgroup>
+        <col style="width:22%"><col style="width:10%"><col style="width:10%"><col style="width:36%"><col style="width:22%">
+      </colgroup>
+      <thead><tr style="border-bottom:1px solid #ddd;">
+        <td style="font-size:10px;font-weight:600;color:#888;letter-spacing:1px;text-transform:uppercase;padding:6px 14px">Category</td>
+        <td style="font-size:10px;font-weight:600;color:#888;letter-spacing:1px;text-transform:uppercase;padding:6px 6px;text-align:center">Net/Acre</td>
+        <td style="font-size:10px;font-weight:600;color:#888;letter-spacing:1px;text-transform:uppercase;padding:6px 6px;text-align:center">% Acres</td>
+        <td style="font-size:10px;font-weight:600;color:#888;letter-spacing:1px;text-transform:uppercase;padding:6px 14px;text-align:center">← Loss &nbsp;|&nbsp; Gain →</td>
+        <td style="font-size:10px;font-weight:600;color:#888;letter-spacing:1px;text-transform:uppercase;padding:6px 10px;text-align:right">Extended</td>
+      </tr></thead>
+      <tbody>
+        <tr style="background:${isMod?'#FEF9EE':'#E2EFDA'}">
+          <td class="bcat">Walkable Commercial</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center;color:${isMod?'#B45309':'#1A6B2F'};padding:7px 6px">+$90K</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;text-align:center;color:#555;padding:7px 6px">${wcPct}%</td>
+          <td class="bcell"><div class="bwrap"><div class="bctr"></div><div class="bright" style="width:${bp(wcT)}%"></div></div></td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:right;padding:7px 10px;color:${isMod?'#B45309':'#1A6B2F'}">+${fmt(wcT*1e6)}</td>
+        </tr>
+        <tr style="background:#f9f9f9">
+          <td class="bcat">Walkable Recreational</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center;color:${isMod?'#B45309':'#1A6B2F'};padding:7px 6px">+$500</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;text-align:center;color:#555;padding:7px 6px">${wrPct}%</td>
+          <td class="bcell"><div class="bwrap"><div class="bctr"></div><div class="bright" style="width:${bp(wrT)}%"></div></div></td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:right;padding:7px 10px;color:${isMod?'#B45309':'#1A6B2F'}">+${fmt(wrT*1e6)}</td>
+        </tr>
+        <tr style="background:${isMod?'#FEF3C7':'#FCE4D6'}">
+          <td class="bcat">Car-Centric</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center;color:${isMod?'#92400E':'#C55A11'};padding:7px 6px">-$6K</td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;text-align:center;color:#555;padding:7px 6px">${ccPct}%</td>
+          <td class="bcell"><div class="bwrap"><div class="bctr"></div><div class="bleft" style="width:${bp(ccT)}%"></div></div></td>
+          <td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:right;padding:7px 10px;color:${isMod?'#92400E':'#C55A11'}">-${fmt(ccT*1e6)}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="out-header">JPODS NETWORK — PRIVATELY FUNDED</div>
+    <table class="dtable">
+      <tr class="hi"><td class="dlbl">${gw} guideway miles &nbsp;|&nbsp; ${gw} stations</td><td class="dval">7 yr payback*</td></tr>
+      <tr class="alt"><td class="dlbl">Network build cost</td><td class="dval">${fmt(netCost)}</td></tr>
+      <tr><td class="dlbl">Solar-powered | 13× more efficient than cars | 50× vs buses</td><td class="dval">$0.03/pass-mi</td></tr>
+    </table>
+    <div class="subnote">*Note to investors: not all savings can be monetized by JPods Networks.</div>
+    <div class="out-header">ANNUAL SAVINGS BREAKDOWN*</div>
+    <table class="dtable">
+      <tr class="hi"><td class="dlbl">Vehicle ownership savings (${fN(elim)} cars × $${fN(aaaCost)})</td><td class="dval">${fmt(vehSav)}/year</td></tr>
+      <tr class="alt"><td class="dlbl">Fuel savings (${(milesRed/1e6).toFixed(0)}M miles ÷ 25 mpg × $${gas.toFixed(2)})</td><td class="dval">${fmt(fuelSav)}/year</td></tr>
+      <tr><td class="dlbl">Road maintenance reduction (${fN(roads)} road miles)</td><td class="dval">${fmt(roadMaint)}+/year</td></tr>
+      <tr class="alt"><td class="dlbl">Annual CO₂ eliminated</td><td class="dval">${fN(Math.round(co2T))} metric tons | ${fmt(ccred)}/yr credits</td></tr>
+      <tr class="warn-row"><td class="dlbl">Vehicles eliminated → capital unlocked</td><td class="dval">${fN(elim)} × $${fN(carVal)} = ${fmt(otVeh)} one-time</td></tr>
+    </table>
+    <div class="cta-bar">
+      <p>JPods is ready for ${city}. &nbsp;<a href="https://jpods.com" target="_blank">jpods.com</a></p>
+      <button class="narr-btn" onclick="genNarrative('${cityLbl}',${pop},${hh},${totalVeh},${netCost},${vehSav},${oneTime},${co2T},${gw},${walk})">Generate Full Narrative ✦</button>
+    </div>
+    <div class="narr-box" id="narrBox"></div>
+    <div class="sources-line">Sources: AAA 2023 | FHWA/DOE TEDB | US Census | Walk Score® | jpods.com/metrics | Strong Towns | Urban3 | NHTSA${isMod?' | ⚠️ MODIFIED ASSUMPTIONS':''}
+    <br><a href="https://www.5x5FreeMarket.com" target="_blank" style="color:#39ff14">5×5 Standard</a> |
+    <a href="https://library.jpods.com/congressionalstudy/" target="_blank" style="color:#aaa">Congressional Study (1975)</a> |
+    <a href="https://library.jpods.com/nj2007/" target="_blank" style="color:#aaa">NJ Legislature Study</a> |
+    <a href="https://library.jpods.com/JPods/004Studies/LeanManufacturingTransit.pdf" target="_blank" style="color:#aaa">Lean Manufacturing &amp; Transit</a></div>
+  `;
+}
+
+// ── NARRATIVE ──
+async function genNarrative(city,pop,hh,veh,net,sav,ot,co2,miles,walk){
+  const box=document.getElementById('narrBox');
+  box.style.display='block';
+  box.innerHTML='<span style="color:#aaa;font-style:italic"><span class="spin"></span>Generating narrative via Claude AI…</span>';
+  const isMod=document.getElementById('outputWrap').classList.contains('is-modified');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:`Write a compelling 3-paragraph executive summary for a JPods solar mobility network assessment for ${city}. Population ${pop.toLocaleString()}, ${hh.toLocaleString()} households, Walk Score ${walk}/100, ${miles} guideway miles proposed. Results: $${(net/1e9).toFixed(2)}B network cost, $${(sav/1e6).toFixed(0)}M/year household savings, $${(ot/1e9).toFixed(2)}B one-time value, ${Math.round(co2/1000)}K metric tons CO₂/year eliminated. Write in Strong Towns style — fiscally pragmatic, pro-walkability, specific to this city's scale. Plain paragraphs only, no bullet points.${isMod?'\n\nIMPORTANT: This assessment uses modified assumptions. Clearly note this at the start.':''}`}]})});
+    const d=await r.json();
+    const txt=d.content?.map(b=>b.text||'').join('')||'Could not generate narrative.';
+    box.innerHTML=txt.split('\n\n').map(p=>`<p style="margin-bottom:12px">${p}</p>`).join('');
+  }catch(e){
+    box.innerHTML='<span style="color:#aaa;font-style:italic">Narrative generation requires API access. Visit jpods.com for full assessments.</span>';
+  }
+}
+
+// ── PROMPT ──
+function getPrompt(){
+  const city=gs('cityName')||'[CITY]', state=gs('stateAbbr').toUpperCase()||'[ST]';
+  const pop=g('population')||0,hh=g('households')||0,carsHH=g('carsHH')||2.0;
+  const roads=g('roadMiles')||0,walk=g('walkScore')||0,gas=g('gasPrice')||3.15;
+  const aa=g('aaaCost')||9282,bc=g('buildCost')||20000000,co2=g('co2Rate')||404,cv=g('vehicleVal')||29400;
+  const isMod=document.getElementById('outputWrap').classList.contains('is-modified');
+  return `JPods City Assessment Prompt Template
+Generated: ${new Date().toLocaleDateString()}
+City: ${city}, ${state}${isMod?'\nSTATUS: ⚠ MODIFIED ASSUMPTIONS — Not JPods Standard':''}
+${'='.repeat(54)}
+
+OBJECTIVE:
+Estimate the costs, benefits, and impacts of replacing 60% of
+highway transportation with JPods solar-powered podcar networks
+in ${city}, ${state}.
+
+CITY DATA:
+  Population:        ${pop.toLocaleString()}
+  Households:        ${hh.toLocaleString()}
+  Cars/household:    ${carsHH}
+  Total road miles:  ${roads}
+  Walk Score:        ${walk}
+
+JPODS STANDARD ASSUMPTIONS (★ = core — flag if modified):
+  ★ Annual vehicle cost (AAA 2023): $${Number(aa).toLocaleString()}/vehicle/year${aa!==DEFAULTS.aaaCost?' ← MODIFIED':''}
+  ★ Build cost per guideway mile:   $${Number(bc).toLocaleString()}/mile${bc!==DEFAULTS.buildCost?' ← MODIFIED':''}
+  ★ CO₂ per vehicle mile:           ${co2}g/mile${co2!==DEFAULTS.co2Rate?' ← MODIFIED':''}
+  ★ Gas price (sourced):            $${Number(gas).toFixed(2)}/gallon${gas!==DEFAULTS.gasPrice?' ← MODIFIED':''}
+  ★ Average vehicle value:          $${Number(cv).toLocaleString()}${cv!==DEFAULTS.vehicleVal?' ← MODIFIED':''}
+  ★ VMT per vehicle/year:           12,000 miles
+  ★ JPods efficiency:               78 Wh/passenger-mile (13× better than cars)
+  ★ JPods cost:                     $0.03/passenger-mile (vs $0.38 cars)
+  ★ Safety:                         ~3,000× fewer injuries/mile (Morgantown PRT)
+  ★ Carbon credit value:            $8/metric ton
+
+INSTRUCTIONS:
+1. Use local ${city}/${state} data first; state averages; national defaults.
+2. Calculate: total vehicles, VMT, guideway miles (road miles ÷ 12), network cost.
+3. Estimate 60% replacement: vehicle savings, fuel, road maintenance, CO₂.
+4. Assess land use: walkable commercial, walkable recreational, car-centric acres.
+5. Estimate fiscal impact of converting 60% of car-centric acres.
+6. One-time value: vehicles eliminated × value + parking freed.
+7. Output in JPods standard table format.
+
+REQUIRED SECTIONS:
+  1.  Executive Summary (3 paragraphs, Strong Towns style)
+  2.  Local & Regional Data
+  3.  Land Use, Tax Productivity & Walkability
+  4.  Fiscal Impact of Converting 60% of Car-Centric Acres
+  5.  One-Time Value Creation
+  6.  Annual Operational Savings
+  7.  JPods Network Cost Estimate
+  8.  Economic Development Potential
+  9.  Environmental & Public Health Benefits
+  10. Summary Output Table
+  11. Data Sources & Methodology Notes
+${isMod?`
+⚠ MODIFIED ASSUMPTIONS NOTICE:
+Label output: "MODIFIED ASSUMPTIONS — Not JPods Standard"
+List all values that differ from defaults above.
+`:''}
+DATA SOURCES:
+  AAA 2023 | FHWA/DOE TEDB | US Census | Walk Score®
+  jpods.com/metrics | Strong Towns / Urban3
+  Morgantown PRT Audit (2010) | NASA/NHTSA
+
+For implementation pathways: jpods.com
+`;
+}
+
+function showModal(){document.getElementById('promptPre').textContent=getPrompt();document.getElementById('promptModal').classList.add('open');}
+function closeModal(){document.getElementById('promptModal').classList.remove('open');}
+document.getElementById('promptModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+
+function downloadTxt(){
+  const city=gs('cityName')||'City';
+  const b=new Blob([getPrompt()],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`JPods_Prompt_${city.replace(/\s+/g,'_')}.txt`;a.click();
+}
+
+async function downloadDocx(){
+  const city=gs('cityName')||'City';
+  const isMod=document.getElementById('outputWrap').classList.contains('is-modified');
+  const{Document,Packer,Paragraph,TextRun,AlignmentType,BorderStyle}=window.docx;
+  const BLUE="1F4E79",HDR=isMod?"B45309":"1F4E79",WARN="C55A11";
+  const lines=getPrompt().split('\n');
+  const children=[
+    new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:200},children:[new TextRun({text:"JPods City Assessment Prompt",bold:true,size:36,color:BLUE,font:"Arial"})]}),
+    ...(isMod?[new Paragraph({alignment:AlignmentType.CENTER,spacing:{before:0,after:300},border:{bottom:{style:BorderStyle.SINGLE,size:4,color:WARN,space:1}},children:[new TextRun({text:"⚠ MODIFIED ASSUMPTIONS — Not JPods Standard",bold:true,size:22,color:WARN,font:"Arial"})]})]:[] )
+  ];
+  for(const line of lines){
+    const t=line.trim();
+    if(!t){children.push(new Paragraph({spacing:{before:30,after:30},children:[]}));continue;}
+    if(/^={4,}$/.test(t)) continue;
+    if(t===t.toUpperCase()&&t.length>4&&/[A-Z]/.test(t)){
+      children.push(new Paragraph({spacing:{before:180,after:80},children:[new TextRun({text:t,bold:true,size:20,color:HDR,font:"Arial"})]}));
+    } else if(t.startsWith('★')){
+      const mod=t.includes('← MODIFIED');
+      children.push(new Paragraph({indent:{left:360},spacing:{before:30,after:30},children:[new TextRun({text:"★ ",bold:true,size:18,color:"1A6B2F",font:"Arial"}),new TextRun({text:t.replace(/^★\s*/,''),size:18,font:"Arial",...(mod?{color:WARN,bold:true}:{})})]}));
+    } else if(/^[-•]\s/.test(t)){
+      children.push(new Paragraph({indent:{left:360},spacing:{before:25,after:25},children:[new TextRun({text:'• '+t.replace(/^[-•]\s*/,''),size:18,font:"Arial"})]}));
+    } else {
+      children.push(new Paragraph({spacing:{before:25,after:25},children:[new TextRun({text:t,size:18,font:"Arial"})]}));
+    }
+  }
+  const doc=new Document({styles:{default:{document:{run:{font:"Arial",size:18}}}},sections:[{properties:{page:{size:{width:12240,height:15840},margin:{top:1440,right:1440,bottom:1440,left:1440}}},children}]});
+  const buf=await Packer.toBuffer(doc);
+  const b=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`JPods_Prompt_${city.replace(/\s+/g,'_')}.docx`;a.click();
+}
+
+// ── THEME TOGGLE ────────────────────────────────────────────
+function setTheme(mode, btn) {
+  document.body.classList.remove('theme-light','theme-hico');
+  if (mode !== 'dark') document.body.classList.add('theme-' + mode);
+  document.querySelectorAll('.tt-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  localStorage.setItem('jpods-theme', mode);
+}
+(function() {
+  const saved = localStorage.getItem('jpods-theme') || 'dark';
+  const btn = document.querySelector('.tt-btn[onclick*="' + saved + '"]');
+  setTheme(saved, btn);
+})();
+</script>
+</div><!-- /#jpods-app -->
+
+
+</div>
+</body>
+</html>

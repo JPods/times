@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MeshMobility — Training Videos</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #e0e0e0; background: #0a1520; }
+  a { color: #5cb8ff; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .topbar {
+    background: #0f1f2f; border-bottom: 1px solid #1a3050;
+    padding: 12px 24px; display: flex; align-items: center; gap: 20px;
+  }
+  .topbar h1 { font-size: 1.3em; font-weight: 300; }
+  .topbar h1 span { color: #2e8b57; font-weight: 600; }
+  .topbar .nav a {
+    color: #7aa; font-size: 0.9em; padding: 4px 12px;
+    border-radius: 4px; transition: background 0.15s;
+  }
+  .topbar .nav a:hover { background: rgba(255,255,255,0.08); color: #bdd; text-decoration: none; }
+
+  .container { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+
+  .page-title { font-size: 1.8em; font-weight: 300; margin-bottom: 8px; }
+  .page-subtitle { color: #6a8a8a; margin-bottom: 32px; font-size: 1.05em; }
+
+  .video-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 20px;
+  }
+
+  .video-card {
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px; overflow: hidden;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  .video-card:hover { border-color: #2e8b57; transform: translateY(-2px); }
+
+  .video-card .thumb {
+    position: relative; background: #000; cursor: pointer;
+  }
+  .video-card .thumb img {
+    width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; opacity: 0.85;
+  }
+  .video-card .thumb:hover img { opacity: 1; }
+  .video-card .thumb .play-btn {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 56px; height: 40px; background: rgba(0,0,0,0.7); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .video-card .thumb .play-btn .tri {
+    width: 0; height: 0; border-style: solid;
+    border-width: 10px 0 10px 18px;
+    border-color: transparent transparent transparent white;
+    margin-left: 3px;
+  }
+  .video-card .thumb .dur {
+    position: absolute; bottom: 8px; right: 8px;
+    background: rgba(0,0,0,0.8); color: #ddd; padding: 2px 8px;
+    border-radius: 4px; font-size: 0.8em;
+  }
+
+  .video-card .info { padding: 14px 16px; }
+  .video-card .info h3 { font-size: 1.05em; color: #ddd; margin-bottom: 6px; font-weight: 600; }
+  .video-card .info p { font-size: 0.85em; color: #8aa; line-height: 1.5; }
+  .video-card .info .links { margin-top: 10px; font-size: 0.85em; }
+  .video-card .info .links a { margin-right: 14px; }
+
+  .section-label {
+    font-size: 1.1em; color: #8ab; margin: 32px 0 14px;
+    padding-bottom: 6px; border-bottom: 1px solid #1a3050;
+  }
+
+  .bottom-bar {
+    margin-top: 48px; padding: 24px; text-align: center;
+    border-top: 1px solid #1a3050; color: #456; font-size: 0.85em;
+  }
+  .bottom-bar a { color: #578; margin: 0 10px; }
+
+  @media (max-width: 500px) {
+    .video-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1><span>Mesh</span>Mobility</h1>
+  <div class="nav">
+    <a href="/">Home</a>
+    <a href="/app">App</a>
+    <a href="https://personalizetransit.com">Personalize Transit</a>
+    <a href="/library">Library</a>
+    <a href="https://www.10xmakers.com" target="_blank">10xMakers</a>
+  </div>
+</div>
+
+<div class="container">
+
+  <h2 class="page-title">Training Videos</h2>
+  <p class="page-subtitle">Learn MeshMobility and JPods — from first network to city council presentation.</p>
+
+  <div class="section-label">Getting Started</div>
+  <div class="video-grid" id="videos-getting-started"></div>
+
+  <div class="section-label">Network Design</div>
+  <div class="video-grid" id="videos-design"></div>
+
+  <div class="section-label">Analysis &amp; Presentation</div>
+  <div class="video-grid" id="videos-analysis"></div>
+
+  <div class="section-label">JPods Overview</div>
+  <div class="video-grid" id="videos-overview"></div>
+
+</div>
+
+<div class="bottom-bar">
+  <a href="/">Home</a>
+  <a href="/app">App</a>
+  <a href="/library">Library</a>
+  <a href="https://www.10xmakers.com" target="_blank">10xMakers</a>
+  <a href="https://jpods.com" target="_blank">JPods</a>
+</div>
+
+<script>
+"use strict";
+
+// Video catalog — add entries here as videos are produced
+// thumb: YouTube thumbnail URL (img.youtube.com/vi/ID/0.jpg) or Vimeo snapshot
+const VIDEOS = [
+  {
+    section: "overview",
+    title: "JPods MeshMobility Demo",
+    description: "Overview of MeshMobility — network design, crash data overlays, simulation, and capital reports.",
+    duration: "3:00",
+    vimeo: "https://vimeo.com/1207891831",
+    youtube: null,
+    thumb: "https://vumbnail.com/1207891831.jpg",
+  },
+  // Add more videos here as they are produced:
+  // {
+  //   section: "getting-started",  // or "design", "analysis", "overview"
+  //   title: "Video Title",
+  //   description: "What the video covers.",
+  //   duration: "2:30",
+  //   vimeo: "https://vimeo.com/XXXXXXXXX",
+  //   youtube: "https://www.youtube.com/watch?v=XXXXXXXXXXX",
+  //   thumb: "https://vumbnail.com/XXXXXXXXX.jpg",
+  // },
+];
+
+function renderCard(v) {
+  const link = v.vimeo || v.youtube || "#";
+  const thumbSrc = v.thumb || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360'%3E%3Crect fill='%23112' width='640' height='360'/%3E%3Ctext x='320' y='180' fill='%23556' text-anchor='middle' font-size='20'%3EVideo%3C/text%3E%3C/svg%3E";
+
+  let links = '';
+  if (v.vimeo) links += `<a href="${v.vimeo}" target="_blank">Vimeo</a>`;
+  if (v.youtube) links += `<a href="${v.youtube}" target="_blank">YouTube</a>`;
+
+  return `
+    <div class="video-card">
+      <a href="${link}" target="_blank" class="thumb">
+        <img src="${thumbSrc}" alt="${v.title}">
+        <div class="play-btn"><div class="tri"></div></div>
+        <span class="dur">${v.duration}</span>
+      </a>
+      <div class="info">
+        <h3>${v.title}</h3>
+        <p>${v.description}</p>
+        <div class="links">${links}</div>
+      </div>
+    </div>`;
+}
+
+const sections = {
+  "getting-started": document.getElementById("videos-getting-started"),
+  "design": document.getElementById("videos-design"),
+  "analysis": document.getElementById("videos-analysis"),
+  "overview": document.getElementById("videos-overview"),
+};
+
+const counts = {};
+VIDEOS.forEach(v => {
+  const el = sections[v.section];
+  if (el) {
+    el.innerHTML += renderCard(v);
+    counts[v.section] = (counts[v.section] || 0) + 1;
+  }
+});
+
+// Hide empty sections
+Object.entries(sections).forEach(([key, el]) => {
+  if (!counts[key]) {
+    el.previousElementSibling.style.display = "none"; // hide section label
+  }
+});
+</script>
+
+</body>
+</html>

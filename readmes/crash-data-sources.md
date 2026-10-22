@@ -53,14 +53,38 @@ Paginate with `resultOffset` in increments of 2000.
 3. **Later:** Contact OHSO (OK statewide), SCDPS (SC), MNCrash (MN), NJDOT (NJ)
 4. **Ongoing:** As each state's data arrives, add to `harvest_crashes.py` and store on 5TB
 
-## How This Was Researched (2026-07-09)
+## Overnight Harvest — 2026-07-21
 
-Searched each state's DOT website, ArcGIS Hub, data.gov portals, and NHTSA references.
-Most states do NOT publish all-severity crash data as bulk download. The pattern:
-- Fatal data: national via FARS (easy)
-- All-severity: state-by-state, each different (hard)
-- ArcGIS Feature Services are the best automated source where they exist
-- Many states require formal data request forms — free but manual
-- Some require government/law-enforcement accounts (MN MNCrash)
+**22 states with ArcGIS endpoints** now configured in `crash_harvester/harvest/arcgis_dot.py`.
+New configs added: TN, VA, OR, IA, IL (3 years), AK, MD (fatal+serious), PA (location-only).
 
-The mess is real. This readme is the map through it.
+**Overnight harvest launched:** `harvest_all_states.py` — harvests all ArcGIS endpoints
+then FARS for all 50 states. Log: `~/Allie/logs/harvest_all_20260721.log`.
+
+**Private/nonprofit sources cataloged:** `crash_harvester/all_sources_catalog.json` covers:
+- IIHS, NSC, GHSA, MADD, AAA Foundation, Vision Zero Network, PBIC, Smart Growth America
+- Waze CCP (crowd-sourced real-time crash reports — free for government partners)
+- University centers: UConn (CT), Alabama CARE (AL), UMTRI (MI), Virginia Tech, Texas A&M TTI, LSU CARTS (LA), NDSU (ND)
+- Conclusion: private sources provide **statistics and reports** but not individual crash locations. IIHS/HLDI has detailed insurance claim data (commercial license required). All other private sources derive from FARS/state DOT data.
+
+**Portal-required states** (21 states — user must visit portal):
+AL, AR, GA, IN, KY, LA, MI, MO, MS, ND, NE, NH, NJ, NV, OH, RI, SC, SD, TX, WV, WY
+
+**MeshMobility UI updated:** "All Crash Data (50 states)" button shows which states are
+harvested, which need portal access, and links users directly to state portals.
+
+**API endpoint:** `GET /api/overlays/crash_data_status` returns full status for all states.
+
+## How This Was Researched (2026-07-09, updated 2026-07-21)
+
+Searched each state's DOT website, ArcGIS Hub, data.gov portals, NHTSA references,
+plus private organizations (MADD, IIHS, NSC, AAA, university centers).
+
+Key finding: **no private organization publishes individual crash locations**.
+All private crash data is derived from NHTSA FARS or state DOT sources.
+MADD, NSC, GHSA, AAA all use FARS as their underlying data.
+IIHS/HLDI has insurance claim data but requires commercial license.
+
+The only path to all-severity crash data is state-by-state from government sources.
+ArcGIS Feature Services are the best automated source where they exist.
+The mess is real. This readme + `all_sources_catalog.json` are the map through it.

@@ -8,3 +8,5 @@ MarkupSafe==3.0.3
 packaging==26.2
 requests>=2.31
 Werkzeug==3.1.8
+flask-session==0.8.0
+redis>=5.0

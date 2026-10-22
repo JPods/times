@@ -1,0 +1,2966 @@
+[
+  {
+    "lat": 42.107156,
+    "lon": -70.934405,
+    "label": "Abington",
+    "lines": [
+      "Kingston Line"
+    ]
+  },
+  {
+    "lat": 42.374262,
+    "lon": -71.030395,
+    "label": "Airport",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.396148,
+    "lon": -71.140698,
+    "label": "Alewife",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.348546,
+    "lon": -71.137362,
+    "label": "Allston Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.348649,
+    "lon": -71.137881,
+    "label": "Allston Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.351066,
+    "lon": -71.115027,
+    "label": "Amory Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.350901,
+    "lon": -71.114318,
+    "label": "Amory Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.516987,
+    "lon": -71.144475,
+    "label": "Anderson/Woburn",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.658336,
+    "lon": -71.144502,
+    "label": "Andover",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.330154,
+    "lon": -71.057655,
+    "label": "Andrew",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.359784,
+    "lon": -71.051652,
+    "label": "Aquarium",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.351902,
+    "lon": -71.070893,
+    "label": "Arlington",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.26149,
+    "lon": -71.482161,
+    "label": "Ashland",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.283768,
+    "lon": -71.063191,
+    "label": "Ashmont",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.28453,
+    "lon": -71.063725,
+    "label": "Ashmont",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.392331,
+    "lon": -71.077262,
+    "label": "Assembly",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.392811,
+    "lon": -71.077257,
+    "label": "Assembly",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 41.941732,
+    "lon": -71.284214,
+    "label": "Attleboro",
+    "lines": [
+      "Foxboro Event Service",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 41.940229,
+    "lon": -71.285521,
+    "label": "Attleboro",
+    "lines": [
+      "Foxboro Event Service",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 41.940739,
+    "lon": -71.285094,
+    "label": "Attleboro",
+    "lines": [
+      "Foxboro Event Service",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.345833,
+    "lon": -71.250373,
+    "label": "Auburndale",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.559074,
+    "lon": -71.588476,
+    "label": "Ayer",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.351695,
+    "lon": -71.120257,
+    "label": "Babcock Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.34735,
+    "lon": -71.075727,
+    "label": "Back Bay",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.34759,
+    "lon": -71.075393,
+    "label": "Back Bay",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.347196,
+    "lon": -71.075299,
+    "label": "Back Bay",
+    "lines": [
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.329369,
+    "lon": -71.111046,
+    "label": "Back of the Hill",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.330139,
+    "lon": -71.111313,
+    "label": "Back of the Hill",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.400103,
+    "lon": -71.111207,
+    "label": "Ball Square",
+    "lines": [
+      "B",
+      "C",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.627356,
+    "lon": -71.159962,
+    "label": "Ballardvale",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.397204,
+    "lon": -70.992551,
+    "label": "Beachmont",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.3975423,
+    "lon": -70.9923194,
+    "label": "Beachmont",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.335625,
+    "lon": -71.140112,
+    "label": "Beaconsfield",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.335912,
+    "lon": -71.140903,
+    "label": "Beaconsfield",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.286588,
+    "lon": -71.145557,
+    "label": "Bellevue",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 42.395896,
+    "lon": -71.17619,
+    "label": "Belmont",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.547276,
+    "lon": -70.885432,
+    "label": "Beverly",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.561651,
+    "lon": -70.811405,
+    "label": "Beverly Farms",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.349276,
+    "lon": -71.100213,
+    "label": "Blandford Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.271466,
+    "lon": -71.095782,
+    "label": "Blue Hill Avenue",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.34024,
+    "lon": -71.166849,
+    "label": "Boston College",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.357293,
+    "lon": -71.139883,
+    "label": "Boston Landing",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.350148,
+    "lon": -71.107455,
+    "label": "Boston University Central",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.349811,
+    "lon": -71.104657,
+    "label": "Boston University East",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.349659,
+    "lon": -71.103989,
+    "label": "Boston University East",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 41.7464973,
+    "lon": -70.5887722,
+    "label": "Bourne",
+    "lines": [
+      "CapeFLYER"
+    ]
+  },
+  {
+    "lat": 42.361365,
+    "lon": -71.062037,
+    "label": "Bowdoin",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.353214,
+    "lon": -71.064545,
+    "label": "Boylston",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.766912,
+    "lon": -71.088411,
+    "label": "Bradford",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.207424,
+    "lon": -71.001645,
+    "label": "Braintree",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.209964,
+    "lon": -71.001088,
+    "label": "Braintree",
+    "lines": [
+      "CapeFLYER",
+      "Fall River/New Bedford Line",
+      "Kingston Line"
+    ]
+  },
+  {
+    "lat": 42.2078543,
+    "lon": -71.0011385,
+    "label": "Braintree",
+    "lines": [
+      "CapeFLYER",
+      "Fall River/New Bedford Line",
+      "Kingston Line",
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.361898,
+    "lon": -71.260065,
+    "label": "Brandeis/Roberts",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.340053,
+    "lon": -71.128869,
+    "label": "Brandon Hall",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 41.984916,
+    "lon": -70.96537,
+    "label": "Bridgewater",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.334331,
+    "lon": -71.104487,
+    "label": "Brigham Circle",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.334846,
+    "lon": -71.103017,
+    "label": "Brigham Circle",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.334229,
+    "lon": -71.104609,
+    "label": "Brigham Circle",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.342622,
+    "lon": -71.056967,
+    "label": "Broadway",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.084659,
+    "lon": -71.016534,
+    "label": "Brockton",
+    "lines": [
+      "CapeFLYER",
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.331293,
+    "lon": -71.126406,
+    "label": "Brookline Hills",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.331413,
+    "lon": -71.127025,
+    "label": "Brookline Hills",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.332614,
+    "lon": -71.116751,
+    "label": "Brookline Village",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.272477,
+    "lon": -71.062438,
+    "label": "Butler",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.272449,
+    "lon": -71.062513,
+    "label": "Butler",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 41.744805,
+    "lon": -70.616226,
+    "label": "Buzzards Bay",
+    "lines": [
+      "CapeFLYER"
+    ]
+  },
+  {
+    "lat": 42.060951,
+    "lon": -71.011004,
+    "label": "Campello",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.157095,
+    "lon": -71.14628,
+    "label": "Canton Center",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.162197,
+    "lon": -71.153718,
+    "label": "Canton Junction",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.163115,
+    "lon": -71.153581,
+    "label": "Canton Junction",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.161746,
+    "lon": -71.152837,
+    "label": "Canton Junction",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.267563,
+    "lon": -71.087338,
+    "label": "Capen Street",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.279693,
+    "lon": -71.060381,
+    "label": "Cedar Grove",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.365379,
+    "lon": -71.103554,
+    "label": "Central",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.270001,
+    "lon": -71.073358,
+    "label": "Central Avenue",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.270054,
+    "lon": -71.073523,
+    "label": "Central Avenue",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.361263,
+    "lon": -71.071602,
+    "label": "Charles/MGH",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.361166,
+    "lon": -71.070628,
+    "label": "Charles/MGH",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.397336,
+    "lon": -71.042409,
+    "label": "Chelsea",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.397024,
+    "lon": -71.041314,
+    "label": "Chelsea",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.326799,
+    "lon": -71.164146,
+    "label": "Chestnut Hill",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.326782,
+    "lon": -71.16478,
+    "label": "Chestnut Hill",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.33829,
+    "lon": -71.153025,
+    "label": "Chestnut Hill Avenue",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.33873,
+    "lon": -71.152526,
+    "label": "Chestnut Hill Avenue",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.352547,
+    "lon": -71.062752,
+    "label": "Chinatown",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.34054,
+    "lon": -71.15114,
+    "label": "Chiswick Road",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 41.67433,
+    "lon": -70.939126,
+    "label": "Church Street",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.336216,
+    "lon": -71.149201,
+    "label": "Cleveland Circle",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.24421,
+    "lon": -70.837529,
+    "label": "Cohasset",
+    "lines": [
+      "Greenbush Line"
+    ]
+  },
+  {
+    "lat": 42.373622,
+    "lon": -71.069533,
+    "label": "Community College",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.456565,
+    "lon": -71.357677,
+    "label": "Concord",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.342274,
+    "lon": -71.120915,
+    "label": "Coolidge Corner",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.342028,
+    "lon": -71.121685,
+    "label": "Coolidge Corner",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.350126,
+    "lon": -71.077376,
+    "label": "Copley",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.349871,
+    "lon": -71.078049,
+    "label": "Copley",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.39674,
+    "lon": -71.121815,
+    "label": "Davis",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.337807,
+    "lon": -71.141753,
+    "label": "Dean Road",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.227079,
+    "lon": -71.174254,
+    "label": "Dedham Corporate Center",
+    "lines": [
+      "Foxboro Event Service",
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.355518,
+    "lon": -71.060225,
+    "label": "Downtown Crossing",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.379624,
+    "lon": -71.086829,
+    "label": "East Somerville",
+    "lines": [
+      "B",
+      "C",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.379467,
+    "lon": -71.086625,
+    "label": "East Somerville",
+    "lines": [
+      "B",
+      "C",
+      "E"
+    ]
+  },
+  {
+    "lat": 41.868178,
+    "lon": -71.061727,
+    "label": "East Taunton",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.2191,
+    "lon": -70.9214,
+    "label": "East Weymouth",
+    "lines": [
+      "Greenbush Line"
+    ]
+  },
+  {
+    "lat": 42.318871,
+    "lon": -71.21642,
+    "label": "Eliot",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.319214,
+    "lon": -71.216949,
+    "label": "Eliot",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.233249,
+    "lon": -71.158647,
+    "label": "Endicott",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.336964,
+    "lon": -71.145867,
+    "label": "Englewood Avenue",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.337011,
+    "lon": -71.145368,
+    "label": "Englewood Avenue",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.33969,
+    "lon": -71.131228,
+    "label": "Fairbanks Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.253638,
+    "lon": -71.11927,
+    "label": "Fairmount",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 41.713982,
+    "lon": -71.154182,
+    "label": "Fall River Depot",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.345328,
+    "lon": -71.104269,
+    "label": "Fenway",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.345029,
+    "lon": -71.104968,
+    "label": "Fenway",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.33374,
+    "lon": -71.105721,
+    "label": "Fenwood Road",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.299935,
+    "lon": -71.061945,
+    "label": "Fields Corner",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.58072,
+    "lon": -71.792611,
+    "label": "Fitchburg",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.300926,
+    "lon": -71.114129,
+    "label": "Forest Hills",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.301065,
+    "lon": -71.113491,
+    "label": "Forest Hills",
+    "lines": [
+      "Franklin/Foxboro Line",
+      "Needham Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.089941,
+    "lon": -71.43902,
+    "label": "Forge Park/495",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.303955,
+    "lon": -71.077979,
+    "label": "Four Corners/Geneva",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.305692,
+    "lon": -71.076096,
+    "label": "Four Corners/Geneva",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.305037,
+    "lon": -71.076833,
+    "label": "Four Corners/Geneva",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.0951,
+    "lon": -71.26151,
+    "label": "Foxboro",
+    "lines": [
+      "Foxboro Event Service",
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.276108,
+    "lon": -71.420055,
+    "label": "Framingham",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.083071,
+    "lon": -71.396375,
+    "label": "Franklin",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 41.773482,
+    "lon": -71.091052,
+    "label": "Freetown",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 41.773672,
+    "lon": -71.090733,
+    "label": "Freetown",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.387831,
+    "lon": -71.096629,
+    "label": "Gilman Square",
+    "lines": [
+      "B",
+      "C",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.616799,
+    "lon": -70.668345,
+    "label": "Gloucester",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.359705,
+    "lon": -71.059215,
+    "label": "Government Center",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.2466,
+    "lon": -71.685325,
+    "label": "Grafton",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.309832,
+    "lon": -71.108059,
+    "label": "Green Street",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.310525,
+    "lon": -71.107414,
+    "label": "Green Street",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.178776,
+    "lon": -70.746641,
+    "label": "Greenbush",
+    "lines": [
+      "Greenbush Line"
+    ]
+  },
+  {
+    "lat": 42.483005,
+    "lon": -71.067247,
+    "label": "Greenwood",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.348919,
+    "lon": -71.134305,
+    "label": "Griggs Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.348747,
+    "lon": -71.1345,
+    "label": "Griggs Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.014739,
+    "lon": -70.824263,
+    "label": "Halifax",
+    "lines": [
+      "Kingston Line"
+    ]
+  },
+  {
+    "lat": 42.609212,
+    "lon": -70.874801,
+    "label": "Hamilton/Wenham",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.043967,
+    "lon": -70.882438,
+    "label": "Hanson",
+    "lines": [
+      "Kingston Line"
+    ]
+  },
+  {
+    "lat": 42.374663,
+    "lon": -71.118814,
+    "label": "Harvard",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.373362,
+    "lon": -71.118956,
+    "label": "Harvard",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.350602,
+    "lon": -71.130727,
+    "label": "Harvard Avenue",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.350263,
+    "lon": -71.131298,
+    "label": "Harvard Avenue",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.773474,
+    "lon": -71.086237,
+    "label": "Haverhill",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.344758,
+    "lon": -71.111761,
+    "label": "Hawes Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.344867,
+    "lon": -71.111157,
+    "label": "Hawes Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.363021,
+    "lon": -71.05829,
+    "label": "Haymarket",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.328316,
+    "lon": -71.110252,
+    "label": "Heath Street",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.275648,
+    "lon": -71.215528,
+    "label": "Hersey",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 42.284969,
+    "lon": -71.153937,
+    "label": "Highland",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 42.156343,
+    "lon": -71.027371,
+    "label": "Holbrook/Randolph",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 41.660225,
+    "lon": -70.276583,
+    "label": "Hyannis",
+    "lines": [
+      "CapeFLYER"
+    ]
+  },
+  {
+    "lat": 42.25503,
+    "lon": -71.125526,
+    "label": "Hyde Park",
+    "lines": [
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.347888,
+    "lon": -71.087903,
+    "label": "Hynes Convention Center",
+    "lines": [
+      "B",
+      "C",
+      "D"
+    ]
+  },
+  {
+    "lat": 42.676921,
+    "lon": -70.840589,
+    "label": "Ipswich",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.22105,
+    "lon": -71.183961,
+    "label": "Islington",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.320637,
+    "lon": -71.052473,
+    "label": "JFK/UMass",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.320632,
+    "lon": -71.052514,
+    "label": "JFK/UMass",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.320434,
+    "lon": -71.052215,
+    "label": "JFK/UMass",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.323132,
+    "lon": -71.099592,
+    "label": "Jackson Square",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.37897,
+    "lon": -71.282411,
+    "label": "Kendal Green",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.362434,
+    "lon": -71.085591,
+    "label": "Kendall/MIT",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.348949,
+    "lon": -71.095169,
+    "label": "Kenmore",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.344117,
+    "lon": -71.114097,
+    "label": "Kent Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.343927,
+    "lon": -71.114569,
+    "label": "Kent Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 41.97762,
+    "lon": -70.721709,
+    "label": "Kingston",
+    "lines": [
+      "Kingston Line"
+    ]
+  },
+  {
+    "lat": 41.87821,
+    "lon": -70.918444,
+    "label": "Lakeville",
+    "lines": [
+      "CapeFLYER"
+    ]
+  },
+  {
+    "lat": 42.347581,
+    "lon": -71.099974,
+    "label": "Lansdowne",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.701806,
+    "lon": -71.15198,
+    "label": "Lawrence",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.370989,
+    "lon": -71.07586,
+    "label": "Lechmere",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.371566,
+    "lon": -71.076457,
+    "label": "Lechmere",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.371572,
+    "lon": -71.076584,
+    "label": "Lechmere",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.413641,
+    "lon": -71.325512,
+    "label": "Lincoln",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.414983,
+    "lon": -71.326462,
+    "label": "Lincoln",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.519236,
+    "lon": -71.502643,
+    "label": "Littleton/Route 495",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.341808,
+    "lon": -71.109777,
+    "label": "Longwood",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.33608,
+    "lon": -71.099883,
+    "label": "Longwood Medical Area",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.336217,
+    "lon": -71.099328,
+    "label": "Longwood Medical Area",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.63535,
+    "lon": -71.314543,
+    "label": "Lowell",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.465165,
+    "lon": -70.940878,
+    "label": "Lynn Interim",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.465397,
+    "lon": -70.940001,
+    "label": "Lynn Interim",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.39405,
+    "lon": -71.106688,
+    "label": "Magoun Square",
+    "lines": [
+      "B",
+      "C",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.393682,
+    "lon": -71.1063879,
+    "label": "Magoun Square",
+    "lines": [
+      "B",
+      "C",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.426677,
+    "lon": -71.074381,
+    "label": "Malden Center",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.573687,
+    "lon": -70.77009,
+    "label": "Manchester",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.032787,
+    "lon": -71.219917,
+    "label": "Mansfield",
+    "lines": [
+      "Foxboro Event Service",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.340927,
+    "lon": -71.084188,
+    "label": "Massachusetts Avenue",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.341512,
+    "lon": -71.083423,
+    "label": "Massachusetts Avenue",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.267559,
+    "lon": -71.092233,
+    "label": "Mattapan",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.3691186,
+    "lon": -71.0395296,
+    "label": "Maverick",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.40828,
+    "lon": -71.117339,
+    "label": "Medford/Tufts",
+    "lines": [
+      "B",
+      "C",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.469464,
+    "lon": -71.068297,
+    "label": "Melrose Highlands",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.458768,
+    "lon": -71.069789,
+    "label": "Melrose/Cedar Park",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 41.887,
+    "lon": -70.923209,
+    "label": "Middleborough",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.270308,
+    "lon": -71.067289,
+    "label": "Milton",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.333279,
+    "lon": -71.109276,
+    "label": "Mission Park",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.333092,
+    "lon": -71.10968,
+    "label": "Mission Park",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.106555,
+    "lon": -71.022001,
+    "label": "Montello",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.562171,
+    "lon": -70.869254,
+    "label": "Montserrat",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.280994,
+    "lon": -71.085475,
+    "label": "Morton Street",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.337875,
+    "lon": -71.09524,
+    "label": "Museum of Fine Arts",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.337711,
+    "lon": -71.095512,
+    "label": "Museum of Fine Arts",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.244959,
+    "lon": -70.869205,
+    "label": "Nantasket Junction",
+    "lines": [
+      "Greenbush Line"
+    ]
+  },
+  {
+    "lat": 42.285719,
+    "lon": -71.347133,
+    "label": "Natick Center",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.280775,
+    "lon": -71.237686,
+    "label": "Needham Center",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 42.293444,
+    "lon": -71.236027,
+    "label": "Needham Heights",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 42.273187,
+    "lon": -71.235559,
+    "label": "Needham Junction",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 41.644306,
+    "lon": -70.925211,
+    "label": "New Bedford",
+    "lines": [
+      "Fall River/New Bedford Line"
+    ]
+  },
+  {
+    "lat": 42.797837,
+    "lon": -70.87797,
+    "label": "Newburyport",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.327415,
+    "lon": -71.065674,
+    "label": "Newmarket",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.329552,
+    "lon": -71.192024,
+    "label": "Newton Centre",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.3294,
+    "lon": -71.192622,
+    "label": "Newton Centre",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.329443,
+    "lon": -71.192414,
+    "label": "Newton Centre",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.322738,
+    "lon": -71.205082,
+    "label": "Newton Highlands",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.322381,
+    "lon": -71.205509,
+    "label": "Newton Highlands",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.351702,
+    "lon": -71.205408,
+    "label": "Newtonville",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.120694,
+    "lon": -71.325217,
+    "label": "Norfolk",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.583779,
+    "lon": -70.883851,
+    "label": "North Beverly",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.593248,
+    "lon": -71.280995,
+    "label": "North Billerica",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.539017,
+    "lon": -71.739186,
+    "label": "North Leominster",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.275802,
+    "lon": -71.030144,
+    "label": "North Quincy",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.275275,
+    "lon": -71.029583,
+    "label": "North Quincy",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.219528,
+    "lon": -70.788602,
+    "label": "North Scituate",
+    "lines": [
+      "Greenbush Line"
+    ]
+  },
+  {
+    "lat": 42.36528,
+    "lon": -71.060205,
+    "label": "North Station",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.366417,
+    "lon": -71.062326,
+    "label": "North Station",
+    "lines": [
+      "Fitchburg Line",
+      "Haverhill Line",
+      "Lowell Line",
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.365577,
+    "lon": -71.06129,
+    "label": "North Station",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E",
+      "Fitchburg Line",
+      "Haverhill Line",
+      "Lowell Line",
+      "Newburyport/Rockport Line",
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.571073,
+    "lon": -71.160939,
+    "label": "North Wilmington",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.339897,
+    "lon": -71.09021,
+    "label": "Northeastern University",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.340222,
+    "lon": -71.0892,
+    "label": "Northeastern University",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.188775,
+    "lon": -71.199665,
+    "label": "Norwood Central",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.196857,
+    "lon": -71.196688,
+    "label": "Norwood Depot",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.437735,
+    "lon": -71.070875,
+    "label": "Oak Grove",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.43668,
+    "lon": -71.071097,
+    "label": "Oak Grove",
+    "lines": [
+      "Haverhill Line",
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.386842,
+    "lon": -71.004767,
+    "label": "Orient Heights",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.351651,
+    "lon": -71.12551,
+    "label": "Packard's Corner",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.351891,
+    "lon": -71.125067,
+    "label": "Packard's Corner",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.3563946,
+    "lon": -71.0624242,
+    "label": "Park Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 41.878804,
+    "lon": -71.392048,
+    "label": "Pawtucket/Central Falls",
+    "lines": [
+      "Foxboro Event Service",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.3884,
+    "lon": -71.119149,
+    "label": "Porter",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 41.829293,
+    "lon": -71.413301,
+    "label": "Providence",
+    "lines": [
+      "Foxboro Event Service",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.34557,
+    "lon": -71.081696,
+    "label": "Prudential",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.233391,
+    "lon": -71.007153,
+    "label": "Quincy Adams",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.251809,
+    "lon": -71.005409,
+    "label": "Quincy Center",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.52221,
+    "lon": -71.108294,
+    "label": "Reading",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.238831,
+    "lon": -71.133281,
+    "label": "Readville",
+    "lines": [
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.237769,
+    "lon": -71.133569,
+    "label": "Readville",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.238405,
+    "lon": -71.133246,
+    "label": "Readville",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.335181,
+    "lon": -71.147879,
+    "label": "Reservoir",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.335163,
+    "lon": -71.148601,
+    "label": "Reservoir",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.407874,
+    "lon": -70.992497,
+    "label": "Revere Beach",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.40776,
+    "lon": -70.992586,
+    "label": "Revere Beach",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.449927,
+    "lon": -70.969848,
+    "label": "River Works",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.337317,
+    "lon": -71.252256,
+    "label": "Riverside",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.337352,
+    "lon": -71.252685,
+    "label": "Riverside",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.331391,
+    "lon": -71.111925,
+    "label": "Riverway",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.331871,
+    "lon": -71.111961,
+    "label": "Riverway",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 42.655491,
+    "lon": -70.627055,
+    "label": "Rockport",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.287442,
+    "lon": -71.130283,
+    "label": "Roslindale Village",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 42.210308,
+    "lon": -71.147134,
+    "label": "Route 128",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.726845,
+    "lon": -70.859034,
+    "label": "Rowley",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.330671,
+    "lon": -71.096121,
+    "label": "Roxbury Crossing",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.331397,
+    "lon": -71.095451,
+    "label": "Roxbury Crossing",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.33649,
+    "lon": -71.089684,
+    "label": "Ruggles",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.337659,
+    "lon": -71.087737,
+    "label": "Ruggles",
+    "lines": [
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.336608,
+    "lon": -71.089208,
+    "label": "Ruggles",
+    "lines": [
+      "Franklin/Foxboro Line",
+      "Needham Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.336377,
+    "lon": -71.088961,
+    "label": "Ruggles",
+    "lines": [
+      "Franklin/Foxboro Line",
+      "Needham Line",
+      "Orange Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.345884,
+    "lon": -71.107697,
+    "label": "Saint Mary's Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.346007,
+    "lon": -71.107166,
+    "label": "Saint Mary's Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.34334,
+    "lon": -71.116927,
+    "label": "Saint Paul Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.524792,
+    "lon": -70.895876,
+    "label": "Salem",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.310591,
+    "lon": -71.053612,
+    "label": "Savin Hill",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.31129,
+    "lon": -71.053331,
+    "label": "Savin Hill",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.366664,
+    "lon": -71.067666,
+    "label": "Science Park/West End",
+    "lines": [
+      "B",
+      "C",
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.124553,
+    "lon": -71.184468,
+    "label": "Sharon",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.2931258,
+    "lon": -71.065738,
+    "label": "Shawmut",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.545089,
+    "lon": -71.648004,
+    "label": "Shirley",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.395625,
+    "lon": -71.302357,
+    "label": "Silver Hill",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.460375,
+    "lon": -71.457744,
+    "label": "South Acton",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 41.897943,
+    "lon": -71.354621,
+    "label": "South Attleboro",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.352271,
+    "lon": -71.055242,
+    "label": "South Station",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.351497,
+    "lon": -71.055059,
+    "label": "South Station",
+    "lines": [
+      "CapeFLYER",
+      "Fairmount Line",
+      "Fall River/New Bedford Line",
+      "Foxboro Event Service",
+      "Framingham/Worcester Line",
+      "Franklin/Foxboro Line",
+      "Greenbush Line",
+      "Kingston Line",
+      "Needham Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.339581,
+    "lon": -71.157499,
+    "label": "South Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.339371,
+    "lon": -71.157057,
+    "label": "South Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.3396,
+    "lon": -71.157661,
+    "label": "South Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.155025,
+    "lon": -70.953302,
+    "label": "South Weymouth",
+    "lines": [
+      "Kingston Line"
+    ]
+  },
+  {
+    "lat": 42.267024,
+    "lon": -71.524371,
+    "label": "Southborough",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.358978,
+    "lon": -71.057598,
+    "label": "State",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.317062,
+    "lon": -71.104248,
+    "label": "Stony Brook",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.124084,
+    "lon": -71.103627,
+    "label": "Stoughton",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.39061,
+    "lon": -70.99703,
+    "label": "Suffolk Downs",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.390422,
+    "lon": -70.997323,
+    "label": "Suffolk Downs",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.383975,
+    "lon": -71.076994,
+    "label": "Sullivan Square",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.34112,
+    "lon": -71.125652,
+    "label": "Summit Avenue",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.341577,
+    "lon": -71.146607,
+    "label": "Sutherland Road",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.341589,
+    "lon": -71.146089,
+    "label": "Sutherland Road",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.473743,
+    "lon": -70.922537,
+    "label": "Swampscott",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.342687,
+    "lon": -71.085056,
+    "label": "Symphony",
+    "lines": [
+      "E"
+    ]
+  },
+  {
+    "lat": 41.726599,
+    "lon": -71.442453,
+    "label": "TF Green Airport",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.292246,
+    "lon": -71.07814,
+    "label": "Talbot Avenue",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.338498,
+    "lon": -71.138731,
+    "label": "Tappan Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.338567,
+    "lon": -71.13819,
+    "label": "Tappan Street",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.349662,
+    "lon": -71.063917,
+    "label": "Tufts Medical Center",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.377024,
+    "lon": -71.093964,
+    "label": "Union Square",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.377359,
+    "lon": -71.094761,
+    "label": "Union Square",
+    "lines": [
+      "D",
+      "E"
+    ]
+  },
+  {
+    "lat": 42.319125,
+    "lon": -71.068627,
+    "label": "Uphams Corner",
+    "lines": [
+      "Fairmount Line",
+      "Franklin/Foxboro Line",
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.268347,
+    "lon": -71.081343,
+    "label": "Valley Road",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.268389,
+    "lon": -71.081504,
+    "label": "Valley Road",
+    "lines": [
+      "Mattapan Line"
+    ]
+  },
+  {
+    "lat": 42.325695,
+    "lon": -71.230476,
+    "label": "Waban",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.325967,
+    "lon": -71.230714,
+    "label": "Waban",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.553477,
+    "lon": -71.848488,
+    "label": "Wachusett",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.502126,
+    "lon": -71.075566,
+    "label": "Wakefield",
+    "lines": [
+      "Haverhill Line"
+    ]
+  },
+  {
+    "lat": 42.145548,
+    "lon": -71.257646,
+    "label": "Walpole",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.145477,
+    "lon": -71.25779,
+    "label": "Walpole",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.374296,
+    "lon": -71.235615,
+    "label": "Waltham",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.373698,
+    "lon": -71.238672,
+    "label": "Waltham",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 41.7604,
+    "lon": -70.7171,
+    "label": "Wareham Village",
+    "lines": [
+      "CapeFLYER"
+    ]
+  },
+  {
+    "lat": 42.348819,
+    "lon": -71.140051,
+    "label": "Warren Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.348285,
+    "lon": -71.140436,
+    "label": "Warren Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.339471,
+    "lon": -71.135139,
+    "label": "Washington Square",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.339519,
+    "lon": -71.134587,
+    "label": "Washington Square",
+    "lines": [
+      "C"
+    ]
+  },
+  {
+    "lat": 42.343974,
+    "lon": -71.142731,
+    "label": "Washington Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.344329,
+    "lon": -71.142385,
+    "label": "Washington Street",
+    "lines": [
+      "B"
+    ]
+  },
+  {
+    "lat": 42.3876,
+    "lon": -71.190744,
+    "label": "Waverley",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.444948,
+    "lon": -71.140169,
+    "label": "Wedgemere",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.323608,
+    "lon": -71.272288,
+    "label": "Wellesley Farms",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.31037,
+    "lon": -71.277044,
+    "label": "Wellesley Hills",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.296963,
+    "lon": -71.295709,
+    "label": "Wellesley Square",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.296559,
+    "lon": -71.296746,
+    "label": "Wellesley Square",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.297526,
+    "lon": -71.294173,
+    "label": "Wellesley Square",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.401505,
+    "lon": -71.077252,
+    "label": "Wellington",
+    "lines": [
+      "Orange Line"
+    ]
+  },
+  {
+    "lat": 42.457043,
+    "lon": -71.392892,
+    "label": "West Concord",
+    "lines": [
+      "Fitchburg Line"
+    ]
+  },
+  {
+    "lat": 42.611933,
+    "lon": -70.705417,
+    "label": "West Gloucester",
+    "lines": [
+      "Newburyport/Rockport Line"
+    ]
+  },
+  {
+    "lat": 42.235838,
+    "lon": -70.902708,
+    "label": "West Hingham",
+    "lines": [
+      "Greenbush Line"
+    ]
+  },
+  {
+    "lat": 42.422221,
+    "lon": -71.133987,
+    "label": "West Medford",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.421776,
+    "lon": -71.133342,
+    "label": "West Medford",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.283064,
+    "lon": -71.391797,
+    "label": "West Natick",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.347878,
+    "lon": -71.230528,
+    "label": "West Newton",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.281358,
+    "lon": -71.160065,
+    "label": "West Roxbury",
+    "lines": [
+      "Needham Line"
+    ]
+  },
+  {
+    "lat": 42.269644,
+    "lon": -71.647076,
+    "label": "Westborough",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.221503,
+    "lon": -70.968152,
+    "label": "Weymouth Landing/East Braintree",
+    "lines": [
+      "Greenbush Line"
+    ]
+  },
+  {
+    "lat": 42.082749,
+    "lon": -70.923411,
+    "label": "Whitman",
+    "lines": [
+      "Kingston Line"
+    ]
+  },
+  {
+    "lat": 41.581289,
+    "lon": -71.491147,
+    "label": "Wickford Junction",
+    "lines": [
+      "Providence/Stoughton Line"
+    ]
+  },
+  {
+    "lat": 42.546624,
+    "lon": -71.174334,
+    "label": "Wilmington",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.451088,
+    "lon": -71.13783,
+    "label": "Winchester Center",
+    "lines": [
+      "Lowell Line"
+    ]
+  },
+  {
+    "lat": 42.172127,
+    "lon": -71.219366,
+    "label": "Windsor Gardens",
+    "lines": [
+      "Franklin/Foxboro Line"
+    ]
+  },
+  {
+    "lat": 42.266788,
+    "lon": -71.020457,
+    "label": "Wollaston",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.266762,
+    "lon": -71.020542,
+    "label": "Wollaston",
+    "lines": [
+      "Red Line"
+    ]
+  },
+  {
+    "lat": 42.413361,
+    "lon": -70.991685,
+    "label": "Wonderland",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.413514,
+    "lon": -70.991714,
+    "label": "Wonderland",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.379671,
+    "lon": -71.022783,
+    "label": "Wood Island",
+    "lines": [
+      "Blue Line"
+    ]
+  },
+  {
+    "lat": 42.332703,
+    "lon": -71.243055,
+    "label": "Woodland",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.333094,
+    "lon": -71.243659,
+    "label": "Woodland",
+    "lines": [
+      "D"
+    ]
+  },
+  {
+    "lat": 42.261056,
+    "lon": -71.794428,
+    "label": "Worcester",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.261291,
+    "lon": -71.794927,
+    "label": "Worcester",
+    "lines": [
+      "Framingham/Worcester Line"
+    ]
+  },
+  {
+    "lat": 42.451731,
+    "lon": -71.069379,
+    "label": "Wyoming Hill",
+    "lines": [
+      "Haverhill Line"
+    ]
+  }
+]

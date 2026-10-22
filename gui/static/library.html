@@ -111,7 +111,7 @@
   <div class="nav">
     <a href="/">Home</a>
     <a href="/app">Design</a>
-    <a href="/citytool">CityTool</a>
+    <a href="https://personalizetransit.com">Personalize Transit</a>
   </div>
   <div class="stats" id="lib-stats"></div>
 </div>
@@ -192,7 +192,13 @@ const Library = (() => {
     });
 
     let html = '';
-    Object.keys(groups).sort().forEach(region => {
+    Object.keys(groups).sort((a, b) => {
+      const aUS = a.startsWith("US");
+      const bUS = b.startsWith("US");
+      if (aUS && !bUS) return -1;
+      if (!aUS && bUS) return 1;
+      return a.localeCompare(b);
+    }).forEach(region => {
       const nets = groups[region];
       const countryNames = { US: 'United States', CAN: 'Canada', GRM: 'Germany', Dubai: 'UAE', Kyrgystan: 'Kyrgyzstan', Liberia: 'Liberia' };
       const parts = region.split(' / ');
