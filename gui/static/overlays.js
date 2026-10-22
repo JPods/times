@@ -192,7 +192,7 @@ const Overlays = (() => {
       if (err.contact) {
         _showCrashContact(err.state, err.contact);
       } else {
-        _showOverlayNote("crash_density", err.error || "All-severity crash data not available for this state. Click Fetch Data first.");
+        { const st = err.state || ""; const msg = err.error || "No crash data for this area."; if (err.has_partial) { _showSearchPrompt(st, msg + " Click Search to try harvesting this county."); } else { _showSearchPrompt(st, msg); } }
       }
       return null;
     }
@@ -542,6 +542,172 @@ const Overlays = (() => {
     }
   }
 
+  // ── Data Search Protocol — 2026-07-30 ──
+  let _searchPolling = null;
+
+  function _startDataSearch(state) {
+    var sp = _spatialParams().replace("?", "").split("&");
+    var slat = "", slon = "", srad = "";
+    sp.forEach(function(p) {
+      if (p.startsWith("lat=")) slat = p.split("=")[1];
+      if (p.startsWith("lon=")) slon = p.split("=")[1];
+      if (p.startsWith("radius=")) srad = p.split("=")[1];
+    });
+    fetch("/api/overlays/search_data", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({state: state, lat: slat, lon: slon, radius: srad || "10"}),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === "found") {
+        _showSearchFound(data);
+      } else {
+        _showSearchProgress(state, data);
+        _searchPolling = setInterval(() => _pollSearch(state), 2000);
+      }
+    })
+    .catch(e => {
+      _showOverlayNote("crash_density", "Search failed: " + e.message);
+    });
+  }
+
+  function _pollSearch(state) {
+    fetch("/api/overlays/search_status?state=" + state)
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === "found") {
+        clearInterval(_searchPolling);
+        _searchPolling = null;
+        _showSearchFound(data);
+      } else if (data.status === "not_found" || data.status === "cancelled") {
+        clearInterval(_searchPolling);
+        _searchPolling = null;
+        _showSearchExhausted(data);
+      } else {
+        _updateSearchProgress(data);
+      }
+    })
+    .catch(() => {});
+  }
+
+  function _showSearchPrompt(state, errorMsg) {
+    let el = document.getElementById("data-search-panel");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "data-search-panel";
+      el.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);" +
+        "background:#1a1a2e;color:#eee;padding:24px;border-radius:10px;" +
+        "box-shadow:0 4px 24px rgba(0,0,0,0.6);z-index:10000;min-width:380px;" +
+        "font-family:system-ui;line-height:1.6;max-width:500px";
+      document.body.appendChild(el);
+    }
+    el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">' +
+      '<span style="font-size:15px;font-weight:700">' + errorMsg + '</span>' +
+      '<button onclick="document.getElementById(\'data-search-panel\').remove()"' +
+      ' style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">&times;</button></div>' +
+      '<div style="font-size:13px;color:#aaa;margin-bottom:16px">' +
+      'Know a data source? Enter a URL or agency name:</div>' +
+      '<input id="ds-user-source" type="text" placeholder="e.g. https://data.ok.gov/crashes or OK DPS"' +
+      ' style="width:100%;padding:8px;border-radius:4px;border:1px solid #444;' +
+      'background:#0d0d1a;color:#eee;font-size:13px;margin-bottom:12px;box-sizing:border-box">' +
+      '<div style="display:flex;gap:8px">' +
+      '<button onclick="Overlays._startDataSearch(\'' + state + '\')"' +
+      ' style="flex:1;padding:10px;border-radius:6px;border:none;' +
+      'background:#1d4ed8;color:#fff;font-weight:600;cursor:pointer;font-size:13px">' +
+      'Search for Data</button>' +
+      '<button onclick="document.getElementById(\'data-search-panel\').remove()"' +
+      ' style="padding:10px 16px;border-radius:6px;border:1px solid #444;' +
+      'background:none;color:#aaa;cursor:pointer;font-size:13px">Cancel</button></div>';
+    el.style.display = "block";
+  }
+
+  function _showSearchProgress(state, data) {
+    let el = document.getElementById("data-search-panel");
+    if (!el) return;
+    el.innerHTML = '<div style="font-size:15px;font-weight:700;margin-bottom:12px">' +
+      'Searching for ' + state.toUpperCase() + ' crash data...</div>' +
+      '<div id="ds-progress-bar" style="background:#333;border-radius:4px;height:6px;margin-bottom:12px">' +
+      '<div style="background:#1d4ed8;height:6px;border-radius:4px;width:0%;transition:width 0.3s"></div></div>' +
+      '<div id="ds-progress-text" style="font-size:12px;color:#aaa">Starting search...</div>' +
+      '<div id="ds-sources-list" style="font-size:11px;color:#666;margin-top:10px;max-height:120px;overflow-y:auto"></div>' +
+      '<button onclick="document.getElementById(\'data-search-panel\').remove();' +
+      'if(window._searchPolling){clearInterval(window._searchPolling);window._searchPolling=null;}"' +
+      ' style="margin-top:12px;padding:6px 16px;border-radius:4px;border:1px solid #444;' +
+      'background:none;color:#aaa;cursor:pointer;font-size:12px">Cancel</button>';
+  }
+
+  function _updateSearchProgress(data) {
+    var pct = data.total > 0 ? Math.round((data.tried / data.total) * 100) : 0;
+    var bar = document.querySelector("#ds-progress-bar > div");
+    if (bar) bar.style.width = pct + "%";
+    var txt = document.getElementById("ds-progress-text");
+    if (txt) txt.textContent = "Checking: " + (data.current || "...") +
+      " (" + data.tried + "/" + data.total + ") - " + Math.round(data.elapsed) + "s";
+    var list = document.getElementById("ds-sources-list");
+    if (list && data.sources) {
+      list.innerHTML = data.sources.map(function(s) {
+        var icon = s.status === "done" ? "OK" : s.status === "trying" ? ">>" :
+                   s.status === "no_data" ? "--" : s.status === "pending" ? ".." : "!!";
+        var color = s.status === "done" ? "#4ade80" : s.status === "trying" ? "#60a5fa" :
+                    s.status.indexOf("error") === 0 ? "#ef4444" : "#666";
+        return '<div style="color:' + color + '">' + icon + ' ' + s.name + '</div>';
+      }).join("");
+    }
+  }
+
+  function _showSearchFound(data) {
+    var el = document.getElementById("data-search-panel");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "data-search-panel";
+      el.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);" +
+        "background:#0a2a0a;color:#eee;padding:24px;border-radius:10px;" +
+        "box-shadow:0 4px 24px rgba(0,0,0,0.6);z-index:10000;min-width:380px;" +
+        "font-family:system-ui;line-height:1.6";
+      document.body.appendChild(el);
+    }
+    el.style.background = "#0a2a0a";
+    el.innerHTML = '<div style="font-size:15px;font-weight:700;color:#4ade80;margin-bottom:12px">' +
+      'Data Found: ' + (data.message || "") + '</div>' +
+      '<div style="font-size:13px;color:#aaa;margin-bottom:16px">' +
+      (data.feature_count ? data.feature_count + " data points loaded." : "") + '</div>' +
+      '<button onclick="document.getElementById(\'data-search-panel\').remove();' +
+      'Overlays.toggleCrashDensity(true)"' +
+      ' style="width:100%;padding:12px;border-radius:6px;border:none;' +
+      'background:#16a34a;color:#fff;font-weight:700;cursor:pointer;font-size:14px">' +
+      'Reload Data</button>';
+  }
+
+  function _showSearchExhausted(data) {
+    var el = document.getElementById("data-search-panel");
+    if (!el) return;
+    el.style.background = "#1a1a2e";
+    var sourcesHtml = "";
+    if (data.sources && data.sources.length > 0) {
+      sourcesHtml = '<div style="font-size:11px;color:#888;margin:12px 0;max-height:150px;overflow-y:auto">' +
+        '<div style="font-weight:600;margin-bottom:4px">Sources checked:</div>' +
+        data.sources.map(function(s) {
+          var color = s.status === "done" ? "#4ade80" : s.status.indexOf("error") === 0 ? "#ef4444" : "#888";
+          return '<div style="color:' + color + '">- ' + s.name + ' : ' + s.status + '</div>';
+        }).join("") + '</div>';
+    }
+    var st = data.state || "";
+    el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+      '<span style="font-size:15px;font-weight:700;color:#ef4444">Search Complete - Data Not Found</span>' +
+      '<button onclick="document.getElementById(\'data-search-panel\').remove()"' +
+      ' style="background:none;border:none;color:#888;font-size:18px;cursor:pointer">&times;</button></div>' +
+      '<div style="font-size:13px;color:#ccc;margin-bottom:8px">' + (data.message || "") + '</div>' +
+      sourcesHtml +
+      '<div style="font-size:13px;color:#aaa;margin-top:12px">Know a source? Enter URL or agency:</div>' +
+      '<input id="ds-user-source" type="text" placeholder="URL or agency name"' +
+      ' style="width:100%;padding:8px;border-radius:4px;border:1px solid #444;' +
+      'background:#0d0d1a;color:#eee;font-size:13px;margin:8px 0;box-sizing:border-box">' +
+      '<button onclick="Overlays._startDataSearch(\'' + st + '\')"' +
+      ' style="width:100%;padding:10px;border-radius:6px;border:none;' +
+      'background:#1d4ed8;color:#fff;font-weight:600;cursor:pointer;font-size:13px">Try Again</button>';
+  }
+
   return {
     toggleAADT(tier, forceReload) {
       tier = tier || "core";
@@ -570,6 +736,7 @@ const Overlays = (() => {
     },
     toggleAccident(f) { _toggle("accident", _loadAccidents, f); },
     toggleCrashDensity(f) { _toggle("crash_density", _loadCrashDensity, f); },
+    _startDataSearch(state) { _startDataSearch(state); },
     toggleMobility(f) { _toggle("mobility", _loadMobility, f); },
     togglePopDensity(f) { _toggle("pop_density", _loadPopDensity, f); },
     togglePropertyValues(f) { _toggle("property_values", _loadPropertyValues, f); },
@@ -919,3 +1086,4 @@ const CustomPoints = (() => {
 // Wire into Overlays namespace
 Overlays.toggleCustomPoints = function() { CustomPoints.toggle(); };
 Overlays.customPoints = CustomPoints;
+

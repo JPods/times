@@ -1,0 +1,79 @@
+{
+  "updated": "2026-07-24",
+  "total_states_with_data": 46,
+  "total_states_missing": 5,
+  "total_states_weak": 5,
+  "missing_states": {
+    "MO": {
+      "status": "no_public_data",
+      "notes": "Dashboard only at savemolives.com/mcrs/dashboards — no raw download or ArcGIS endpoint found",
+      "contact": "Missouri DOT — Highway Safety and Traffic Division",
+      "contact_url": "https://www.savemolives.com",
+      "contact_phone": "888-275-6636",
+      "rutgers_note": "Dashboard/Map Only"
+    },
+    "MS": {
+      "status": "restricted",
+      "notes": "eCrash portal requires login — data is not public per Rutgers catalog",
+      "contact": "Mississippi Department of Public Safety — eCrash",
+      "contact_url": "https://publicdata.dps.ms.gov/Public-CrashData/eCrash/",
+      "contact_phone": "601-987-1212",
+      "rutgers_note": "Data is not Public",
+      "researcher": "Mehrara Molan (Ole Miss), Wang (JSU) — Action #395 in WC3"
+    },
+    "ND": {
+      "status": "no_public_data",
+      "notes": "Dashboard only at NDSU ArcGIS — no raw download or FeatureServer found",
+      "contact": "North Dakota DOT — Safety Division",
+      "contact_url": "https://ndsu.maps.arcgis.com/apps/dashboards/93a0ca93e706476f89e927a84e247155",
+      "contact_phone": "701-328-2500",
+      "rutgers_note": "Dashboard/Map Only",
+      "researcher": "Vachal (NDSU) — Action #395 in WC3"
+    },
+    "NV": {
+      "status": "needs_harvest",
+      "notes": "NDOT has ArcGIS viewer AND raw data download — both URLs known, not yet harvested",
+      "contact": "Nevada DOT — Traffic Safety Engineering",
+      "contact_url": "https://www.dot.nv.gov/safety/traffic-crash-data",
+      "arcgis_viewer": "https://ndot.maps.arcgis.com/apps/webappviewer/index.html?id=00d23dc547eb4382bef9beabe07eaefd",
+      "rutgers_note": "Raw Data and Dashboard/Map",
+      "action": "Probe ArcGIS viewer for FeatureServer endpoint, or download raw data from dot.nv.gov"
+    },
+    "RI": {
+      "status": "requested",
+      "notes": "APRA request 26-284 submitted 2026-07-24 by Bill James. RI DOT must respond within 10 business days.",
+      "contact": "Rhode Island DOT — Traffic Engineering",
+      "contact_url": "https://www.dot.ri.gov/",
+      "contact_phone": "401-222-2450",
+      "request_portal": "https://dot-ri.nextrequest.com/requests/new",
+      "request_id": "26-284",
+      "request_date": "2026-07-24",
+      "request_tracker": "https://dot-ri.nextrequest.com/requests/26-284",
+      "rutgers_note": "Data is not Public",
+      "researcher": "Abbate (RIDOT) — Action #395 in WC3"
+    }
+  },
+  "weak_states": {
+    "ME": {
+      "cells": 137,
+      "notes": "Only 137 grid cells — likely partial harvest. Maine has crash data portal — needs re-harvest"
+    },
+    "MD": {
+      "cells": 247,
+      "notes": "Only 247 grid cells — Maryland has extensive data. Likely only got one county. Re-harvest needed"
+    },
+    "NE": {
+      "cells": 425,
+      "notes": "Only 425 grid cells — Nebraska has statewide data. Partial harvest"
+    },
+    "AR": {
+      "cells": 496,
+      "notes": "Only 496 grid cells — Arkansas has more data. Partial harvest"
+    },
+    "NM": {
+      "cells": 967,
+      "notes": "Only 967 grid cells — New Mexico has statewide portal. Needs re-harvest for full coverage"
+    }
+  },
+  "note_for_users": "When a state has no crash data, MeshMobility should display the state contact information so the user can request it directly. Every state collects crash data — some just don't publish it yet."
+}

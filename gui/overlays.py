@@ -302,15 +302,28 @@ def overlay_crash_density():
         return jsonify({"error": "Cannot determine state — place a station first"}), 404
     data = _md.get_crashes(state, center_lat, center_lon, radius)
     if not data or not data.get("features"):
+        # Detect which county is missing
+        county_fips, county_name = _detect_county(center_lat, center_lon)
+        # Check if we have ANY state data (other counties)
+        all_state = _md.get_crashes(state)
+        has_partial = bool(all_state and all_state.get("features"))
+        error_msg = f"No crash data for {county_name or 'this area'}, {state.upper()}."
+        if has_partial:
+            error_msg += f" Data exists for other {state.upper()} counties but not this one."
         # Check if we have contact info for this state
         missing = _crash_status.get("missing_states", {}).get(state.upper(), {})
+        resp = {
+            "error": error_msg,
+            "state": state.upper(),
+            "county_fips": county_fips,
+            "county_name": county_name,
+            "has_partial": has_partial,
+            "lat": center_lat,
+            "lon": center_lon,
+        }
         if missing:
-            return jsonify({
-                "error": f"No all-severity crash data for {state.upper()}",
-                "contact": missing,
-                "state": state.upper(),
-            }), 404
-        return jsonify({"error": f"No all-severity crash data for {state.upper()}"}), 404
+            resp["contact"] = missing
+        return jsonify(resp), 404
 
     # Quality check: if crashes ≈ fatal, this is just FARS repackaged, not real all-severity
     sample = data["features"][:200]
@@ -491,3 +504,193 @@ def overlay_jobs():
     if data and data.get("features"):
         return jsonify(data)
     return jsonify({"error": f"No jobs data for {state.upper()}. Harvest: python3 -m crash_harvester harvest --census {state}"}), 404
+
+# ---------------------------------------------------------------------------
+# Data Search Protocol — active search when data is missing
+# Established 2026-07-30
+# ---------------------------------------------------------------------------
+import threading
+import time as _time
+
+_active_searches = {}  # key = state, value = search state dict
+
+
+def _detect_county(lat, lon):
+    """Detect county FIPS from lat/lon via FCC API."""
+    try:
+        import urllib.request
+        url = f"https://geo.fcc.gov/api/census/area?lat={lat}&lon={lon}&format=json"
+        r = urllib.request.urlopen(url, timeout=10)
+        import json as _jmod
+        data = _jmod.loads(r.read())
+        for result in data.get("results", []):
+            fips = result.get("county_fips", "")
+            name = result.get("county_name", "")
+            if fips and len(fips) >= 5:
+                return fips[2:], name  # 3-digit county code, county name
+    except Exception:
+        pass
+    return None, None
+
+def _run_data_search(state):
+    """Background thread: try ArcGIS harvest for missing state data.
+    Harvests statewide, normalizes by county, checks target county."""
+    search = _active_searches.get(state)
+    if not search:
+        return
+    search["status"] = "searching"
+
+    # Detect target county from search lat/lon
+    slat = search.get("lat")
+    slon = search.get("lon")
+    target_county, target_county_name = None, None
+    if slat and slon:
+        try:
+            target_county, target_county_name = _detect_county(float(slat), float(slon))
+            search["target_county"] = target_county
+            search["target_county_name"] = target_county_name
+            log.info(f"[DataSearch] Target: {target_county_name} County ({target_county}) in {state.upper()}")
+        except Exception:
+            pass
+
+    # Build source list
+    sources = []
+    try:
+        from CrashHarvester.harvest.arcgis_dot import CONFIGS
+        for key, cfg in CONFIGS.items():
+            if key.startswith(state) or key == state:
+                sources.append({
+                    "name": f"ArcGIS: {key}",
+                    "config_key": key,
+                    "url": cfg.get("url", ""),
+                    "notes": cfg.get("notes", ""),
+                })
+    except Exception as e:
+        log.warning(f"[DataSearch] Could not load ArcGIS configs: {e}")
+
+    if not sources:
+        search["status"] = "not_found"
+        search["sources"] = []
+        search["message"] = (
+            f"No ArcGIS endpoint configured for {state.upper()}. "
+            f"State DOT data may need to be obtained manually."
+        )
+        return
+
+    search["sources"] = [{"name": s["name"], "url": s["url"], "status": "pending"} for s in sources]
+    search["total"] = len(sources)
+
+    for i, src in enumerate(sources):
+        if search.get("cancelled"):
+            search["status"] = "cancelled"
+            return
+
+        search["current"] = src["name"]
+        search["tried"] = i + 1
+        search["sources"][i]["status"] = "trying"
+
+        try:
+            from CrashHarvester.harvest.arcgis_dot import harvest_arcgis
+            harvest_arcgis(sources[i]["config_key"])
+            search["sources"][i]["status"] = "done"
+
+            # Check if we now have data
+            _md._cache.clear()
+            slat = search.get("lat")
+            slon = search.get("lon")
+            srad = search.get("radius", 10)
+            if slat and slon:
+                test = _md.get_crashes(state, float(slat), float(slon), float(srad))
+            else:
+                test = _md.get_crashes(state)
+            if test and test.get("features"):
+                county_msg = f" ({target_county_name} County)" if target_county_name else ""
+                search["status"] = "found"
+                search["message"] = f"Crash data for {state.upper()}{county_msg} is now available. Reload Data."
+                search["feature_count"] = len(test["features"])
+                log.info(f"[DataSearch] Found {len(test['features'])} features for {state.upper()}{county_msg}")
+                return
+            else:
+                # Data harvested but not for target county
+                all_test = _md.get_crashes(state)
+                if all_test and all_test.get("features"):
+                    search["sources"][i]["status"] = "partial"
+                    log.info(f"[DataSearch] {src['name']} has data but not for target area")
+                else:
+                    search["sources"][i]["status"] = "no_data"
+        except Exception as e:
+            search["sources"][i]["status"] = f"error: {str(e)[:100]}"
+            log.warning(f"[DataSearch] {src['name']} failed: {e}")
+
+    county_msg = f" ({target_county_name} County)" if target_county_name else ""
+    search["status"] = "not_found"
+    search["message"] = (
+        f"Search complete. Could not find crash data for {state.upper()}{county_msg}. "
+        f"Checked {len(sources)} source(s). The state DOT may not publish data for this county, "
+        f"or may require a data request."
+    )
+
+
+@overlays_bp.post("/overlays/search_data")
+def overlay_search_data():
+    """Start a background search for missing crash data."""
+    state = request.json.get("state", "").lower() if request.is_json else ""
+    if not state:
+        state_detected, _, _ = _detect_state()
+        state = state_detected or ""
+    if not state:
+        return jsonify({"error": "No state specified"}), 400
+
+    existing = _active_searches.get(state)
+    if existing and existing["status"] == "searching":
+        return jsonify(existing)
+
+    lat = request.json.get("lat") if request.is_json else None
+    lon = request.json.get("lon") if request.is_json else None
+    radius = request.json.get("radius", 10) if request.is_json else 10
+    _md._cache.clear()
+    if lat and lon:
+        test = _md.get_crashes(state, float(lat), float(lon), float(radius))
+    else:
+        test = _md.get_crashes(state)
+    if test and test.get("features"):
+        return jsonify({
+            "status": "found",
+            "state": state.upper(),
+            "message": f"Crash data for {state.upper()} is already available. Reload Data.",
+            "feature_count": len(test["features"]),
+        })
+
+    search = {
+        "state": state.upper(),
+        "status": "starting",
+        "started": _time.time(),
+        "lat": lat,
+        "lon": lon,
+        "radius": radius,
+        "sources": [],
+        "tried": 0,
+        "total": 0,
+        "current": "",
+        "message": f"Searching for crash data for {state.upper()}...",
+    }
+    _active_searches[state] = search
+
+    t = threading.Thread(target=_run_data_search, args=(state,), daemon=True)
+    t.start()
+
+    return jsonify(search)
+
+
+@overlays_bp.get("/overlays/search_status")
+def overlay_search_status():
+    """Poll search progress."""
+    state = request.args.get("state", "").lower()
+    if not state:
+        return jsonify({"error": "No state specified"}), 400
+    search = _active_searches.get(state)
+    if not search:
+        return jsonify({"status": "none", "state": state.upper()})
+    result = dict(search)
+    result["elapsed"] = round(_time.time() - search["started"], 1)
+    return jsonify(result)
