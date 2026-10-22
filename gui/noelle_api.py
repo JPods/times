@@ -1047,7 +1047,7 @@ def network_report_md():
     if _net() is None:
         return Response("No network loaded\n", status=400, mimetype="text/markdown")
     html = _report_html(_design_report(), _state.get("structures", {}))
-    return Response(html_to_markdown(html), mimetype="text/markdown; charset=utf-8")
+    return Response(html_to_markdown(html), mimetype="text/markdown")
 
 
 # ---------------------------------------------------------------------------
