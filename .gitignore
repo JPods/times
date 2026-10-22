@@ -39,3 +39,10 @@ overlays/*.geojson
 # Runtime
 route_time.log
 sweep_trips.json
+
+# Flask filesystem sessions (fallback when Redis unavailable)
+.flask_sessions/
+
+# Runtime log and drawn-line scratch files
+mesh_mobility.log
+drawn_lines/

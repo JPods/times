@@ -70,7 +70,7 @@ from mesh_mobility.engine import Network, Node, Line, Station
 from mesh_mobility.engine.structures import (
     build_traffic_circle, build_station, connect_cps, disconnect_cp,
     rotate_station, rotate_traffic_circle,
-    ConnectionPoint, Structure,
+    ConnectionPoint, Structure, design_summary,
 )
 from mesh_mobility.io import load_jpd
 
@@ -202,10 +202,8 @@ def _network_to_geojson(net: Network) -> dict:
             "network_id": net.network_id,
             "node_count": len(net.nodes),
             "line_count": len(net.lines),
-            "station_count": len(net.stations),
             "total_km": round(net.total_length_m() / 1000, 2),
-            "total_miles": round(net.total_length_m() / 1609.34, 1),
-            "circle_count": sum(1 for s in _state["structures"].values() if s.structure_type == "circle"),
+            **design_summary(net, _state["structures"]),
             "city_label": (_state.get("overlays") or {}).get("city_label", ""),
             "center": center,
             "structures": structures_meta,

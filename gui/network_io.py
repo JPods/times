@@ -33,7 +33,7 @@ import subprocess as _subprocess
 
 from mesh_mobility.engine import Network, Node, Line, Station
 from mesh_mobility.engine.structures import (
-    ConnectionPoint, Structure,
+    ConnectionPoint, Structure, design_summary,
 )
 from mesh_mobility.io import load_jpd, load_podpresenter, load_sketchup_map
 from mesh_mobility.io.jpd_writer import save_jpd, serialise_jpd
@@ -73,6 +73,9 @@ ALLOWED_PATHS = [
     os.path.expanduser("~/Allie/"),
     "/Volumes/Allie/",
     "/tmp/mesh_mobility/",
+    # Andi (IT15) production paths
+    "/opt/andi/apps/mesh_mobility/library/drafts/",
+    "/opt/andi/data/networks/",
 ]
 
 def _validate_path(path: str, operation: str = "access") -> str:
@@ -138,9 +141,9 @@ def _noelle_on_save(net, path, state):
     spec.loader.exec_module(noelle)
 
     structures = state.get("structures", {})
-    station_count = len(net.stations) if hasattr(net, "stations") else 0
-    circle_count = sum(1 for s in structures.values()
-                       if getattr(s, "structure_type", "") == "traffic_circle")
+    summary = design_summary(net, structures)
+    station_count = summary["station_count"]
+    circle_count = summary["circle_count"]
     connection_count = len(net.connections) if hasattr(net, "connections") else 0
 
     network_data = {
@@ -341,6 +344,13 @@ def load_network():
 
 @network_io_bp.post("/network/save")
 def save_network():
+    """Save network to server library. Superusers only."""
+    from mesh_mobility.gui.auth import is_superuser, get_current_user
+    email = get_current_user()
+    if not is_superuser(email):
+        return jsonify({"error": "Superuser access required to save to library",
+                        "detail": "Use Save Local to save to your machine."}), 403
+
     net = _net()
     if net is None:
         return jsonify({"error": "No network loaded"}), 400
@@ -357,8 +367,8 @@ def save_network():
     if not filename.endswith(".jpd"):
         filename = filename + ".jpd"
 
-    # Always save to the blessed library folder
-    maps_dir = ALLOWED_PATHS[0]  # mesh_mobility_maps
+    # Always save to the blessed library folder (resolves correctly on Mac and Andi)
+    maps_dir = _maps_dir()
     os.makedirs(maps_dir, exist_ok=True)
     path = os.path.join(maps_dir, filename)
 
@@ -391,14 +401,15 @@ def save_network():
     try:
         from mesh_mobility.gui.auth import register_network_save
         settings = _state.get("settings") or {}
+        summary = design_summary(net, _state["structures"])
         register_network_save(os.path.basename(path), {
             "city": settings.get("city", net.network_id),
             "state": settings.get("state", ""),
             "country": settings.get("country", ""),
-            "stations": len(net.stations),
-            "circles": sum(1 for s in _state["structures"].values()
-                           if getattr(s, "structure_type", "") == "traffic_circle"),
-            "total_miles": round(net.total_length_m() / 1609.34, 1),
+            "stations": summary["station_count"],
+            "circles": summary["circle_count"],
+            "total_miles": summary["route_miles"],
+            "columns": summary["column_count"],
         })
     except Exception:
         pass
@@ -706,6 +717,44 @@ def download_network():
     )
 
 
+# ---------------------------------------------------------------------------
+# Admin setting: archive Save Local files to Noelle's network folder
+# Set to False when public traffic gets too noisy
+# ---------------------------------------------------------------------------
+ARCHIVE_LOCAL_SAVES = True
+
+
+@network_io_bp.post("/network/archive_local")
+def archive_local_save():
+    """Silent archive of Save Local files for Noelle's learning.
+    Admin-controlled — set ARCHIVE_LOCAL_SAVES = False to disable."""
+    if not ARCHIVE_LOCAL_SAVES:
+        return jsonify({"archived": False, "reason": "disabled"})
+
+    net = _net()
+    if net is None or not net.stations:
+        return jsonify({"archived": False, "reason": "empty"})
+
+    try:
+        content_bytes = serialise_jpd(net, _state["structures"], _state["cps"],
+                                       _state["settings"], _state.get("overlays"))
+        archive_dir = os.path.join(_NOELLE_LOG_DIR, "networks")
+        os.makedirs(archive_dir, exist_ok=True)
+        ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+        data = request.json or {}
+        fname = data.get("filename", "local").replace(".jpd", "")
+        archive_name = f"{ts}_{fname}.jpd"
+        with open(os.path.join(archive_dir, archive_name), "wb") as f:
+            f.write(content_bytes)
+        noelle_log("archive_local_save", {
+            "filename": archive_name,
+            "stations": len(net.stations),
+        })
+        return jsonify({"archived": True, "filename": archive_name})
+    except Exception as e:
+        return jsonify({"archived": False, "reason": str(e)})
+
+
 @network_io_bp.post("/network/new")
 def new_network():
     data = request.json or {}
@@ -822,6 +871,10 @@ def load_network_text():
         return jsonify({"error": str(e)}), 500
     finally:
         os.unlink(tmp_path)
+
+    # The temp file's name means nothing — name the network after the user's file
+    if not net.network_id or net.network_id == "untitled" or net.network_id.startswith("tmp"):
+        net.network_id = os.path.splitext(os.path.basename(filename))[0]
 
     _state["network"] = net
     _state["network_path"] = None

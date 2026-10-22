@@ -858,72 +858,58 @@ const Sim = (() => {
   }
 
 
+  let _simRunning = false;
+  let _simStopped = false;
+
+  function _resetRunButton() {
+    _simRunning = false;
+    _simStopped = false;
+    const btn = document.getElementById("btn-run");
+    if (btn) { btn.textContent = "▶ Run"; btn.style.background = ""; }
+  }
+
   return {
 
     async run() {
-      const slots = parseInt(document.getElementById("sim-slots").value, 10) || 360;
-      setStatus("Running simulation… ⏳");
-      _stopReplay();
-
-      // Pre-fetch network geometry so loading animation starts immediately
-      _geojson = await api("GET", "/api/network");
-      _startLoadingAnim(_geojson);
-      _showSweepCircles(_geojson);   // orange rings on all stations
-      _showNetworkIssues(_geojson);  // green=orphans, yellow=dead ends
-
-      // Start async simulation — send current panel settings so server uses live values
-      const started = await api("POST", "/api/simulation/run", { slots, settings: Settings.current() });
-      if (started.error) {
-        _stopLoadingAnim();
-        _clearSweepCircles();
-        alert(started.error);
+      // Toggle: if running, stop it
+      if (_simRunning) {
+        _simStopped = true;
+        setStatus("Stopping…");
         return;
       }
 
-      // Poll progress every 800 ms
-      let result = null;
-      let dotCount = 0;
-      while (!result) {
-        await new Promise(r => setTimeout(r, 800));
-        const prog = await api("GET", "/api/simulation/progress");
+      _simRunning = true;
+      _simStopped = false;
+      const btn = document.getElementById("btn-run");
+      if (btn) { btn.textContent = "⏹ Stop"; btn.style.background = "#6a2a2a"; }
+      setStatus("Computing travel times…");
+      _stopReplay();
 
-        if (prog.status === "done") {
-          result = prog.result;
-        } else if (prog.status === "error") {
-          _stopLoadingAnim();
-          _clearSweepCircles();
-          alert("Simulation error: " + (prog.error || "unknown"));
+      // Compute Dijkstra travel times for all station pairs — instant, no simulation needed
+      _geojson = await api("GET", "/api/network");
+      _showNetworkIssues(_geojson);  // green=orphans, yellow=dead ends
+
+      try {
+        const r = await api("POST", "/api/network/compute_travel_times", { settings: Settings.current() });
+        _resetRunButton();
+
+        if (r.error) {
+          alert(r.error);
           return;
-        } else if (prog.status === "running") {
-          // Remove orange ring from each station that has completed all sweeps
-          _clearSweepCirclesFor(prog.completed_origins || []);
-          const n    = prog.total_stations || 0;
-          const done = (prog.completed_origins || []).length;
-          const cp   = prog.covered_pairs  || 0;
-          const tp   = prog.total_pairs    || (n * (n - 1));
-          const dots = ".".repeat((dotCount++ % 3) + 1);
-          setStatus(`Running simulation${dots} ${done}/${n} stations · ${cp}/${tp} pairs`);
         }
+
+        document.getElementById("btn-timemap").disabled = false;
+        const n = r.stations || 0;
+        const pairs = r.pairs || 0;
+        const unreachable = r.unreachable || 0;
+        let msg = `Travel times computed — ${n} stations, ${pairs} pairs`;
+        if (unreachable > 0) msg += ` (${unreachable} unreachable)`;
+        setStatus(msg);
+        if (typeof App !== "undefined" && App.flash) App.flash("Isochrone ready — click any point on the map", 4000);
+      } catch (e) {
+        _resetRunButton();
+        alert("Failed: " + e.message);
       }
-
-      _stopLoadingAnim();
-      _clearSweepCircles();
-
-      if (result.error) { alert(result.error); return; }
-
-      _result = result;
-      _showResults(result);
-      await _buildFrames(result, _geojson);
-
-      document.getElementById("btn-replay").disabled = false;
-      document.getElementById("btn-replay").textContent = "⏹ Stop";
-      document.getElementById("btn-report").disabled = false;
-      document.getElementById("btn-timemap").disabled = false;
-      _startReplay();   // auto-start animation immediately after build
-      const pax = result.simulation.passengers_served;
-      setStatus(`Simulation complete — ${pax} passengers served`);
-      App.setReadOnly(true);
-      _showLogPrompt(result);
     },
 
     replay() {
@@ -944,7 +930,6 @@ const Sim = (() => {
       document.getElementById("panel-sim").style.display = "none";
       document.getElementById("btn-replay").textContent = "▶▶ Replay";
       document.getElementById("btn-replay").disabled = true;
-      document.getElementById("btn-report").disabled = true;
       document.getElementById("btn-timemap").disabled = true;
       setStatus("Ready");
     },

@@ -41,6 +41,8 @@ from mesh_mobility.engine.structures import (
     build_traffic_circle, build_station, connect_cps,
     ConnectionPoint, Structure,
 )
+from mesh_mobility.engine.design_report import design_report
+from mesh_mobility.gui.report_md import html_to_markdown
 
 # ---------------------------------------------------------------------------
 # Shared state imports
@@ -782,94 +784,31 @@ def noelle_wild_guess():
 # Network report (printable HTML)
 # ---------------------------------------------------------------------------
 
-@noelle.get("/network/report")
-def network_report():
-    """Printable HTML network summary — stations, miles, economics."""
-    net = _net()
-    if net is None:
-        return "<h1>No network loaded</h1>", 400
-
-    structures = _state.get("structures", {})
-    stations = [(sid, s) for sid, s in structures.items() if s.structure_type == "station"]
-    circles = [(sid, s) for sid, s in structures.items() if s.structure_type == "circle"]
-    total_miles = round(net.total_length_m() / 1609.34, 1)
-    build_cost = round(total_miles * 20, 1)
-    network_id = net.network_id or "Untitled"
-
-    # City name from overlay state
-    city_label = ""
-    overlays = _state.get("overlays", {})
-    city_key = overlays.get("city", "")
-
-    html = f"""<!DOCTYPE html>
+_REPORT_HEAD = """<!DOCTYPE html>
 <html><head><meta charset="utf-8">
-<title>JPods Network Summary — {network_id}</title>
+<title>JPods Design Summary — __TITLE__</title>
 <style>
-  @media print {{ body {{ font-size: 11pt; }} }}
-  body {{ font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 800px;
-         margin: 40px auto; padding: 0 20px; color: #222; }}
-  h1 {{ color: #1a5276; border-bottom: 2px solid #1a5276; padding-bottom: 8px; }}
-  h2 {{ color: #2e7d32; margin-top: 24px; }}
-  table {{ width: 100%; border-collapse: collapse; margin: 12px 0; }}
-  th, td {{ padding: 6px 12px; text-align: left; border-bottom: 1px solid #ddd; }}
-  th {{ background: #f5f5f5; font-weight: 600; }}
-  .metric {{ font-size: 28px; font-weight: 700; color: #1a5276; }}
-  .metric-label {{ font-size: 12px; color: #888; text-transform: uppercase; }}
-  .metrics {{ display: flex; gap: 32px; margin: 20px 0; }}
-  .metric-box {{ text-align: center; }}
-  .footer {{ margin-top: 40px; font-size: 11px; color: #888;
-             border-top: 1px solid #ddd; padding-top: 12px; }}
-  .oss {{ background: #f0f8f0; padding: 8px 12px; border-radius: 4px;
-          border-left: 3px solid #2e7d32; font-size: 12px; margin: 16px 0; }}
+  @media print { body { font-size: 11pt; } }
+  body { font-family: -apple-system, 'Segoe UI', sans-serif; max-width: 800px;
+         margin: 40px auto; padding: 0 20px; color: #222; }
+  h1 { color: #1a5276; border-bottom: 2px solid #1a5276; padding-bottom: 8px; }
+  h2 { color: #2e7d32; margin-top: 24px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+  th, td { padding: 6px 12px; text-align: left; border-bottom: 1px solid #ddd; }
+  th { background: #f5f5f5; font-weight: 600; }
+  .metric { font-size: 28px; font-weight: 700; color: #1a5276; }
+  .metric-label { font-size: 12px; color: #888; text-transform: uppercase; }
+  .metrics { display: flex; gap: 32px; margin: 20px 0; }
+  .metric-box { text-align: center; }
+  .footer { margin-top: 40px; font-size: 11px; color: #888;
+             border-top: 1px solid #ddd; padding-top: 12px; }
+  .oss { background: #f0f8f0; padding: 8px 12px; border-radius: 4px;
+          border-left: 3px solid #2e7d32; font-size: 12px; margin: 16px 0; }
 </style>
 </head><body>
-<h1>JPods Network Summary — {network_id}</h1>
+"""
 
-<div class="metrics">
-  <div class="metric-box"><div class="metric">{len(stations)}</div><div class="metric-label">Stations</div></div>
-  <div class="metric-box"><div class="metric">{len(circles)}</div><div class="metric-label">Circles</div></div>
-  <div class="metric-box"><div class="metric">{total_miles}</div><div class="metric-label">Guideway Miles</div></div>
-  <div class="metric-box"><div class="metric">${build_cost:,.0f}M</div><div class="metric-label">Build Cost ($20M/mi)</div></div>
-</div>
-
-<div class="oss">Open Source — all designs created with this tool are open source and publicly shared.
-Solar-powered · 13x more efficient than cars · 50x vs buses · $0.03/passenger-mile</div>
-
-<h2>Stations ({len(stations)})</h2>
-<table>
-<tr><th>ID</th><th>Latitude</th><th>Longitude</th></tr>"""
-
-    for sid, s in sorted(stations, key=lambda x: x[0]):
-        html += f"\n<tr><td>{sid}</td><td>{s.center_lat:.5f}</td><td>{s.center_lon:.5f}</td></tr>"
-
-    html += f"""
-</table>
-
-<h2>Traffic Circles ({len(circles)})</h2>
-<table>
-<tr><th>ID</th><th>Latitude</th><th>Longitude</th></tr>"""
-
-    for cid, c in sorted(circles, key=lambda x: x[0]):
-        html += f"\n<tr><td>{cid}</td><td>{c.center_lat:.5f}</td><td>{c.center_lon:.5f}</td></tr>"
-
-    html += f"""
-</table>
-
-<h2>Bill of Materials (BOM)</h2>
-<table>
-<tr><th>Item</th><th>Quantity</th><th>Unit Cost</th><th>Total</th></tr>
-<tr><td>Guideway (dual beam, solar panels, columns)</td><td>{total_miles} mi</td><td>$20M/mi</td><td>${build_cost:,.0f}M</td></tr>
-<tr><td>Stations (2-slot standard)</td><td>{len(stations)}</td><td>~$2M ea</td><td>~${len(stations)*2:,}M</td></tr>
-<tr><td>Traffic circles (junction structures)</td><td>{len(circles)}</td><td>~$0.5M ea</td><td>~${round(len(circles)*0.5):,}M</td></tr>
-<tr><td>Vehicles (pods, 4 per station initial fleet)</td><td>{len(stations)*4}</td><td>~$50K ea</td><td>~${round(len(stations)*4*0.05):,}M</td></tr>
-<tr style="font-weight:600;border-top:2px solid #333">
-  <td>Total estimated</td><td></td><td></td>
-  <td>${build_cost + len(stations)*2 + round(len(circles)*0.5) + round(len(stations)*4*0.05):,.0f}M</td></tr>
-</table>
-<p style="font-size:11px;color:#666">Note: Costs are rough planning estimates. Guideway dominates.
-Actual costs vary by terrain, permitting, and local labor markets.</p>
-
-<h2>Guideway Capacity</h2>
+_REPORT_STATIC_CAPACITY = """<h2>Guideway Capacity</h2>
 <p>Capacity is determined by <strong>speed × headway</strong> on the guideway, but the real constraint
 is <strong>station slots</strong> — how many pods can load/unload simultaneously.
 Stations are parallel processors: more slots = more throughput, without changing the guideway.</p>
@@ -901,18 +840,9 @@ Capacity scales by adding slots — the station is a parallel processor.</p>
 Two 18-slot stations 200m apart = 6,480 pax/hr without changing the guideway.
 <a href="https://library.jpods.com/capacity/">Detailed capacity analysis →</a></p>
 
-<h2>Network Summary — This Design</h2>
-<table>
-<tr><th>Metric</th><th>Value</th></tr>
-<tr><td>Guideway miles</td><td>{total_miles} mi</td></tr>
-<tr><td>Stations × 4 slots (default)</td><td>{len(stations)} × 480 pods/hr = {len(stations)*480:,} pods/hr network capacity</td></tr>
-<tr><td>Build cost</td><td>${build_cost + len(stations)*2 + round(len(circles)*0.5):,.0f}M</td></tr>
-<tr><td>JPods efficiency</td><td>13× more efficient than cars · 50× vs buses</td></tr>
-<tr><td>Operating cost</td><td>$0.03/passenger-mile</td></tr>
-<tr><td>Energy</td><td>Solar-powered — no fuel dependency</td></tr>
-</table>
+"""
 
-<p>Run the <a href="/citytool">City Assessment Tool</a> for full savings analysis including
+_REPORT_STATIC_CONTEXT = """<p>Run the <a href="https://personalizetransit.com">Personalize Transit</a> for full savings analysis including
 vehicle ownership reduction, fuel savings, road maintenance, CO₂ reduction, and fiscal impact.</p>
 
 <h2>The Cost of Free Parking</h2>
@@ -976,14 +906,148 @@ transit operators from considering it."
 <div class="footer">
   Generated by MeshMobility · JPods Network Planner<br>
   <a href="https://vimeo.com/1207891831?fl=tl&fe=ec">Video Demo</a> ·
-  <a href="/citytool">City Assessment Tool</a> ·
+  <a href="https://personalizetransit.com">Personalize Transit</a> ·
   <a href="https://www.5x5FreeMarket.com">5×5 Standard</a> ·
   <a href="https://library.jpods.com/capacity/">Capacity</a> ·
   Open source at jpods.com
 </div>
 </body></html>"""
 
-    return html
+
+def _design_report() -> dict:
+    """The one report dict for the loaded network (page, Markdown and JSON)."""
+    overlays = _state.get("overlays") or {}
+    return design_report(_net(), _state.get("structures", {}), _state.get("cps", {}),
+                         travel=_state.get("travel_times"),
+                         city_label=overlays.get("city_label", ""))
+
+
+def _report_html(r: dict, structures: dict) -> str:
+    from html import escape as esc
+    s, cov, st, tr = r["summary"], r["coverage"], r["stations"], r["travel"]
+    title = esc(r["network_id"]) + (f" — {esc(r['city_label'])}" if r["city_label"] else "")
+    pct = lambda v: "—" if v is None else f"{v}%"
+    lo, hi = s["solar_vmt_per_day"]
+
+    h = [_REPORT_HEAD.replace("__TITLE__", title),
+         f"<h1>JPods Design Summary — {title}</h1>",
+         f'<p style="font-size:11px;color:#888">Generated {r["generated_utc"]}</p>',
+         f'<!--no-md--><p style="font-size:11px;color:#888">'
+         '<a href="/api/network/report.json">JSON</a> · '
+         '<a href="/api/network/report.md">Markdown</a> (Shift+click Report to copy)</p><!--/no-md-->',
+         '<!--no-md--><div class="metrics">']
+    for v, label in [(s["station_count"], "Stations"), (s["circle_count"], "Circles"),
+                     (s["route_miles"], f"Guideway Miles ({s['route_km']} km)"),
+                     (f"{s['column_count']:,}", "Columns"),
+                     (s["solar_mw"], "Solar MW"),
+                     (f"${r['bom_total_m']:,.0f}M", "Est. Build Cost")]:
+        h.append(f'  <div class="metric-box"><div class="metric">{v}</div>'
+                 f'<div class="metric-label">{label}</div></div>')
+    h.append("</div><!--/no-md-->")
+    h.append('<div class="oss">Open Source — all designs created with this tool are open source and publicly shared.\n'
+             'Solar-powered · 13x more efficient than cars · 50x vs buses · $0.03/passenger-mile</div>')
+
+    h.append("<h2>Design</h2>\n<table>\n<tr><th>Metric</th><th>Value</th></tr>")
+    for k, v in [
+        ("Stations", s["station_count"]),
+        ("Traffic circles", s["circle_count"]),
+        ("Guideway (two one-way beams on one column line)", f"{s['route_miles']} mi ({s['route_km']} km)"),
+        ("One-way track, structure internals included", f"{s['track_miles']} mi ({s['track_km']} km)"),
+        ("Support columns", f"{s['column_count']:,} (one per {s['column_spacing_m']:.0f} m; structure columns not counted)"),
+        ("Solar panel modules", f"{s['panel_modules']:,} (2.5 m pitch, 10 per span)"),
+        ("Solar collectors", f"{s['solar_mw']} MW (1 MW per guideway mile)"),
+        ("Solar mobility", f"{lo:,}–{hi:,} vehicle-miles of power per day"),
+        ("Estimated build cost", f"${r['bom_total_m']:,.0f}M (see Bill of Materials)"),
+    ]:
+        h.append(f"<tr><td>{k}</td><td>{v}</td></tr>")
+    h.append("</table>")
+
+    h.append("<h2>Coverage — Last Mile</h2>\n<table>\n"
+             "<tr><th>Reach from a station</th><th>Area</th><th>Share of network footprint</th></tr>")
+    h.append(f"<tr><td>Walk {cov['walk_m'] / 1609.34:.2f} mi ({cov['walk_m'] / 1000:.1f} km)</td>"
+             f"<td>{cov['walk_km2']} km²</td><td>{pct(cov['walk_pct'])}</td></tr>")
+    h.append(f"<tr><td>Bike {cov['bike_m'] / 1609.34:.2f} mi ({cov['bike_m'] / 1000:.1f} km)</td>"
+             f"<td>{cov['bike_km2']} km²</td><td>{pct(cov['bike_pct'])}</td></tr>")
+    h.append("</table>")
+    h.append(f'<p style="font-size:11px;color:#666">Footprint = convex hull of all stations and circles '
+             f'({cov["footprint_km2"]} km²). Straight-line reach, 100 m grid.</p>')
+
+    h.append("<h2>Stations — Container Design</h2>")
+    h.append(f"<p>Each station starts as a container station: <strong>{st['slots']} slots, "
+             f"{st['lifts']} lifts</strong>. Slots load/unload at {st['slot_pods_per_hr']} pods/hr each, "
+             f"so a station handles at most {st['station_pods_per_hr_max']:,} pods/hr "
+             f"({st['network_pods_per_hr_max']:,} across the network). Lifts lower pods to grade and have "
+             "much lower capacity — they set the real limit until the lift cycle is measured.</p>")
+
+    h.append("<h2>Travel Times</h2>")
+    if tr:
+        h.append("<table>\n<tr><th>Metric</th><th>Value</th></tr>")
+        h.append(f"<tr><td>Station pairs reachable</td><td>{tr['pairs']:,} of {tr['total_possible']:,}</td></tr>")
+        h.append(f"<tr><td>Unreachable pairs</td><td>{tr['unreachable']:,}</td></tr>")
+        if tr["avg_trip_min"] is not None:
+            h.append(f"<tr><td>Average trip</td><td>{tr['avg_trip_min']} min</td></tr>")
+            h.append(f"<tr><td>Longest trip</td><td>{tr['max_trip_min']} min</td></tr>")
+        h.append("</table>")
+        h.append(f'<p style="font-size:11px;color:#666">Shortest guideway path at '
+                 f'{tr["speed_kmh"]:.0f} km/h cruise; no acceleration or station dwell.</p>')
+    else:
+        h.append("<p>Press <strong>Run</strong> to add travel times for this design.</p>")
+
+    segs = r["segments"]
+    h.append(f"<h2>Segments ({len(segs)})</h2>\n<table>\n"
+             "<tr><th>From</th><th>To</th><th>Length</th><th>Columns</th></tr>")
+    for g in segs:
+        h.append(f"<tr><td>{esc(g['from'])}</td><td>{esc(g['to'])}</td>"
+                 f"<td>{g['length_mi']} mi ({g['length_m']:,} m)</td><td>{g['columns']}</td></tr>")
+    h.append("</table>")
+
+    h.append("<h2>Bill of Materials (BOM)</h2>\n<table>\n"
+             "<tr><th>Item</th><th>Quantity</th><th>Unit Cost</th><th>Total</th></tr>")
+    for b in r["bom"]:
+        h.append(f"<tr><td>{b['item']}</td><td>{b['qty']}</td><td>{b['unit']}</td>"
+                 f"<td>${b['total_m']:,.1f}M</td></tr>")
+    h.append(f'<tr style="font-weight:600;border-top:2px solid #333"><td>Total estimated</td>'
+             f'<td></td><td></td><td>${r["bom_total_m"]:,.0f}M</td></tr>\n</table>')
+    h.append('<p style="font-size:11px;color:#666">Note: Costs are rough planning estimates. Guideway dominates.\n'
+             'Actual costs vary by terrain, permitting, and local labor markets.</p>')
+
+    h.append(_REPORT_STATIC_CAPACITY)
+
+    for label, kind in (("Stations", "station"), ("Traffic Circles", "traffic_circle")):
+        natural = lambda kv: [int(t) if t.isdigit() else t for t in _re_road.split(r"(\d+)", kv[0])]
+        rows = sorted(((sid, x) for sid, x in structures.items() if x.structure_type == kind), key=natural)
+        h.append(f"<h2>{label} ({len(rows)})</h2>\n<table>\n"
+                 "<tr><th>ID</th><th>Latitude</th><th>Longitude</th></tr>")
+        for sid, x in rows:
+            h.append(f"<tr><td>{esc(sid)}</td><td>{x.center_lat:.5f}</td><td>{x.center_lon:.5f}</td></tr>")
+        h.append("</table>")
+
+    h.append(_REPORT_STATIC_CONTEXT)
+    return "\n".join(h)
+
+
+@noelle.get("/network/report")
+def network_report():
+    """Printable HTML design summary."""
+    if _net() is None:
+        return "<h1>No network loaded</h1>", 400
+    return _report_html(_design_report(), _state.get("structures", {}))
+
+
+@noelle.get("/network/report.json")
+def network_report_json():
+    if _net() is None:
+        return jsonify({"error": "No network loaded"}), 400
+    return jsonify(_design_report())
+
+
+@noelle.get("/network/report.md")
+def network_report_md():
+    """The printable report as Markdown, for pasting into other documents."""
+    if _net() is None:
+        return Response("No network loaded\n", status=400, mimetype="text/markdown")
+    html = _report_html(_design_report(), _state.get("structures", {}))
+    return Response(html_to_markdown(html), mimetype="text/markdown; charset=utf-8")
 
 
 # ---------------------------------------------------------------------------

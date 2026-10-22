@@ -113,6 +113,11 @@ class ConnectionPoint:
     center_lat:    float
     center_lon:    float
     connected_to:  Optional[str] = None   # other cp_id
+    cp_uuid:       Optional[str] = None   # permanent identity — survives merge/renumber
+
+    def __post_init__(self):
+        if self.cp_uuid is None:
+            self.cp_uuid = uuid.uuid4().hex[:12]
 
     def to_dict(self) -> dict:
         return {
@@ -124,6 +129,7 @@ class ConnectionPoint:
             "center_lat":    self.center_lat,
             "center_lon":    self.center_lon,
             "connected_to":  self.connected_to,
+            "cp_uuid":       self.cp_uuid,
         }
 
 
@@ -142,18 +148,24 @@ class Structure:
     center_lon:     float = 0.0
     heading_deg:    float = 0.0           # station: NB travel direction
     arm_headings:   List[float] = field(default_factory=list)  # traffic_circle
+    structure_uuid: Optional[str] = None  # permanent serial — survives merge/renumber
+
+    def __post_init__(self):
+        if self.structure_uuid is None:
+            self.structure_uuid = uuid.uuid4().hex[:12]
 
     def to_dict(self) -> dict:
         return {
-            "structure_id":   self.structure_id,
-            "structure_type": self.structure_type,
-            "cp_ids":         self.cp_ids,
-            "node_ids":       self.node_ids,
-            "line_ids":       self.line_ids,
-            "center_lat":     self.center_lat,
-            "center_lon":     self.center_lon,
-            "heading_deg":    self.heading_deg,
-            "arm_headings":   self.arm_headings,
+            "structure_id":     self.structure_id,
+            "structure_type":   self.structure_type,
+            "cp_ids":           self.cp_ids,
+            "node_ids":         self.node_ids,
+            "line_ids":         self.line_ids,
+            "center_lat":       self.center_lat,
+            "center_lon":       self.center_lon,
+            "heading_deg":      self.heading_deg,
+            "arm_headings":     self.arm_headings,
+            "structure_uuid":   self.structure_uuid,
         }
 
 
@@ -736,3 +748,58 @@ def rotate_traffic_circle(
 
     struct.arm_headings = list(new_arm_headings)
     net.build()
+
+
+# ---------------------------------------------------------------------------
+# Design summary — the one place counts and lengths are computed
+# ---------------------------------------------------------------------------
+
+_COLUMN_SPACING_M = 25.0   # SU jpod_constants.rb SUPPORT_SPACING — one column per span
+_PANEL_PITCH_M    = 2.5    # SU SOLAR_PANEL_REPEAT — 10 panel modules per span
+_SOLAR_MW_PER_MI  = 1.0    # JPods: 1 MW of collectors per mile of guideway (readmes/12-jpods.md)
+_SOLAR_VMT_PER_MI = (25_000, 65_000)  # vehicle-miles of power per guideway mile per day
+_M_PER_MILE       = 1609.34
+
+# Container station — the starting design until load is measured (Bill 2026-10-22).
+# Lifts lower pods to grade and have much lower capacity than slots; lift cycle
+# is not yet measured, so throughput is reported as a slot-limited upper bound.
+STATION_SLOTS     = 4
+STATION_LIFTS     = 3
+SLOT_PODS_PER_HR  = 120    # 30 s load/unload cycle per slot
+
+# Last-Mile reach from a station (also drives the map's coverage overlay)
+WALK_M            = 0.75 * _M_PER_MILE
+BIKE_M            = 1.5 * _M_PER_MILE
+
+
+def design_summary(net: Network, structures: Dict[str, Structure]) -> dict:
+    """Stations, circles, guideway length and column count for a network.
+
+    route   = guideway between structures; one pair of one-way beams on one
+              column line, so it is the sum of connecting lines / 2
+    track   = every one-way line, structure internals included
+    columns = route length / column spacing (structure columns not counted)
+    solar   = JPods 1 MW per guideway mile; panel modules at 2.5 m pitch
+    """
+    internal = set()
+    for s in structures.values():
+        internal.update(s.line_ids)
+    track_m = net.total_length_m()
+    route_m = sum(l.length_m for lid, l in net.lines.items()
+                  if lid not in internal) / 2
+    return {
+        "station_count": len(net.stations),
+        "circle_count":  sum(1 for s in structures.values()
+                             if s.structure_type == "traffic_circle"),
+        "route_miles":   round(route_m / _M_PER_MILE, 1),
+        "route_km":      round(route_m / 1000, 1),
+        "track_miles":   round(track_m / _M_PER_MILE, 1),
+        "track_km":      round(track_m / 1000, 1),
+        "column_count":  round(route_m / _COLUMN_SPACING_M),
+        "column_spacing_m": _COLUMN_SPACING_M,
+        "panel_modules": round(route_m / _PANEL_PITCH_M),
+        "solar_mw":      round(route_m / _M_PER_MILE * _SOLAR_MW_PER_MI, 1),
+        "solar_vmt_per_day": [round(route_m / _M_PER_MILE * v) for v in _SOLAR_VMT_PER_MI],
+        "walk_m":        WALK_M,
+        "bike_m":        BIKE_M,
+    }

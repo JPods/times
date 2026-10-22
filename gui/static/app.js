@@ -5,6 +5,57 @@
 
 "use strict";
 
+// ── IndexedDB directory handle persistence ──────────────────────────────────
+// Stores the last-used directory handle so Save/Open dialogs remember location
+// across page reloads. FileSystemDirectoryHandle survives structured clone into IDB.
+
+const _IDB_NAME  = "mm_file_handles";
+const _IDB_STORE = "handles";
+
+function _openHandleDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(_IDB_NAME, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(_IDB_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
+async function storeFileHandle(key, handle) {
+  try {
+    const db = await _openHandleDB();
+    const tx = db.transaction(_IDB_STORE, "readwrite");
+    tx.objectStore(_IDB_STORE).put(handle, key);
+    await new Promise((res, rej) => { tx.oncomplete = res; tx.onerror = rej; });
+    db.close();
+  } catch (_) { /* silent — persistence is best-effort */ }
+}
+
+async function getFileHandle(key) {
+  try {
+    const db = await _openHandleDB();
+    const tx = db.transaction(_IDB_STORE, "readonly");
+    const req = tx.objectStore(_IDB_STORE).get(key);
+    const handle = await new Promise((res, rej) => {
+      req.onsuccess = () => res(req.result);
+      req.onerror   = () => rej(req.error);
+    });
+    db.close();
+    if (!handle) return null;
+    // Re-verify permission — user may have revoked since last session
+    // "read" is sufficient for startIn — the picker just needs the directory location
+    const perm = await handle.requestPermission({ mode: "read" });
+    return perm === "granted" ? handle : null;
+  } catch (_) { return null; }
+}
+
+// Restore on page load — stored in App._lastDir once App is defined (see below)
+let _restoredDirHandle = null;
+getFileHandle("lastDir").then(h => {
+  _restoredDirHandle = h;
+  if (typeof App !== "undefined") App._lastDir = h;
+});
+
 // ── Map setup ────────────────────────────────────────────────────────────────
 
 const TILES = {
@@ -46,8 +97,10 @@ const WalkCircle = (() => {
   let _active = false;
   let _walkCircle = null;
   let _bikeCircle = null;
-  const _walkM = 0.75 * 1609.34;  // 0.75 miles
-  const _bikeM = 1.5 * 1609.34;   // 1.5 miles (mom + kids, Dutch data ~10 km/h)
+  // Reach comes from the server (engine/structures.py WALK_M / BIKE_M) so the
+  // overlay and the design report use the same numbers.
+  let _walkM = 0.75 * 1609.34;  // 0.75 miles
+  let _bikeM = 1.5 * 1609.34;   // 1.5 miles (mom + kids, Dutch data ~10 km/h)
 
   // Station coverage overlay
   let _coverageLayer = null;
@@ -195,7 +248,12 @@ const WalkCircle = (() => {
 
   function toggleCoverage() { cycleCoverage(); }
 
-  return { toggle, toggleCoverage, cycleCoverage };
+  function setReach(walkM, bikeM) {
+    if (walkM > 0) _walkM = walkM;
+    if (bikeM > 0) _bikeM = bikeM;
+  }
+
+  return { toggle, toggleCoverage, cycleCoverage, setReach };
 })();
 
 // Fixed scale bars: 0.75 mi (15-min walk) and 5 mi
@@ -261,8 +319,8 @@ const CitySearch = (() => {
     _clearFence();
     _fenceLayer = L.geoJSON(geojson, {
       style: {
-        color:     "#ffaa00",
-        weight:    2,
+        color:     "#9b30ff",
+        weight:    4,
         dashArray: "8 5",
         fillOpacity: 0,
         interactive: false,
@@ -317,6 +375,10 @@ const CitySearch = (() => {
 
           const label = r.display_name.split(",").slice(0, 3).join(",").trim();
           setStatus(`Centered on: ${label}`);
+          // Save last city to user config (CarryOn seed)
+          if (typeof Auth !== "undefined" && Auth.setConfig) {
+            Auth.setConfig("last_city", label);
+          }
           // Show city name in sidebar header and overlay panel
           const sidebarCity = document.getElementById("sidebar-city");
           if (sidebarCity) sidebarCity.textContent = label;
@@ -1296,6 +1358,7 @@ const App = {
   },
 
   _saveHandle: null,   // remembered File System Access handle
+  _lastDir: _restoredDirHandle,  // persisted directory handle from IndexedDB
   _dirty: false,       // true when network has unsaved changes
 
   _checkUnsaved() {
@@ -1322,10 +1385,12 @@ const App = {
     // Use File System Access API to get a reusable handle for Save
     if (window.showOpenFilePicker) {
       try {
-        const [handle] = await window.showOpenFilePicker({
+        const openOpts = {
           types: [{ description: "JPods network file", accept: { "application/xml": [".jpd"], "application/json": [".json"] } }],
           multiple: false,
-        });
+        };
+        if (App._lastDir) openOpts.startIn = App._lastDir;
+        const [handle] = await window.showOpenFilePicker(openOpts);
         const file = await handle.getFile();
         const text = await file.text();
         const r = await _postRaw("/api/network/load_text", {
@@ -1334,6 +1399,8 @@ const App = {
         });
         if (r.error) { alert(r.error); return; }
         App._saveHandle = handle;
+        App._lastDir = handle;
+        storeFileHandle("lastDir", handle);
         App._dirty = false;
         _fitOnNextRender = true;
         App._render(r);
@@ -1376,23 +1443,84 @@ const App = {
     input.value = "";
   },
 
-  async saveFile() {
-    // Save to server — blessed library folder only. No file picker, no navigation.
-    // Smart filename: ST_City_YYYY-MM-DD.jpd from city label
-    const cityEl = document.getElementById("sidebar-city");
-    const cityText = cityEl ? cityEl.textContent.trim() : "";
-    let filename = "network.jpd";
-    if (cityText) {
-      const parts = cityText.split(",").map(s => s.trim());
-      const city = (parts[0] || "network").replace(/\s+/g, "_");
-      const stateMap = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC","United States":"US"};
-      let st = "";
-      for (const p of parts) {
-        if (stateMap[p]) { st = stateMap[p]; break; }
+  async downloadFile() {
+    // Save to user's local machine using File System Access API (choose folder)
+    // Falls back to browser download if API not supported
+    try {
+      // Use /api/network/download — returns proper .jpd format (switches, stations,
+      // lines, structures, cps, settings, overlays) that load_jpd can read back.
+      // GET /api/network returns GeoJSON display format — wrong for round-trip.
+      const resp = await fetch("/api/network/download");
+      if (!resp.ok) { alert("No network to download"); return; }
+      const jsonStr = await resp.text();
+      if (!jsonStr || jsonStr.length < 10) { alert("No network to download"); return; }
+      const fname = _jpdFilename();
+
+      // Try File System Access API — lets user pick/create a MeshMobility folder
+      if (window.showSaveFilePicker) {
+        try {
+          const saveOpts = {
+            suggestedName: fname,
+            startIn: App._lastDir || "documents",
+            types: [{
+              description: "JPods Network Design",
+              accept: { "application/json": [".jpd"] },
+            }],
+          };
+          const handle = await window.showSaveFilePicker(saveOpts);
+          const writable = await handle.createWritable();
+          await writable.write(jsonStr);
+          await writable.close();
+          App._saveHandle = handle;
+          // Persist the file handle so next reload opens the same directory
+          App._lastDir = handle;
+          storeFileHandle("lastDir", handle);
+          setStatus(`Saved locally: ${handle.name}`);
+          if (typeof App !== "undefined" && App.flash) App.flash(`Saved: ${handle.name}`, 3000);
+          // Save last filename to user config (CarryOn seed)
+          if (typeof Auth !== "undefined" && Auth.setConfig) {
+            Auth.setConfig("last_save_file", handle.name);
+          }
+          // Silent archive to server for Noelle (admin-controlled)
+          fetch("/api/network/archive_local", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ filename: fname }),
+          }).catch(() => {});
+          return;
+        } catch (e) {
+          if (e.name === "AbortError") return; // user cancelled
+          // Fall through to download
+        }
       }
-      const today = new Date().toISOString().slice(0, 10);
-      filename = st ? `${st}_${city}_${today}.jpd` : `${city}_${today}.jpd`;
+
+      // Fallback: browser download
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = fname;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      setStatus(`Downloaded: ${fname}`);
+      // Silent archive to server for Noelle (admin-controlled)
+      fetch("/api/network/archive_local", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: fname }),
+      }).catch(() => {});
+    } catch (e) {
+      alert("Download failed: " + e.message);
     }
+  },
+
+  async saveFile() {
+    // Save to server (requires auth) + offer local save
+    if (typeof Auth !== "undefined" && !Auth.requireAuth("save networks")) return;
+
+    // Visual feedback
+    setStatus("Saving…");
+
+    let filename = _jpdFilename();
 
     try {
       const resp = await fetch("/api/network/save", {
@@ -1402,16 +1530,19 @@ const App = {
       });
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        alert(err.error || "Save failed");
+        setStatus("Save failed");
+        if (typeof App !== "undefined" && App.flash) App.flash(err.error || "Save failed", 4000);
         return;
       }
       const result = await resp.json();
       App._dirty = false;
       _updateFilename(filename);
       _updateDirtyFlag();
-      flashSuccess(`Saved: ${result.path || filename}`);
+      setStatus(`Saved: ${filename}`);
+      if (typeof App !== "undefined" && App.flash) App.flash(`Saved: ${filename}`, 3000);
     } catch (e) {
-      alert("Save failed: " + e.message);
+      setStatus("Save failed");
+      if (typeof App !== "undefined" && App.flash) App.flash("Save failed: " + e.message, 4000);
     }
   },
 
@@ -1487,10 +1618,12 @@ const App = {
         const filename = `jpods-network-${dt}.png`;
         if (window.showSaveFilePicker) {
           try {
-            const handle = await window.showSaveFilePicker({
+            const captureOpts = {
               suggestedName: filename,
               types: [{ description: "PNG image", accept: { "image/png": [".png"] } }],
-            });
+            };
+            if (App._lastDir) captureOpts.startIn = App._lastDir;
+            const handle = await window.showSaveFilePicker(captureOpts);
             const writable = await handle.createWritable();
             await writable.write(blob);
             await writable.close();
@@ -1515,8 +1648,21 @@ const App = {
     }
   },
 
-  printReport() {
-    window.open("/api/network/report", "_blank");
+  async printReport(evt) {
+    if (!(evt && evt.shiftKey)) {
+      window.open("/api/network/report", "_blank");
+      return;
+    }
+    // Shift+click: copy the same report as Markdown for pasting into other documents
+    try {
+      const r = await fetch("/api/network/report.md", { credentials: "same-origin" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      await navigator.clipboard.writeText(await r.text());
+      if (App.flash) App.flash("Report copied as Markdown", 3000);
+      setStatus("Report copied to clipboard as Markdown");
+    } catch (e) {
+      alert("Could not copy the report: " + e.message);
+    }
   },
 
   _render(geojson) {
@@ -1627,11 +1773,18 @@ const App = {
     }
     const circles = m.circle_count || 0;
     const stations = m.station_count || 0;
-    const miles = m.total_miles || 0;
+    const miles = m.route_miles || 0;
+    const km = m.route_km || 0;
+    const columns = m.column_count || 0;
     document.getElementById("net-stats").innerHTML =
-      `Stations: ${stations} &nbsp; Circles: ${circles} &nbsp; Total: ${miles} mi`;
+      `Stations: ${stations} &nbsp; Circles: ${circles}<br>` +
+      `Guideway: ${miles} mi (${km} km) &nbsp; Columns: ${columns.toLocaleString()}<br>` +
+      `Solar: ${m.solar_mw || 0} MW`;
     document.getElementById("status-net").textContent =
       `Stations: ${stations} · Circles: ${circles} · Total: ${miles} mi`;
+    WalkCircle.setReach(m.walk_m, m.bike_m);
+    // Report summarises the design — available whenever there is one, not only after Run
+    document.getElementById("btn-report").disabled = (stations + circles) === 0;
 
     // Fit map only when explicitly loading a file (not on every edit)
     if (_fitOnNextRender) {
@@ -2404,6 +2557,24 @@ function _autoSaveDebounced() {
 })();
 
 
+const _stateMap = {"Alabama":"AL","Alaska":"AK","Arizona":"AZ","Arkansas":"AR","California":"CA","Colorado":"CO","Connecticut":"CT","Delaware":"DE","Florida":"FL","Georgia":"GA","Hawaii":"HI","Idaho":"ID","Illinois":"IL","Indiana":"IN","Iowa":"IA","Kansas":"KS","Kentucky":"KY","Louisiana":"LA","Maine":"ME","Maryland":"MD","Massachusetts":"MA","Michigan":"MI","Minnesota":"MN","Mississippi":"MS","Missouri":"MO","Montana":"MT","Nebraska":"NE","Nevada":"NV","New Hampshire":"NH","New Jersey":"NJ","New Mexico":"NM","New York":"NY","North Carolina":"NC","North Dakota":"ND","Ohio":"OH","Oklahoma":"OK","Oregon":"OR","Pennsylvania":"PA","Rhode Island":"RI","South Carolina":"SC","South Dakota":"SD","Tennessee":"TN","Texas":"TX","Utah":"UT","Vermont":"VT","Virginia":"VA","Washington":"WA","West Virginia":"WV","Wisconsin":"WI","Wyoming":"WY","District of Columbia":"DC","United States":"US"};
+
+function _jpdFilename() {
+  // ST_CityName_YYYY-MM-DD.jpd — CamelCase city, no spaces, state + city only
+  const cityEl = document.getElementById("sidebar-city");
+  const cityText = cityEl ? cityEl.textContent.trim() : "";
+  const today = new Date().toISOString().slice(0, 10);
+  if (!cityText) return `network_${today}.jpd`;
+  const parts = cityText.split(",").map(s => s.trim());
+  // CamelCase: capitalize each word, remove spaces
+  const city = (parts[0] || "network").split(/\s+/).map(
+    w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+  ).join("");
+  let st = "";
+  for (const p of parts) { if (_stateMap[p]) { st = _stateMap[p]; break; } }
+  return st ? `${st}_${city}_${today}.jpd` : `${city}_${today}.jpd`;
+}
+
 async function _postRaw(path, body) {
   const r = await fetch(path, {
     method: "POST",
@@ -2719,6 +2890,7 @@ const Palette = (() => {
     try {
       const r = await api("POST", "/api/network/load_library", { filename: libFile });
       if (r && r.features) {
+        _fitOnNextRender = true;
         App._render(r);
         if (r.settings) Object.assign(window._settings || {}, r.settings);
         const mode = params.get("clone") ? "clone" : "open";

@@ -935,7 +935,7 @@
       <div class="pal-label">Simulate</div>
       <button id="btn-run" onclick="Sim.run()" title="Run simulation — click again to stop">&#9654; Run</button>
       <button id="btn-replay" onclick="Sim.replay()" title="Replay animation" disabled>&#9654;&#9654; Replay</button>
-      <button id="btn-report" onclick="App.printReport()" title="Printable network summary — stations, miles, economics" disabled>&#128196; Report</button>
+      <button id="btn-report" onclick="App.printReport(event)" title="Printable design summary — stations, circles, guideway, columns, solar, coverage, economics. Shift+click: copy as Markdown" disabled>&#128196; Report</button>
       <button id="btn-timemap" onclick="TimeMap.toggle()"
               title="Isochrone: click a point to see walk-ride-walk travel-time zones (5/10/20/30 min)" disabled>&#9711; Isochrone</button>
     </div>

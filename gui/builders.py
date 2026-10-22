@@ -34,7 +34,7 @@ from mesh_mobility.engine import Network, Line
 from mesh_mobility.engine.network import vincenty_m
 from mesh_mobility.engine.structures import (
     build_traffic_circle, build_station, connect_cps, disconnect_cp,
-    ConnectionPoint, Structure,
+    ConnectionPoint, Structure, design_summary,
 )
 
 # ---------------------------------------------------------------------------
@@ -712,7 +712,7 @@ def network_city_mesh():
             prev_sid = st.structure_id
 
     net.build()
-    total_miles = round(net.total_length_m() / 1609.34, 1)
+    total_miles = design_summary(net, _state["structures"])["route_miles"]
 
     noelle_log("city_mesh", {
         "circles": len(grid_map),
@@ -905,7 +905,7 @@ def network_line():
             connected += 1
 
     net.build()
-    total_miles = round(net.total_length_m() / 1609.34, 1)
+    total_miles = design_summary(net, _state["structures"])["route_miles"]
 
     noelle_log("line_build", {
         "stations": len([p for p in placed if p[0].structure_type == "station"]),
@@ -1151,10 +1151,12 @@ def network_build_on_lines():
     STATION_CIRCLE_EXCL_M   = 300    # suppress stations within this of a circle
     ENDPOINT_CIRCLE_MAX_M   = 2000   # max distance to connect endpoint to circle
 
-    # Build new network
-    net = Network(network_id="drawn_corridors")
-    _state["network"] = net
-    clear_edit_state()
+    # Use existing network or create new — never erase existing structures
+    net = _state.get("network")
+    if net is None:
+        net = Network(network_id="drawn_corridors")
+        _state["network"] = net
+        clear_edit_state()
 
     n_stations = 0
     n_circles = 0
@@ -1211,22 +1213,36 @@ def network_build_on_lines():
     circle_structs = {}  # (rounded_lat, rounded_lon) → (struct, cp_dict, lat, lon)
 
     for clat, clon, line_idxs, seg_map in circle_points:
-        # Use local heading at the crossing segment, not whole-line direction
-        headings = []
+        # Two standard circle orientations — pick whichever fits better:
+        #   Cardinal (N/E/S/W):  [0, 90, 180, 270]
+        #   Diagonal (45°):      [45, 135, 225, 315]
+        CARDINAL = [0.0, 90.0, 180.0, 270.0]
+        DIAGONAL = [45.0, 135.0, 225.0, 315.0]
+
+        raw_headings = []
         for li in line_idxs:
             if li in seg_map:
                 h = _local_heading(lines[li], seg_map[li])
             else:
                 h = _local_heading(lines[li], 0)
-            headings.extend([h, (h + 180) % 360])
-        headings = sorted(set(round(h / 10) * 10 for h in headings))
-        if len(headings) < 4:
-            headings = [0.0, 90.0, 180.0, 270.0]
+            raw_headings.append(h % 360)
+
+        def _align_score(arms, line_hs):
+            total = 0
+            for lh in line_hs:
+                for d in [lh, (lh + 180) % 360]:
+                    total += min(abs(((d - a + 180) % 360) - 180) for a in arms)
+            return total
+
+        if _align_score(CARDINAL, raw_headings) <= _align_score(DIAGONAL, raw_headings):
+            headings = CARDINAL
+        else:
+            headings = DIAGONAL
 
         struct, cp_dict = build_traffic_circle(
             net, clat, clon,
             structure_id=next_sid("c"),
-            arm_headings=[float(h) for h in headings[:4]],
+            arm_headings=headings,
         )
         _state["structures"][struct.structure_id] = struct
         _state["cps"].update(cp_dict)
@@ -1235,6 +1251,13 @@ def network_build_on_lines():
 
     # --- Place stations along each line ---
     all_placed = {}  # line_idx → [(struct, cps, lat, lon, heading)]
+    STATION_DEDUP_M = 300  # min distance between any two stations
+
+    # Seed dedup list with existing stations already in the network
+    all_station_locs = []
+    for nid, node in net.nodes.items():
+        if nid in net.stations:
+            all_station_locs.append((node.lat, node.lon))
 
     for li, line_pts in enumerate(lines):
         if len(line_pts) < 2:
@@ -1274,6 +1297,14 @@ def network_build_on_lines():
             if near_circle:
                 continue
 
+            # Skip if too close to any already-placed station (cross-line dedup)
+            near_station = any(
+                vincenty_m(slat, slon, plat, plon) < STATION_DEDUP_M
+                for plat, plon in all_station_locs
+            )
+            if near_station:
+                continue
+
             local_heading = _local_heading(line_pts, seg_k)
 
             st, st_cps = build_station(net, slat, slon, heading_deg=local_heading,
@@ -1281,6 +1312,7 @@ def network_build_on_lines():
             _state["structures"][st.structure_id] = st
             _state["cps"].update(st_cps)
             placed.append((st, st_cps, slat, slon, local_heading))
+            all_station_locs.append((slat, slon))
             n_stations += 1
 
         all_placed[li] = placed
@@ -1326,7 +1358,7 @@ def network_build_on_lines():
                 _connect_toward(st_cps, ccps, slat, slon, clat, clon)
 
     net.build()
-    total_miles = round(net.total_length_m() / 1609.34, 1)
+    total_miles = design_summary(net, _state["structures"])["route_miles"]
 
     noelle_log("build_on_lines", {
         "lines": len(lines), "circles": n_circles,
@@ -1639,7 +1671,7 @@ def network_crash_mesh():
                     connect_cps(net, cp_st, cp_tc, _state["cps"])
 
     net.build()
-    total_miles = round(net.total_length_m() / 1609.34, 1)
+    total_miles = design_summary(net, _state["structures"])["route_miles"]
 
     noelle_log("crash_mesh", {
         "corridors": len(corridors),

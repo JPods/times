@@ -33,6 +33,7 @@ if _parent not in sys.path:
 import subprocess as _subprocess
 
 from mesh_mobility.engine import Network, Simulator
+from mesh_mobility.engine.design_report import network_signature
 
 # ---------------------------------------------------------------------------
 # Shared state imports
@@ -185,6 +186,24 @@ def run_simulation():
 
             _save_sweep_json(result)
             allie_capture_simulation(result, net)
+
+            # Noelle observation — simulation results
+            try:
+                import importlib.util
+                _ns = "/opt/andi/scripts/noelle-observe.py"
+                if os.path.exists(_ns):
+                    spec = importlib.util.spec_from_file_location("noelle_observe", _ns)
+                    _no = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(_no)
+                    _no.on_simulation_complete({
+                        "network": network_name,
+                        "generated": getattr(result, "passengers_generated", 0) or
+                                     getattr(getattr(result, "simulation", None), "passengers_generated", 0) or 0,
+                        "served": pax_served or 0,
+                        "elapsed": getattr(result, "elapsed_seconds", 0) or 0,
+                    })
+            except Exception:
+                pass
         except Exception as exc:
             import traceback
             _state["sim_error"] = str(exc)
@@ -238,6 +257,25 @@ def simulation_progress():
         # Count total covered O-D pairs for progress display
         covered_pairs = sum(len(v) for v in orig_dests.values())
         total_pairs   = n * (n - 1)
+
+        # Auto-stop: once every station pair has a travel time, the sweep is done
+        if total_pairs > 0 and covered_pairs >= total_pairs:
+            _state["sim_active"] = False
+            _state["sim_instance"] = None
+            log.info("Sweep complete: %d/%d pairs covered — auto-stopped", covered_pairs, total_pairs)
+            result = _state.get("sim_result")
+            if result:
+                return jsonify({"status": "done", "result": result.to_dict()})
+            # Result may not be set yet — return done with sweep data
+            return jsonify({
+                "status": "done",
+                "result": {
+                    "sweep_complete": True,
+                    "covered_pairs": covered_pairs,
+                    "total_pairs": total_pairs,
+                    "stations": n,
+                },
+            })
 
         return jsonify({
             "status":            "running",
@@ -346,7 +384,93 @@ def post_settings():
 
 
 # ---------------------------------------------------------------------------
-# Analytical travel times (Dijkstra -- used by isochrone)
+# Compute all travel times (Dijkstra -- enables isochrone instantly)
+# ---------------------------------------------------------------------------
+
+@sim_bp.post("/network/compute_travel_times")
+def compute_all_travel_times():
+    """Compute Dijkstra travel times for all station pairs.
+    Instant — no simulation needed. Enables isochrone immediately."""
+    net = _net()
+    if net is None:
+        return jsonify({"error": "No network loaded"}), 400
+
+    data = request.json or {}
+    settings = _state["settings"].copy()
+    incoming = {k: v for k, v in data.get("settings", {}).items() if v is not None and v == v}
+    settings.update(incoming)
+    if incoming:
+        _state["settings"].update(incoming)
+
+    station_ids = list(net.stations.keys())
+    n = len(station_ids)
+    if n < 2:
+        return jsonify({"error": "Need at least 2 stations"}), 400
+
+    speed_kmh = float(settings.get("maxVelocityInKMPH", 60))
+    speed_m_per_min = speed_kmh * 1000 / 60
+
+    # Dijkstra from each station — O(n * E log V), much faster than simulation
+    pairs = 0
+    unreachable = 0
+    trip_min = []
+    for sid in station_ids:
+        platform = sid   # station ids are their platform node ids
+        if platform not in net.nodes:
+            continue
+        # Run Dijkstra (same algorithm as travel_times endpoint)
+        dist_m = {platform: 0.0}
+        pq = [(0.0, platform)]
+        INF = float("inf")
+        while pq:
+            cost, nid = heapq.heappop(pq)
+            if cost > dist_m.get(nid, INF):
+                continue
+            node = net.nodes[nid]
+            for line in node.outbound:
+                w = max(line.length_m, 0.001)
+                new_cost = cost + w
+                if new_cost < dist_m.get(line.end_node.node_id, INF):
+                    dist_m[line.end_node.node_id] = new_cost
+                    heapq.heappush(pq, (new_cost, line.end_node.node_id))
+
+        # Count reachable stations
+        for other_sid in station_ids:
+            if other_sid == sid:
+                continue
+            other_platform = other_sid
+            if other_platform in dist_m:
+                pairs += 1
+                trip_min.append(dist_m[other_platform] / speed_m_per_min)
+            else:
+                unreachable += 1
+
+    noelle_log("compute_travel_times", {
+        "stations": n, "pairs": pairs, "unreachable": unreachable,
+    })
+
+    # Kept for the design report; network_signature tells it when it is stale
+    _state["travel_times"] = {
+        "signature":      network_signature(net),
+        "stations":       n,
+        "pairs":          pairs,
+        "unreachable":    unreachable,
+        "total_possible": n * (n - 1),
+        "speed_kmh":      speed_kmh,
+        "avg_trip_min":   round(sum(trip_min) / len(trip_min), 1) if trip_min else None,
+        "max_trip_min":   round(max(trip_min), 1) if trip_min else None,
+    }
+
+    return jsonify({
+        "stations": n,
+        "pairs": pairs,
+        "unreachable": unreachable,
+        "total_possible": n * (n - 1),
+    })
+
+
+# ---------------------------------------------------------------------------
+# Single-origin travel times (Dijkstra -- used by isochrone click)
 # ---------------------------------------------------------------------------
 
 @sim_bp.get("/network/travel_times")
